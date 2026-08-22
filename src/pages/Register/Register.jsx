@@ -545,7 +545,7 @@ function RegisterPage() {
               )}
 
               {form.password && (
-                <div className="mt-3 space-y-3 animate-fade-in">
+                <div className="mt-3 space-y-5 animate-fade-in">
                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full transition-all duration-300 rounded-full ${strengthColor}`}

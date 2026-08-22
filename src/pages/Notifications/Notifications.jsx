@@ -67,7 +67,7 @@ function Notifications() {
   };
 
   return (
-    <PageContainer className="space-y-8">
+    <PageContainer>
       {/* Page Header */}
       <PageHeader
         title="Notifications"

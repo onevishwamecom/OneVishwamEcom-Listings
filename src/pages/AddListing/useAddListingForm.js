@@ -7,7 +7,7 @@ import { INITIAL_FORM, STEPS, CATEGORY_FIELDS, REQUIRED_BY_STEP } from "./formCo
 import { validateStep, canNext } from "./validation";
 import { createNewListingData, createUpdatedListingData } from "./payloadBuilder";
 import { CATEGORY_TO_MOCK, SERVICE_TYPE_TO_CATEGORY } from "./constants";
-import { findListing, createListing, updateListing, invalidateListings } from "../../services/listings";
+import { findListing, createListing, updateListing, invalidateListings, uploadImages } from "../../services/listings";
 import { getCachedUser } from "../../services/userCache";
 import { useListingStats } from "../../components/ListingStats";
 
@@ -55,10 +55,35 @@ export function useAddListingForm() {
   const docUrls = documents.filter((d) => d.url).map((d) => d.url);
 
   const removePhoto = (index) =>
-    setPhotos((prev) => prev.filter((_, idx) => idx !== index));
+    setPhotos((prev) => {
+      const removed = prev[index];
+      if (removed?.url) {
+        URL.revokeObjectURL(removed.url);
+      }
+      return prev.filter((_, idx) => idx !== index);
+    });
 
   const removeDocument = (index) =>
-    setDocuments((prev) => prev.filter((_, idx) => idx !== index));
+    setDocuments((prev) => {
+      const removed = prev[index];
+      if (removed?.url) {
+        URL.revokeObjectURL(removed.url);
+      }
+      return prev.filter((_, idx) => idx !== index);
+    });
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      photos.forEach((p) => {
+        if (p.url) URL.revokeObjectURL(p.url);
+      });
+      documents.forEach((d) => {
+        if (d.url) URL.revokeObjectURL(d.url);
+      });
+      if (brochureUrl) URL.revokeObjectURL(brochureUrl);
+    };
+  }, []);
 
   const handleAddPhoto = async (file) => {
     if (!file || photos.length >= 6) return;
@@ -147,10 +172,23 @@ export function useAddListingForm() {
     try {
       const typeKey = CATEGORY_TO_MOCK[category] || category;
 
+      // Extract File objects from photos for upload (filter out existing images without file)
+      const photoFiles = photos.filter((p) => p.file).map((p) => p.file);
+
+      // Upload new photos to backend
+      let uploadedImageUrls = [];
+      if (photoFiles.length > 0) {
+        const uploadResult = await uploadImages(photoFiles);
+        uploadedImageUrls = uploadResult.images || [];
+      }
+
+      // Combine existing image URLs (from editing) with newly uploaded URLs
+      const finalImageUrls = [...imageUrls.filter((url) => !url.startsWith('blob:')), ...uploadedImageUrls];
+
       if (isEditing && originalListingId) {
-        await updateListing(typeKey, originalListingId, createUpdatedListingData(form, category, subcategory, imageUrls, docUrls, brochureUrl, cities));
+        await updateListing(typeKey, originalListingId, createUpdatedListingData(form, category, subcategory, finalImageUrls, docUrls, brochureUrl, cities));
       } else {
-        const listingPayload = createNewListingData(form, category, subcategory, imageUrls, docUrls, brochureUrl, cities);
+        const listingPayload = createNewListingData(form, category, subcategory, finalImageUrls, docUrls, brochureUrl, cities);
         const user = getCachedUser() || {};
         await createListing({
           ...listingPayload,

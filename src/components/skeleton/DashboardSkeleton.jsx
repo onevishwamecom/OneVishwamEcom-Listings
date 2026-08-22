@@ -13,7 +13,7 @@ export function DashboardSkeleton() {
       <div className="rounded-2xl bg-hero-gradient p-6 sm:p-8 overflow-hidden shadow-lg">
         <div className="flex items-center gap-4">
           <Skeleton className="h-16 w-16 sm:h-20 sm:w-20 rounded-3xl bg-white/10" />
-          <div className="flex-1 space-y-3">
+          <div className="flex-1 space-y-5">
             <Skeleton className="h-6 w-48 sm:w-64 bg-white/10" rounded="rounded-lg" />
             <Skeleton className="h-4 w-72 max-w-full bg-white/10" rounded="rounded-md" />
           </div>

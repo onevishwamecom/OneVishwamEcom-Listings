@@ -27,7 +27,7 @@ export function ListingCardSkeleton() {
     <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-card">
       <div className="flex">
         <SkeletonBase className="w-32 h-32 rounded-none" />
-        <div className="flex-1 p-4 space-y-3">
+        <div className="flex-1 p-4 space-y-5">
           <SkeletonBase className="h-4 w-3/4" rounded="rounded-md" />
           <SkeletonBase className="h-3 w-full" rounded="rounded" />
           <SkeletonBase className="h-3 w-1/2" rounded="rounded" />

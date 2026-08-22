@@ -13,7 +13,7 @@ export function ListingCardSkeleton({ horizontal = false, className = '' }) {
       <div className={`bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-card ${className}`}>
         <div className="flex">
           <SkeletonImage className="w-32 h-32 rounded-none" fallbackIcon="fa-image" />
-          <div className="flex-1 p-4 space-y-3">
+          <div className="flex-1 p-4 space-y-5">
             <Skeleton className="h-4 w-3/4" rounded="rounded-md" />
             <Skeleton className="h-3 w-full" rounded="rounded" />
             <Skeleton className="h-3 w-1/2" rounded="rounded" />
@@ -33,7 +33,7 @@ export function ListingCardSkeleton({ horizontal = false, className = '' }) {
       <Skeleton className="h-40 w-full rounded-none" />
 
       {/* Body */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-5">
         <Skeleton className="h-4 w-3/4" rounded="rounded-md" />
         <Skeleton className="h-3 w-full" rounded="rounded" />
         <Skeleton className="h-3 w-2/3" rounded="rounded" />

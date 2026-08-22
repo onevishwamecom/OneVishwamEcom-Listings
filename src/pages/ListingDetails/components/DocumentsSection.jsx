@@ -5,7 +5,7 @@ export function DocumentsSection({ documents }) {
 
   return (
     <SectionCard title="Documents" icon="fa-file-pdf">
-      <div className="space-y-3">
+      <div className="space-y-5">
         {documents.map((doc, index) => (
           <div key={index} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
             <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0">

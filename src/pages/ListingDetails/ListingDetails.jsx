@@ -46,39 +46,39 @@ function ListingDetails() {
 
   if (!listing || error) {
     return (
-      <PageContainer className="space-y-8">
+      <PageContainer>
         <PageHeader
           title="Listing Details"
           subtitle="Full details and activity for this listing"
           action={
             <Link
               to="/listings"
-              className="inline-flex items-center gap-2 bg-brand-blue text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-200 hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 bg-brand-blue text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-200 hover:-translate-y-0.5"
             >
               <i className="fa-solid fa-arrow-left text-xs" /> Back to All Listings
             </Link>
           }
         />
 
-        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-4 animate-fade-in">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/10 to-orange-500/10 flex items-center justify-center mb-5 border border-rose-100">
-            <i className="fa-solid fa-house-crack text-3xl text-rose-400" aria-hidden="true" />
+        <div className="flex flex-col items-center justify-center py-12 bg-white rounded-2xl border border-slate-100 shadow-sm text-center px-4 animate-fade-in">
+          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-rose-500/10 to-orange-500/10 flex items-center justify-center mb-4 border border-rose-100">
+            <i className="fa-solid fa-house-crack text-2xl text-rose-400" aria-hidden="true" />
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-1">Listing not found</h3>
           <p className="text-sm font-medium text-slate-500 max-w-sm">
             This listing may have been removed or does not exist.
           </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
             <button
               type="button"
               onClick={retry}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-100 text-slate-700 px-5 py-2.5 text-sm font-bold hover:bg-slate-200 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-100 text-slate-700 px-4 py-2 text-sm font-bold hover:bg-slate-200 transition-colors"
             >
               <i className="fa-solid fa-rotate-right text-xs" aria-hidden="true" /> Try Again
             </button>
             <Link
               to="/listings"
-              className="inline-flex items-center gap-2 rounded-xl bg-brand-blue text-white px-5 py-2.5 text-sm font-bold hover:bg-brand-blue/90 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand-blue text-white px-4 py-2 text-sm font-bold hover:bg-brand-blue/90 transition-colors"
             >
               <i className="fa-solid fa-list text-xs" /> View All Listings
             </Link>
@@ -109,7 +109,7 @@ function ListingDetails() {
   const nextImage = () => setSelectedImage((prev) => (prev + 1) % images.length);
 
   return (
-    <PageContainer className="space-y-8">
+    <PageContainer>
       {/* Page Header */}
       <PageHeader
         title={displayTitle}
@@ -117,7 +117,7 @@ function ListingDetails() {
         action={
           <Link
             to="/listings"
-            className="inline-flex items-center gap-2 bg-brand-blue text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-200 hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 bg-brand-blue text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-200 hover:-translate-y-0.5"
           >
             <i className="fa-solid fa-arrow-left text-xs" /> Back to Listed Items
           </Link>
@@ -125,9 +125,9 @@ function ListingDetails() {
       />
 
       {/* Listing Summary & Status */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-3">
         {/* Left Column - Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-5">
           {/* Image Gallery */}
           <ImageGallery images={images} displayTitle={displayTitle} onImageClick={handleImageClick} selectedImage={selectedImage} />
 
@@ -154,7 +154,7 @@ function ListingDetails() {
         </div>
 
         {/* Right Column - Status & Actions */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           <StatusCard
             listing={listing}
             config={config}

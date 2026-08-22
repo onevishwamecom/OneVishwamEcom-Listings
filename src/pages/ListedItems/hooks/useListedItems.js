@@ -7,6 +7,7 @@ import { parsePrice, PRICE_LIMITS, SERVICE_CONFIG } from '../constants';
 import useCachedData from '@/hooks/useCachedData';
 import { fetchListings, deleteListing, invalidateListings } from '@/services/listings';
 import { CACHE_TTL } from '@/services/cacheService';
+import { useDebouncedValue } from '@/hooks/useDebounce';
 
 export function useListedItems() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -14,7 +15,8 @@ export function useListedItems() {
 
   const [busyId, setBusyId] = useState(null);
 
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const search = useDebouncedValue(searchInput, 300);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sort, setSort] = useState('newest');
   const [priceRange] = useState({ ...PRICE_LIMITS });
@@ -175,8 +177,8 @@ export function useListedItems() {
     error,
     retry,
     busyId,
-    search,
-    setSearch,
+    search: searchInput,
+    setSearch: setSearchInput,
     categoryFilter,
     setCategoryFilter,
     sort,

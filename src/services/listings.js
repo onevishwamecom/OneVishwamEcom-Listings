@@ -67,6 +67,12 @@ export async function createListing(payload) {
   return unwrap(await api.post('/listings', payload));
 }
 
+export async function uploadImages(files) {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('images', file));
+  return unwrap(await api.post('/upload/images', formData));
+}
+
 export async function updateListing(type, id, updates) {
   return unwrap(await api.patch(`/listings/${type}/${encodeURIComponent(id)}`, updates));
 }

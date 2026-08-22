@@ -40,7 +40,7 @@ function ProfilePage() {
   const accountStatus = (user?.accountStatus || 'active').replace(/-/g, ' ');
 
   return (
-    <PageContainer className="space-y-8">
+    <PageContainer>
       <PageHeader
         title="Account Settings"
         subtitle="Manage your profile details, photo, and notification preferences"

@@ -1,9 +1,11 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import Badge from '@/components/ui/Badge';
 import { getDisplayId, formatDate } from '@/utils';
 import { STATUS_BADGE, SERVICE_CONFIG } from '../constants';
 
-export function renderActions(item, align = 'start', busyId, handleDelete) {
+/** Memoized action cell to prevent re-renders when parent re-renders */
+const ActionCell = memo(function ActionCell({ item, align, busyId, handleDelete }) {
   const id = getDisplayId(item);
   const status = item.status || 'pending';
   const busy = busyId === id;
@@ -31,6 +33,17 @@ export function renderActions(item, align = 'start', busyId, handleDelete) {
         </Link>
       )}
 
+      {status === 'approved' && (
+        <Link
+          to={editLink}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand-blue/10 text-brand-blue font-bold text-xs hover:bg-brand-blue hover:text-white transition-colors"
+          title="Edit & Resubmit"
+        >
+          <i className="fa-solid fa-pen text-sm" aria-hidden="true" />
+          Edit
+        </Link>
+      )}
+
       <button
         onClick={() => handleDelete(item, item._type)}
         disabled={busy}
@@ -46,14 +59,24 @@ export function renderActions(item, align = 'start', busyId, handleDelete) {
       </button>
     </div>
   );
+});
+
+export function renderActions(item, align = 'start', busyId, handleDelete) {
+  return <ActionCell item={item} align={align} busyId={busyId} handleDelete={handleDelete} />;
 }
 
-export function renderStatus(item) {
+/** Memoized status badge */
+const StatusCell = memo(function StatusCell({ item }) {
   const cfg = STATUS_BADGE[item.status] || STATUS_BADGE.pending;
   return <Badge variant={cfg.variant} icon={cfg.icon}>{cfg.label}</Badge>;
+});
+
+export function renderStatus(item) {
+  return <StatusCell item={item} />;
 }
 
-export function renderProductCell(item) {
+/** Memoized product cell */
+const ProductCell = memo(function ProductCell({ item }) {
   const images = Array.isArray(item?.images) ? item.images : item?.image ? [item.image] : [];
   const title = item?.title || item?.name || item?.brand || 'Untitled';
   return (
@@ -76,9 +99,14 @@ export function renderProductCell(item) {
       </div>
     </div>
   );
+});
+
+export function renderProductCell(item) {
+  return <ProductCell item={item} />;
 }
 
-export function renderCategory(item) {
+/** Memoized category cell */
+const CategoryCell = memo(function CategoryCell({ item }) {
   const config = SERVICE_CONFIG[item._type] || { label: item._type, icon: 'fa-box', color: 'bg-slate-100 text-slate-600 border-slate-200' };
   return (
     <div className="flex items-center gap-2">
@@ -88,9 +116,14 @@ export function renderCategory(item) {
       <span className="text-sm font-semibold text-slate-700">{config.label}</span>
     </div>
   );
+});
+
+export function renderCategory(item) {
+  return <CategoryCell item={item} />;
 }
 
-export function renderLocation(item) {
+/** Memoized location cell */
+const LocationCell = memo(function LocationCell({ item }) {
   const location = item?.location || item?.city || item?.area || '—';
   return (
     <span className="text-sm font-medium text-slate-600 flex items-center gap-1.5">
@@ -98,18 +131,28 @@ export function renderLocation(item) {
       <span className="truncate max-w-[160px]">{location}</span>
     </span>
   );
+});
+
+export function renderLocation(item) {
+  return <LocationCell item={item} />;
 }
 
-export function renderDate(item) {
+/** Memoized date cell */
+const DateCell = memo(function DateCell({ item }) {
   return (
     <span className="text-sm font-medium text-slate-600 flex items-center gap-1.5">
       <i className="fa-regular fa-clock text-xs text-slate-300" aria-hidden="true" />
       {formatDate(item?.createdAt)}
     </span>
   );
+});
+
+export function renderDate(item) {
+  return <DateCell item={item} />;
 }
 
-export function renderMobileCard(item, index, renderActions, renderStatus) {
+/** Memoized mobile card */
+const MobileCard = memo(function MobileCard({ item, index, renderActions, renderStatus }) {
   const config = SERVICE_CONFIG[item._type] || { label: item._type, icon: 'fa-box', color: 'bg-slate-100 text-slate-600 border-slate-200' };
   const images = Array.isArray(item?.images) ? item.images : item?.image ? [item.image] : [];
   const title = item?.title || item?.name || item?.brand || 'Untitled';
@@ -117,7 +160,6 @@ export function renderMobileCard(item, index, renderActions, renderStatus) {
 
   return (
     <div
-      key={getDisplayId(item)}
       className="p-4 sm:p-5 flex flex-col gap-3 opacity-0 animate-fade-in-up"
       style={{ animationDelay: `${index * 40}ms`, animationFillMode: 'forwards' }}
     >
@@ -161,12 +203,16 @@ export function renderMobileCard(item, index, renderActions, renderStatus) {
       <div className="pt-3 border-t border-slate-100">{renderActions(item)}</div>
     </div>
   );
+});
+
+export function renderMobileCard(item, index, renderActions, renderStatus) {
+  return <MobileCard key={getDisplayId(item)} item={item} index={index} renderActions={renderActions} renderStatus={renderStatus} />;
 }
 
-export function renderTableRow(item, index, renderActions, renderProductCell, renderCategory, renderLocation, renderDate, renderStatus) {
+/** Memoized table row */
+const TableRow = memo(function TableRow({ item, index, renderActions, renderProductCell, renderCategory, renderLocation, renderDate, renderStatus }) {
   return (
     <tr
-      key={getDisplayId(item)}
       className="hover:bg-slate-50/60 transition-colors opacity-0 animate-fade-in-up"
       style={{ animationDelay: `${index * 40}ms`, animationFillMode: 'forwards' }}
     >
@@ -178,4 +224,8 @@ export function renderTableRow(item, index, renderActions, renderProductCell, re
       <td className="px-5 py-4">{renderActions(item, 'end')}</td>
     </tr>
   );
+});
+
+export function renderTableRow(item, index, renderActions, renderProductCell, renderCategory, renderLocation, renderDate, renderStatus) {
+  return <TableRow key={getDisplayId(item)} item={item} index={index} renderActions={renderActions} renderProductCell={renderProductCell} renderCategory={renderCategory} renderLocation={renderLocation} renderDate={renderDate} renderStatus={renderStatus} />;
 }

@@ -104,7 +104,7 @@ export function getCategoryFields(listing) {
 
 export function getAdminFeedback(listing, ADMIN_FEEDBACKS) {
   if (listing.status === 'changes-required') {
-    return ADMIN_FEEDBACKS[listing._id] || 'Please review and update the listing as per admin feedback.';
+    return listing.adminComment || ADMIN_FEEDBACKS[listing._id] || 'Please review and update the listing as per admin feedback.';
   }
   return null;
 }
@@ -118,6 +118,8 @@ export function getTimeline(listing, getAdminFeedback) {
     base.push({ date: listing.updatedAt || listing.createdAt, title: 'Listing Approved', description: 'Approved by admin and now live', type: 'approved' });
   } else if (listing.status === 'changes-required') {
     base.push({ date: listing.updatedAt || listing.createdAt, title: 'Changes Required', description: getAdminFeedback(listing), type: 'changes' });
+  } else if (listing.status === 'cancelled') {
+    base.push({ date: listing.updatedAt || listing.createdAt, title: 'Listing Cancelled', description: listing.adminComment || 'Cancelled by admin', type: 'cancelled' });
   }
 
   return base;

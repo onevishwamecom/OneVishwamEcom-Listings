@@ -48,7 +48,7 @@ function ListedItems() {
   }
 
   return (
-    <PageContainer className="space-y-8">
+    <PageContainer>
       <PageHeader
         title="Listed Items"
         subtitle="View and manage all your submitted products across every status"
