@@ -1,8 +1,30 @@
 import { safeParseInt, safeParseFloat } from "../../utils";
+import { PRICE_UNITS } from "./constants";
 
 export const buildPayload = (form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA = {}) => {
   const finalSubcategory = subcategory || form.subcategory || "";
   const cityLabel = CITY_DATA?.[form.city]?.label || form.city || "";
+
+  // Compute numeric price from raw input × unit multiplier
+  const rawPrice = safeParseFloat(String(form.price).replace(/[^\d.]/g, ''));
+  const unitMultiplier = PRICE_UNITS.find((u) => u.value === (form.priceUnit || 'exact'))?.multiplier || 1;
+  const numericPrice = rawPrice * unitMultiplier;
+
+  // Format display price string in Indian notation
+  let displayPrice = '';
+  if (numericPrice > 0) {
+    if (numericPrice >= 10000000) {
+      const cr = numericPrice / 10000000;
+      displayPrice = `₹${cr % 1 === 0 ? cr : cr.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')} Cr`;
+    } else if (numericPrice >= 100000) {
+      const l = numericPrice / 100000;
+      displayPrice = `₹${l % 1 === 0 ? l : l.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')} L`;
+    } else {
+      displayPrice = `₹${numericPrice.toLocaleString('en-IN')}`;
+    }
+  } else {
+    displayPrice = form.price || '';
+  }
 
   const base = {
     title: form.title,
@@ -10,7 +32,8 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     description: form.description || "",
     category,
     subcategory: finalSubcategory,
-    price: form.price,
+    price: displayPrice,
+    numericPrice,
     priceType: form.priceType || "fixed",
     priceSuffix: form.priceSuffix || "",
     state: form.state || "karnataka",
@@ -53,7 +76,7 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
       fuelType: form.fuelType || "Petrol",
       transmission: form.transmission || undefined,
       kmDriven: Math.max(0, safeParseInt(form.kmDriven)),
-      priceValue: Math.max(0, safeParseFloat(String(form.price).replace(/[₹,\s]/g, ""))),
+      priceValue: numericPrice || Math.max(0, safeParseFloat(String(form.price).replace(/[₹,\s]/g, ""))),
       location: form.area || "",
     },
     grocery: {

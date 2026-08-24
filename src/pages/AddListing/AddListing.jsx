@@ -217,6 +217,7 @@ export default function AddListing() {
                   updateForm={updateForm}
                   validationErrors={validationErrors}
                   formatINR={formatINR}
+                  category={form.category}
                 />
               )}
 

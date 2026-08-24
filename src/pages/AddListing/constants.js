@@ -132,6 +132,23 @@ export const PRICE_TYPES = [
   { value: "on-request", label: "Price on Request" },
 ];
 
+export const PRICE_UNITS = [
+  { value: "exact", label: "₹ (Exact Amount)", multiplier: 1 },
+  { value: "thousand", label: "Thousands (K)", multiplier: 1000 },
+  { value: "lakh", label: "Lakhs (L)", multiplier: 100000 },
+  { value: "crore", label: "Crores (Cr)", multiplier: 10000000 },
+];
+
+export const PRICE_SUFFIXES_BY_CATEGORY = {
+  "real-estate": ["", "/ Sq. Ft.", "/ month", "/ year", "Onwards"],
+  vehicle: ["", "Onwards", "EMI Available"],
+  grocery: ["", "/ kg", "/ piece", "/ pack", "/ liter", "/ dozen"],
+  garment: ["", "Onwards", "/ piece"],
+  jewellery: ["", "/ gram", "/ piece", "+ Making Charges"],
+  finance: ["", "% p.a.", "/ year"],
+  service: ["", "/ visit", "/ hour", "/ job"],
+};
+
 export const CATEGORY_TO_MOCK = {
   "real-estate": "properties",
   vehicle: "vehicles",
