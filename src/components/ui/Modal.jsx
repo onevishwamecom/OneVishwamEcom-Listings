@@ -15,6 +15,7 @@ export function Modal({
   size = 'md', // 'sm' | 'md' | 'lg'
   showCancel = true,
   closeOnOverlayClick = true,
+  showFooter = true,
 }) {
   if (!isOpen) return null;
 
@@ -52,18 +53,19 @@ export function Modal({
               {description && (
                 <p className="text-sm text-slate-500">{description}</p>
               )}
-              {children && !title && !description && (
-                <div>{children}</div>
+              {children && (
+                <div className={(title || description) ? "mt-4" : ""}>{children}</div>
               )}
             </div>
           )}
 
-          <div className="p-5 flex flex-col sm:flex-row gap-2.5 justify-end">
-            {showCancel && (
-              <button
+          {showFooter && (
+            <div className="p-5 flex flex-col sm:flex-row gap-2.5 justify-end">
+              {showCancel && (
+                <button
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 sm:flex-none bg-white text-slate-700 border-2 border-slate-200 py-3 rounded-2xl font-bold hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50"
+                className="flex-1 sm:flex-none px-6 py-3 bg-white text-slate-700 border-2 border-slate-200 rounded-2xl font-bold hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50"
               >
                 {cancelText || "Cancel"}
               </button>
@@ -71,7 +73,7 @@ export function Modal({
             <button
               onClick={onConfirm}
               disabled={loading}
-              className={`flex-1 sm:flex-none py-3 rounded-2xl font-bold transition-all disabled:opacity-50 ${
+              className={`flex-1 sm:flex-none px-6 py-3 rounded-2xl font-bold transition-all disabled:opacity-50 ${
                 variant === 'danger'
                   ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
                   : 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90'
@@ -87,6 +89,7 @@ export function Modal({
               )}
             </button>
           </div>
+        )}
         </div>
       </div>
     </Fragment>

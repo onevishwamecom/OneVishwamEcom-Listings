@@ -18,7 +18,7 @@ export function useAddListingForm() {
   const isEditing = Boolean(editId && editType);
   const { refresh: refreshStats } = useListingStats();
 
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(isEditing ? 1 : 0);
   const [form, setForm] = useState(INITIAL_FORM);
   const [photos, setPhotos] = useState([]);
   const [documents, setDocuments] = useState([]);

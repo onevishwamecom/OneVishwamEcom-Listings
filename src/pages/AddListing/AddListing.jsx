@@ -69,76 +69,14 @@ export default function AddListing() {
 
   const setCategory = (value) => updateForm("category", value);
 
-  if (submitted) {
-    const listingId = originalListingId || `LST${Date.now().toString().slice(-6)}`;
-    const isResubmission = isEditing && originalListingId;
-    return (
-      <div className="max-w-2xl mx-auto text-center py-12 animate-fade-in-up">
-        <div className="relative mb-6">
-          <div className="absolute inset-0 bg-brand-gold blur-3xl opacity-20 rounded-full" />
-          <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-brand-gold to-brand-gold/70 flex items-center justify-center mx-auto shadow-float text-white border-4 border-white">
-            <i className="fa-solid fa-check text-4xl" />
-          </div>
-        </div>
+  // When editing, skip the Category step (index 0) and start at Basic Info (index 1)
+  const effectiveSteps = isEditing ? STEPS.slice(1) : STEPS;
+  const stepOffset = isEditing ? 1 : 0;
+  const effectiveStep = step - stepOffset;
+  const effectiveIsLastStep = effectiveStep === effectiveSteps.length - 1;
 
-        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-3">
-          {isResubmission ? "Listing Resubmitted!" : isEditing ? "Listing Updated!" : "Listing Submitted for Approval!"}
-        </h2>
-
-        <p className="text-base text-slate-500 font-medium mb-5 max-w-md mx-auto">
-          {isResubmission
-            ? "Your updated listing has been sent for admin approval."
-            : isEditing
-            ? "Your listing changes have been saved and sent for review."
-            : "Your listing has been submitted and is now pending admin approval."}
-        </p>
-
-        <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 inline-block min-w-[260px]">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-            <i className="fa-solid fa-clock text-brand-gold" /> Status
-          </div>
-          <Badge variant="pending" icon="fa-clock" className="text-sm px-3 py-1.5">
-            Pending Approval
-          </Badge>
-          <div className="mt-3 pt-3 border-t border-slate-100">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Listing ID</div>
-            <div className="font-mono text-base font-extrabold text-brand-blue">{listingId}</div>
-          </div>
-        </div>
-
-        {brochureUrl && (
-          <a
-            href={brochureUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 hover:bg-white hover:shadow-sm transition-all"
-          >
-            <i className="fa-solid fa-file-pdf text-red-500 text-base" />
-            View Uploaded Brochure
-          </a>
-        )}
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            to="/listings?status=pending"
-            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-blue to-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:shadow-glow-blue transition-all duration-300 hover:-translate-y-0.5"
-          >
-            <i className="fa-solid fa-list" /> View Pending Listings
-          </Link>
-          {!isEditing && (
-            <button
-              onClick={() => {
-                window.location.href = "/add-listing";
-              }}
-              className="inline-flex items-center justify-center gap-2 bg-white text-slate-700 border-2 border-slate-200 px-6 py-3 rounded-2xl font-bold text-sm hover:border-slate-300 hover:bg-slate-50 transition-all duration-300 hover:-translate-y-0.5"
-            >
-              <i className="fa-solid fa-plus" /> Add Another
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const listingId = originalListingId || `LST${Date.now().toString().slice(-6)}`;
+  const isResubmission = isEditing && originalListingId;
 
   return (
     <>
@@ -190,15 +128,16 @@ export default function AddListing() {
           <div className="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
             <div className="bg-slate-50/50 border-b border-slate-100 px-4 py-4">
               <div className="flex items-start justify-between relative z-10">
-                {STEPS.map((s, i) => {
-                  const isActive = i === step;
-                  const isCompleted = i < step;
-                  const isClickable = i <= step;
+                {effectiveSteps.map((s, i) => {
+                  const stepIndex = i + stepOffset;
+                  const isActive = stepIndex === step;
+                  const isCompleted = stepIndex < step;
+                  const isClickable = stepIndex <= step;
 
                   return (
                     <div key={s.id} className="flex flex-col items-center gap-1.5 relative z-10 flex-1">
                       <button
-                        onClick={() => isClickable && setStep(i)}
+                        onClick={() => isClickable && setStep(stepIndex)}
                         disabled={!isClickable}
                         className={`relative w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 z-10 ${
                           isActive
@@ -231,14 +170,14 @@ export default function AddListing() {
                 <div className="absolute top-[18px] -translate-y-1/2 left-[10%] right-[10%] h-0.5 bg-slate-200 -z-0 rounded-full">
                   <div
                     className="h-full bg-brand-blue transition-all duration-500 ease-in-out rounded-full shadow-[0_0_8px_rgba(72,150,230,0.5)]"
-                    style={{ width: `${(step / (STEPS.length - 1)) * 100}%` }}
+                    style={{ width: `${(effectiveStep / (effectiveSteps.length - 1)) * 100}%` }}
                   />
                 </div>
               </div>
             </div>
 
             <div className="p-4 sm:px-6 sm:pb-6 sm:pt-5">
-              {step === 0 && (
+              {!isEditing && step === 0 && (
                 <CategoryStep
                   category={category}
                   setCategory={setCategory}
@@ -246,7 +185,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === 1 && (
+              {step === (isEditing ? 1 : 1) && (
                 <BasicInfoStep
                   form={form}
                   updateForm={updateForm}
@@ -254,7 +193,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === 2 && (
+              {step === (isEditing ? 2 : 2) && (
                 <DetailsStep
                   form={form}
                   updateForm={updateForm}
@@ -264,7 +203,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === 3 && (
+              {step === (isEditing ? 3 : 3) && (
                 <LocationStep
                   form={form}
                   updateForm={updateForm}
@@ -272,7 +211,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === 4 && (
+              {step === (isEditing ? 4 : 4) && (
                 <PricingStep
                   form={form}
                   updateForm={updateForm}
@@ -281,7 +220,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === 5 && (
+              {step === (isEditing ? 6 : 5) && (
                 <MediaStep
                   photos={photos}
                   documents={documents}
@@ -304,7 +243,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === 6 && (
+              {step === (isEditing ? 5 : 6) && (
                 <ReviewStep
                   form={form}
                   category={category}
@@ -339,7 +278,7 @@ export default function AddListing() {
                   </button>
                 )}
 
-                {!isLastStep ? (
+                {!effectiveIsLastStep ? (
                   <button
                     onClick={handleNext}
                     disabled={!canProceed()}
@@ -399,6 +338,81 @@ export default function AddListing() {
       loading={submitting}
       size="md"
     />
+
+    <Modal
+      isOpen={submitted}
+      onClose={() => {}}
+      showFooter={false}
+      closeOnOverlayClick={false}
+      size="md"
+    >
+      <div className="text-center py-4">
+        <div className="relative mb-6 mt-2">
+          <div className="absolute inset-0 bg-brand-gold blur-3xl opacity-20 rounded-full" />
+          <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-brand-gold to-brand-gold/70 flex items-center justify-center mx-auto shadow-float text-white border-4 border-white">
+            <i className="fa-solid fa-check text-3xl" />
+          </div>
+        </div>
+
+        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-2">
+          {isResubmission ? "Listing Resubmitted!" : isEditing ? "Listing Updated!" : "Listing Submitted for Approval!"}
+        </h2>
+
+        <p className="text-sm text-slate-500 font-medium mb-6 max-w-sm mx-auto">
+          {isResubmission
+            ? "Your updated listing has been sent for admin approval."
+            : isEditing
+            ? "Your listing changes have been saved and sent for review."
+            : "Your listing has been submitted and is now pending admin approval."}
+        </p>
+
+        <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 w-full text-left">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-slate-500 flex items-center gap-2">
+              <i className="fa-solid fa-clock text-brand-gold" /> Status
+            </span>
+            <Badge variant="pending" icon="fa-clock" className="text-sm px-3 py-1.5">
+              Pending Approval
+            </Badge>
+          </div>
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Listing ID</span>
+            <span className="font-mono text-base font-extrabold text-brand-blue">{listingId}</span>
+          </div>
+        </div>
+
+        {brochureUrl && (
+          <a
+            href={brochureUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-6 inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 hover:bg-white hover:shadow-sm transition-all"
+          >
+            <i className="fa-solid fa-file-pdf text-red-500 text-base" />
+            View Uploaded Brochure
+          </a>
+        )}
+
+        <div className="flex flex-col gap-3">
+          <Link
+            to="/listings?status=pending"
+            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-blue to-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-300 hover:-translate-y-0.5"
+          >
+            <i className="fa-solid fa-list" /> View Pending Listings
+          </Link>
+          {!isEditing && (
+            <button
+              onClick={() => {
+                window.location.href = "/add-listing";
+              }}
+              className="w-full inline-flex items-center justify-center gap-2 bg-white text-slate-700 border-2 border-slate-200 px-6 py-3 rounded-2xl font-bold text-sm hover:border-slate-300 hover:bg-slate-50 transition-all duration-300 hover:-translate-y-0.5"
+            >
+              <i className="fa-solid fa-plus" /> Add Another
+            </button>
+          )}
+        </div>
+      </div>
+    </Modal>
     </>
   );
 }
