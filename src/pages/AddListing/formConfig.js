@@ -7,6 +7,7 @@ export const INITIAL_FORM = {
   category: "",
   subcategory: "",
   price: "",
+  priceUnit: "exact",
   priceType: "fixed",
   priceSuffix: "",
   state: "karnataka",
