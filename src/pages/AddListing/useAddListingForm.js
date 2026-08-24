@@ -6,7 +6,7 @@ import { formatINR } from "../../utils";
 import { INITIAL_FORM, STEPS, CATEGORY_FIELDS, REQUIRED_BY_STEP } from "./formConfig";
 import { validateStep, canNext } from "./validation";
 import { createNewListingData, createUpdatedListingData } from "./payloadBuilder";
-import { CATEGORY_TO_MOCK, SERVICE_TYPE_TO_CATEGORY } from "./constants";
+import { CATEGORY_TO_MOCK, SERVICE_TYPE_TO_CATEGORY, SUBCATEGORIES } from "./constants";
 import { findListing, createListing, updateListing, invalidateListings, uploadImages } from "../../services/listings";
 import { getCachedUser } from "../../services/userCache";
 import { useListingStats } from "../../components/ListingStats";
@@ -150,18 +150,22 @@ export function useAddListingForm() {
         position: "top-end",
       });
     } catch (err) {
-      console.warn("Failed to save draft:", err?.message);
-      setSubmitError("Failed to save draft. Local storage may be full or unavailable.");
+      console.warn("Save draft failed:", err?.message);
+      Swal.fire({ icon: "error", title: "Save Failed", text: "Failed to save draft." });
     }
   };
 
   const handlePublish = () => {
-    if (!validateStep(form, step, catFields, imageUrls, STEPS, REQUIRED_BY_STEP, setValidationErrors)) return;
-    if (imageUrls.length === 0) {
-      setValidationErrors((prev) => ({ ...prev, photos: "At least one photo is required" }));
-      setStep(STEPS.findIndex(s => s.id === "media"));
-      return;
-    }
+    const isStepValid = validateStep(
+      form,
+      step,
+      catFields,
+      imageUrls,
+      STEPS,
+      REQUIRED_BY_STEP,
+      setValidationErrors,
+    );
+    if (!isStepValid) return;
     setShowConfirm(true);
   };
 
@@ -264,22 +268,60 @@ export function useAddListingForm() {
         nextForm.description = item.description || "";
         nextForm.price = item.price || "";
         nextForm.priceSuffix = item.priceSuffix || "";
+        nextForm.priceType = item.priceType || nextForm.priceType || "fixed";
         nextForm.area = item.area || item.location || "";
         nextForm.city = item.city || defaultCity;
         nextForm.pincode = item.pincode || "";
         nextForm.contact = item.contact || item.contactPhone || "9876543210";
         nextForm.category = serviceType;
 
+        // Resolve subcategory robustly
+        const rawSubcategory =
+          item.subcategory ||
+          item.subCategory ||
+          (serviceType === "real-estate" && (item.propertyType || item.category)) ||
+          (serviceType === "vehicle" && (
+            item.wheelerType ||
+            item.categoryVehicle ||
+            (item.category === "2-wheeler" ? "Bike" : item.category === "3-wheeler" ? "Auto Rickshaw" : item.category === "commercial" ? "Commercial Vehicle" : item.category === "4-wheeler" ? "Car" : item.category)
+          )) ||
+          (serviceType === "jewellery" && (item.metalType || item.material || item.category)) ||
+          (serviceType === "finance" && (item.serviceType || item.type || item.category)) ||
+          (serviceType === "grocery" && item.category) ||
+          (serviceType === "garment" && item.category) ||
+          "";
+
+        const validSubcategories = SUBCATEGORIES[serviceType] || [];
+        const matchedSub = validSubcategories.find(
+          (s) => s.toLowerCase() === String(rawSubcategory).trim().toLowerCase()
+        );
+        nextForm.subcategory = matchedSub || rawSubcategory || "";
+
+        if (serviceType === "real-estate") {
+          nextForm.propertyType = nextForm.subcategory || item.propertyType || "";
+          nextForm.bhk = item.bhk || "";
+          nextForm.bathrooms = item.bathrooms || "";
+          nextForm.area_sqft = item.area_sqft || item.numericArea || (item.area ? String(item.area).replace(/[^\d.]/g, '') : "");
+          nextForm.furnishing = item.furnishing || item.furnishingStatus || "";
+          nextForm.floor = item.floor || "";
+          nextForm.parking = item.parking || "";
+          nextForm.extraRoom = item.extraRoom || "";
+          nextForm.projectCount = item.projectCount ?? "";
+          nextForm.totalUnits = item.totalUnits ?? "";
+          nextForm.availableUnits = item.availableUnits ?? "";
+        }
         if (serviceType === "vehicle") {
           nextForm.brand = item.brand || item.make || "";
           nextForm.model = item.model || "";
-          nextForm.year = item.year || "";
+          nextForm.year = item.year ? String(item.year) : "";
+          nextForm.condition = item.condition || "used";
           nextForm.fuelType = item.fuelType || "";
           nextForm.kmDriven = item.kmDriven ?? "";
           nextForm.transmission = item.transmission || "";
+          nextForm.categoryVehicle = item.categoryVehicle || item.wheelerType || item.category || "";
         }
         if (serviceType === "grocery") {
-          nextForm.quantity = item.stock ?? nextForm.quantity;
+          nextForm.quantity = item.stock ?? item.quantity ?? nextForm.quantity;
           nextForm.unit = item.unit || nextForm.unit;
         }
         if (serviceType === "garment") {
@@ -288,11 +330,18 @@ export function useAddListingForm() {
         }
         if (serviceType === "jewellery") {
           nextForm.weight = item.weight ?? item.weightGrams ?? nextForm.weight;
-          nextForm.material = item.metalType || item.material || "";
+          nextForm.material = item.metalType || item.material || nextForm.subcategory || "";
           nextForm.purity = item.purity || "";
+          nextForm.gemstone = item.gemstone || "";
         }
-        if (serviceType === "finance")
-          nextForm.serviceType = item.type || item.category || nextForm.serviceType;
+        if (serviceType === "finance") {
+          nextForm.serviceType = item.serviceType || item.type || item.category || nextForm.subcategory || nextForm.serviceType;
+          nextForm.experience = item.experience ?? "";
+        }
+        if (serviceType === "service") {
+          nextForm.serviceType = item.serviceType || item.type || item.category || nextForm.subcategory || nextForm.serviceType;
+          nextForm.experience = item.experience ?? "";
+        }
 
         const existingImages = (
           Array.isArray(item.images)
