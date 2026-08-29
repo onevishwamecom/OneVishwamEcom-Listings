@@ -56,11 +56,7 @@ export const SUBCATEGORIES = {
   "real-estate": [
     "Apartment",
     "Villa",
-    "Plot",
-    "Commercial Property",
-    "PG / Co-living",
-    "Office Space",
-    "Warehouse",
+    "Plot"
   ],
   vehicle: [
     "Car",

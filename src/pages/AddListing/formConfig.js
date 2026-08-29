@@ -16,7 +16,6 @@ export const INITIAL_FORM = {
   area: "",
   pincode: "",
   contact: "",
-  propertyType: "",
   bhk: "",
   bathrooms: "",
   area_sqft: "",

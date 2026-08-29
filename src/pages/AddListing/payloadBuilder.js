@@ -50,7 +50,7 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
   const payloads = {
     "real-estate": {
       ...base,
-      propertyType: finalSubcategory || form.propertyType || "",
+      subcategory: finalSubcategory || form.subcategory || "",
       bhk: form.bhk || "",
       bathrooms: form.bathrooms || "",
       area_sqft: form.area_sqft || "",

@@ -6,8 +6,7 @@ export function getCategoryInfo(listing) {
 }
 
 export function getSubcategory(listing) {
-  if (listing.subcategory) return listing.subcategory;
-  if (listing._type === 'properties' && listing.propertyType) return listing.propertyType;
+  if (listing.subcategory || listing.subCategory) return listing.subcategory || listing.subCategory;
   if (listing._type === 'vehicles' && listing.category) return listing.category;
   if (listing._type === 'groceries') return 'Packaged Food';
   if (listing._type === 'garments') return "Men's Wear";
@@ -50,7 +49,7 @@ export function getCategoryFields(listing) {
   const fields = [];
 
   if (type === 'properties') {
-    if (listing.propertyType) fields.push({ label: 'Property Type', value: listing.propertyType });
+    if (listing.subcategory || listing.subCategory) fields.push({ label: 'Subcategory', value: listing.subcategory || listing.subCategory });
     if (listing.bhk) fields.push({ label: 'BHK', value: listing.bhk });
     if (listing.bathrooms) fields.push({ label: 'Bathrooms', value: listing.bathrooms });
     if (listing.area_sqft) fields.push({ label: 'Area', value: `${listing.area_sqft} Sq. Ft.` });

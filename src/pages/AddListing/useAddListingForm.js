@@ -279,7 +279,7 @@ export function useAddListingForm() {
         const rawSubcategory =
           item.subcategory ||
           item.subCategory ||
-          (serviceType === "real-estate" && (item.propertyType || item.category)) ||
+          (serviceType === "real-estate" && item.category) ||
           (serviceType === "vehicle" && (
             item.wheelerType ||
             item.categoryVehicle ||
@@ -298,7 +298,6 @@ export function useAddListingForm() {
         nextForm.subcategory = matchedSub || rawSubcategory || "";
 
         if (serviceType === "real-estate") {
-          nextForm.propertyType = nextForm.subcategory || item.propertyType || "";
           nextForm.bhk = item.bhk || "";
           nextForm.bathrooms = item.bathrooms || "";
           nextForm.area_sqft = item.area_sqft || item.numericArea || (item.area ? String(item.area).replace(/[^\d.]/g, '') : "");
