@@ -17,46 +17,64 @@ function LoginPage() {
     password: "",
   });
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(null);
+
+  const from = location.state?.from?.pathname || "/";
 
   function validate() {
     const e = {};
-    const phoneDigits = form.phone.replace(/\D/g, '');
-    if (!phoneDigits) e.phone = "Phone is required";
-    else if (phoneDigits.length === 10) {
-      if (!/^[6-9]\d{9}$/.test(phoneDigits)) e.phone = "Invalid phone number";
-    } else if (phoneDigits.length === 12 && phoneDigits.startsWith('91')) {
+    const phoneDigits = form.phone.replace(/\D/g, "");
+    if (!phoneDigits) {
+      e.phone = "Mobile number is required";
+    } else if (phoneDigits.length === 10) {
+      if (!/^[6-9]\d{9}$/.test(phoneDigits)) e.phone = "Enter a valid 10-digit mobile number";
+    } else if (phoneDigits.length === 12 && phoneDigits.startsWith("91")) {
       const tenDigit = phoneDigits.slice(2);
-      if (!/^[6-9]\d{9}$/.test(tenDigit)) e.phone = "Invalid phone number";
+      if (!/^[6-9]\d{9}$/.test(tenDigit)) e.phone = "Enter a valid 10-digit mobile number";
     } else {
-      e.phone = "Invalid phone number";
+      e.phone = "Enter a valid 10-digit mobile number";
     }
-    if (!form.password) e.password = "Password is required";
-    else if (form.password.length < 8) e.password = "At least 8 characters";
+
+    if (!form.password) {
+      e.password = "Password is required";
+    } else if (form.password.length < 8) {
+      e.password = "Password must be at least 8 characters";
+    }
     return e;
   }
 
   function updateField(field, value) {
     let next = value;
-    if (field === 'phone') {
-      next = value.replace(/\D/g, '').slice(0, 12);
+    if (field === "phone") {
+      next = value.replace(/\D/g, "").slice(0, 12);
     }
-    setForm({ ...form, [field]: next });
+    setForm((prev) => ({ ...prev, [field]: next }));
     clearError();
+    setServerError(null);
     if (errors[field]) {
-      const nextErrors = { ...errors };
-      delete nextErrors[field];
-      setErrors(nextErrors);
+      setErrors((prev) => {
+        const nextErrors = { ...prev };
+        delete nextErrors[field];
+        return nextErrors;
+      });
     }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setServerError(null);
+    clearError();
+
     const v = validate();
     setErrors(v);
     if (Object.keys(v).length) return;
 
     try {
-      await phoneLogin({ phone: normalizePhone(form.phone), password: form.password }).unwrap();
+      await phoneLogin({
+        phone: normalizePhone(form.phone),
+        password: form.password,
+      }).unwrap();
+
       Swal.fire({
         icon: "success",
         title: "Login Successful!",
@@ -65,14 +83,20 @@ function LoginPage() {
         toast: true,
         position: "top-end",
       });
+
       navigate(from, { replace: true });
     } catch (err) {
-      console.warn(
-        "Login failed:",
-        err?.response?.data?.message || err?.message,
-      );
+      const msg =
+        (typeof err === "string" ? err : null) ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Invalid mobile number or password. Please try again.";
+      setServerError(msg);
+      console.warn("Login failed:", msg);
     }
   };
+
+  const isFormValid = Boolean(form.phone.trim() && form.password.trim());
 
   return (
     <div className="min-h-screen flex bg-slate-50">
@@ -89,7 +113,7 @@ function LoginPage() {
             <img src={logo} alt="OneVishwam Logo" className="h-10 w-auto object-contain" />
           </div>
 
-          <div className="text-center lg:text-left mb-10">
+          <div className="text-center lg:text-left mb-8">
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
               Sign in
             </h2>
@@ -98,48 +122,72 @@ function LoginPage() {
             </p>
           </div>
 
-          <div className="mb-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <Input
-                  id="login-phone"
-                  label="Mobile Number"
-                  type="tel"
-                  icon="fa-phone"
-                  placeholder="+91 98765 43210"
-                  value={form.phone}
-                  onChange={(e) => updateField('phone', e.target.value)}
-                  error={errors.phone}
-                  required
-                />
+          {(serverError || error) && (
+            <div className="mb-6 rounded-2xl bg-brand-orange/10 border border-brand-orange/20 p-4 text-sm text-brand-orange flex items-start gap-3 animate-fade-in">
+              <i className="fa-solid fa-circle-exclamation mt-0.5" aria-hidden="true" />
+              <span>{serverError || error}</span>
+            </div>
+          )}
 
-                <Input
-                  id="login-password"
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  icon="fa-lock"
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={(e) => updateField('password', e.target.value)}
-                  error={errors.password}
-                  required
+          <div className="mb-6">
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+              <Input
+                id="login-phone"
+                label="Mobile Number"
+                type="tel"
+                icon="fa-phone"
+                placeholder="+91 98765 43210"
+                value={form.phone}
+                onChange={(e) => updateField("phone", e.target.value)}
+                error={errors.phone}
+                required
+              />
+
+              <Input
+                id="login-password"
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                icon="fa-lock"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={(e) => updateField("password", e.target.value)}
+                error={errors.password}
+                required
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
-                  </button>
-                </Input>
-              </div>
+                  <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`} />
+                </button>
+              </Input>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading || !isFormValid}
+                className="w-full rounded-2xl mt-2 bg-gradient-to-r from-brand-blue to-brand-blue/80 py-3.5 text-sm font-bold text-white shadow-glow-blue hover:shadow-glow-blue transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <i className="fa-solid fa-circle-notch fa-spin text-base" aria-hidden="true" />
+                    <span>Signing In...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In</span>
+                    <i className="fa-solid fa-arrow-right text-xs" aria-hidden="true" />
+                  </>
+                )}
+              </button>
             </form>
           </div>
 
           <div className="text-center text-sm text-slate-500 font-medium pt-4">
             <div className="mb-2">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 to="/register"
                 className="text-brand-blue hover:text-brand-blue/80 font-bold transition-colors"
