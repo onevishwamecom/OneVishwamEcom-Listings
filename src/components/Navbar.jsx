@@ -24,9 +24,9 @@ function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { total: totalListings, refresh: refreshStats } = useListingStats();
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { total: totalListings } = useListingStats();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
 
   const pageTitle = getPageTitle(location.pathname);
@@ -47,10 +47,6 @@ function Navbar() {
       unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    refreshStats();
-  }, [location.pathname, refreshStats]);
 
   useEffect(() => {
     function handleClickOutside(e) {
