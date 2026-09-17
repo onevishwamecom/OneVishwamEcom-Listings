@@ -7,6 +7,7 @@ import { AuthBrandPanel } from "@/components/AuthBrandPanel";
 import Input from "@/components/ui/Input";
 import { OTPInput } from "@/components/ui/OTPInput";
 import { normalizePhone, normalizePhoneForApi } from "@/utils/phone";
+import { sendPhoneOtp, confirmPhoneOtp, getRecaptchaVerifier } from "@/firebase/phoneAuth";
 
 const RULES = [
   { key: "min", label: "At least 8 characters", test: (v) => v.length >= 8 },
@@ -80,6 +81,9 @@ function RegisterPage() {
   const [serverError, setServerError] = useState(null);
   const [otpSent, setOtpSent] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [firebaseIdToken, setFirebaseIdToken] = useState(null);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -91,6 +95,18 @@ function RegisterPage() {
       return () => clearTimeout(timer);
     }
   }, [resendCooldown]);
+
+  // Render reCAPTCHA widget
+  useEffect(() => {
+    if (!phoneVerified) {
+      try {
+        const verifier = getRecaptchaVerifier("recaptcha-container");
+        verifier?.render().catch(() => {});
+      } catch (err) {
+        // ignore
+      }
+    }
+  }, [phoneVerified]);
 
   function getFieldError(field, data = form) {
     switch (field) {
@@ -164,34 +180,44 @@ function RegisterPage() {
   const canRegister = phoneVerified && isNameValid() && isPasswordValid() && isConfirmValid();
 
   const handleSendOtp = useCallback(async () => {
-    if (!canSendOtp || loading) return;
+    if (!canSendOtp || sendingOtp || loading) return;
+    setSendingOtp(true);
+    setErrors({});
+    setServerError(null);
     try {
-      await sendOtp(normalizePhoneForApi(form.phone)).unwrap();
+      await sendPhoneOtp(form.phone, "recaptcha-container");
       setOtpSent(true);
       setResendCooldown(60);
-      setErrors({});
-      setServerError(null);
       Swal.fire({
         icon: "success",
-        title: "OTP sent!",
-        text: "Enter the 6-digit code you received.",
-        timer: 2000,
+        title: "OTP sent via SMS!",
+        text: "Enter the 6-digit code received on your phone.",
+        timer: 3000,
         showConfirmButton: false,
         toast: true,
         position: "top-end",
       });
     } catch (err) {
-      setErrors({ phone: err?.response?.data?.message || "Failed to send OTP" });
+      console.error("Firebase sendPhoneOtp error:", err);
+      let msg = err?.message || "Failed to send OTP";
+      if (err?.code === "auth/invalid-phone-number") msg = "Invalid phone number format";
+      if (err?.code === "auth/too-many-requests") msg = "Too many requests. Please wait a moment before trying again.";
+      if (err?.code === "auth/quota-exceeded") msg = "SMS quota exceeded. Please contact support.";
+      setErrors({ phone: msg });
+    } finally {
+      setSendingOtp(false);
     }
-  }, [form.phone, canSendOtp, loading, sendOtp]);
+  }, [form.phone, canSendOtp, sendingOtp, loading]);
 
   const handleVerifyOtp = useCallback(async () => {
-    if (!canVerifyOtp || loading) return;
+    if (!canVerifyOtp || verifyingOtp || loading) return;
+    setVerifyingOtp(true);
+    setErrors({});
+    setServerError(null);
     try {
-      await verifyOtp({ phone: normalizePhoneForApi(form.phone), otp: form.otp }).unwrap();
+      const { idToken } = await confirmPhoneOtp(form.otp);
+      setFirebaseIdToken(idToken);
       setPhoneVerified(true);
-      setErrors({});
-      setServerError(null);
       Swal.fire({
         icon: "success",
         title: "Phone verified!",
@@ -201,9 +227,15 @@ function RegisterPage() {
         position: "top-end",
       });
     } catch (err) {
-      setErrors({ otp: err?.response?.data?.message || "Invalid OTP" });
+      console.error("Firebase confirmPhoneOtp error:", err);
+      let msg = err?.message || "Invalid OTP";
+      if (err?.code === "auth/invalid-verification-code") msg = "Incorrect OTP code. Please try again.";
+      if (err?.code === "auth/code-expired") msg = "OTP has expired. Please request a new code.";
+      setErrors({ otp: msg });
+    } finally {
+      setVerifyingOtp(false);
     }
-  }, [form.otp, form.phone, canVerifyOtp, loading, verifyOtp]);
+  }, [form.otp, canVerifyOtp, verifyingOtp, loading]);
 
   const handleRegister = useCallback(async (e) => {
     e.preventDefault();
@@ -216,6 +248,7 @@ function RegisterPage() {
         phone: normalizePhoneForApi(form.phone),
         password: form.password,
         confirmPassword: form.confirm,
+        firebaseIdToken,
       }).unwrap();
       Swal.fire({
         icon: "success",
@@ -410,16 +443,21 @@ function RegisterPage() {
               )}
             </div>
 
+            {/* Firebase reCAPTCHA Widget */}
+            {!phoneVerified && (
+              <div id="recaptcha-container" className="my-3 flex justify-center"></div>
+            )}
+
             {/* Send OTP Button */}
             {!phoneVerified && (
               <div className="flex gap-4">
                 <button
                   type="button"
                   onClick={handleSendOtp}
-                  disabled={loading || !isPhoneValid() || resendCooldown > 0}
+                  disabled={sendingOtp || loading || !isPhoneValid() || resendCooldown > 0}
                   className="w-full rounded-2xl mt-4 bg-gradient-to-r from-brand-blue to-brand-blue/80 py-3.5 text-sm font-bold text-white shadow-glow-blue hover:shadow-glow-blue transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
-                  {loading ? (
+                  {sendingOtp ? (
                     <span className="flex items-center justify-center gap-2">
                       <i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true" />
                       Sending OTP...
@@ -444,7 +482,7 @@ function RegisterPage() {
                   value={form.otp}
                   onChange={(value) => handleChange("otp", value)}
                   onComplete={handleVerifyOtp}
-                  disabled={phoneVerified || loading}
+                  disabled={phoneVerified || verifyingOtp || loading}
                   error={errors.otp}
                   label={phoneVerified ? "OTP (Verified)" : "OTP"}
                   id="reg-otp"
@@ -455,7 +493,7 @@ function RegisterPage() {
                     <button
                       type="button"
                       onClick={handleResendOtp}
-                      disabled={loading || resendCooldown > 0}
+                      disabled={sendingOtp || verifyingOtp || loading || resendCooldown > 0}
                       className="flex-1 rounded-2xl border border-slate-300 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                       Back
@@ -463,10 +501,10 @@ function RegisterPage() {
                     <button
                       type="button"
                       onClick={handleVerifyOtp}
-                      disabled={loading || !canVerifyOtp}
+                      disabled={verifyingOtp || loading || !canVerifyOtp}
                       className="flex-1 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-blue/80 py-3.5 text-sm font-bold text-white shadow-glow-blue hover:shadow-glow-blue transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                     >
-                      {loading ? (
+                      {verifyingOtp ? (
                         <span className="flex items-center justify-center gap-2">
                           <i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true" />
                           Verifying...
