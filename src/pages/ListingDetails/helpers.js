@@ -49,14 +49,22 @@ export function getCategoryFields(listing) {
   const fields = [];
 
   if (type === 'properties') {
-    if (listing.subcategory || listing.subCategory) fields.push({ label: 'Subcategory', value: listing.subcategory || listing.subCategory });
+    if (listing.subcategory || listing.subCategory || listing.propertyType) fields.push({ label: 'Subcategory', value: listing.subcategory || listing.subCategory || listing.propertyType });
     if (listing.bhk) fields.push({ label: 'BHK', value: listing.bhk });
     if (listing.bathrooms) fields.push({ label: 'Bathrooms', value: listing.bathrooms });
     if (listing.area_sqft) fields.push({ label: 'Area', value: `${listing.area_sqft} Sq. Ft.` });
+    else if (listing.area) fields.push({ label: 'Area', value: listing.area });
+    if (listing.floors) fields.push({ label: 'Floors', value: listing.floors });
+    else if (listing.floor) fields.push({ label: 'Floor', value: listing.floor });
+    if (listing.towers) fields.push({ label: 'Towers', value: listing.towers });
+    if (listing.approval) fields.push({ label: 'Approval', value: listing.approval });
+    if (listing.possession || listing.possessionStatus) fields.push({ label: 'Possession', value: listing.possession || listing.possessionStatus });
     if (listing.furnishing) fields.push({ label: 'Furnishing', value: listing.furnishing });
-    if (listing.floor) fields.push({ label: 'Floor', value: listing.floor });
     if (listing.parking) fields.push({ label: 'Parking', value: listing.parking });
     if (listing.extraRoom) fields.push({ label: 'Extra Room', value: listing.extraRoom });
+    if (listing.loanApproved) fields.push({ label: 'Bank Loan Approved', value: 'Yes' });
+    if (listing.vendorName) fields.push({ label: 'Vendor Name', value: listing.vendorName });
+    if (listing.email || listing.contactEmail) fields.push({ label: 'Contact Email', value: listing.email || listing.contactEmail });
     if (listing.projectCount) fields.push({ label: 'Total Projects', value: listing.projectCount });
     if (listing.totalUnits) fields.push({ label: 'Total Units', value: listing.totalUnits });
     if (listing.availableUnits) fields.push({ label: 'Available Units', value: listing.availableUnits });

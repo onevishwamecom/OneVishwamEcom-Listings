@@ -7,7 +7,7 @@ import { INITIAL_FORM, STEPS, CATEGORY_FIELDS, REQUIRED_BY_STEP } from "./formCo
 import { validateStep, canNext } from "./validation";
 import { createNewListingData, createUpdatedListingData } from "./payloadBuilder";
 import { CATEGORY_TO_MOCK, SERVICE_TYPE_TO_CATEGORY, SUBCATEGORIES } from "./constants";
-import { findListing, createListing, updateListing, invalidateListings, uploadImages } from "../../services/listings";
+import { findListing, createListing, updateListing, invalidateListings, uploadImages, uploadBrochure, uploadVideo } from "../../services/listings";
 import { getCachedUser } from "../../services/userCache";
 import { useListingStats } from "../../components/ListingStats";
 
@@ -21,6 +21,8 @@ export function useAddListingForm() {
   const [step, setStep] = useState(isEditing ? 1 : 0);
   const [form, setForm] = useState(INITIAL_FORM);
   const [photos, setPhotos] = useState([]);
+  const [video, setVideo] = useState(null);
+  const [videoUrl, setVideoUrl] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [brochure, setBrochure] = useState(null);
   const [brochureUrl, setBrochureUrl] = useState(null);
@@ -35,6 +37,7 @@ export function useAddListingForm() {
   const [adminFeedback, setAdminFeedback] = useState(null);
 
   const fileRef = useRef(null);
+  const videoRef = useRef(null);
   const brochureRef = useRef(null);
   const documentRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
@@ -76,17 +79,35 @@ export function useAddListingForm() {
   useEffect(() => {
     return () => {
       photos.forEach((p) => {
-        if (p.url) URL.revokeObjectURL(p.url);
+        if (p.url && p.url.startsWith('blob:')) URL.revokeObjectURL(p.url);
       });
       documents.forEach((d) => {
-        if (d.url) URL.revokeObjectURL(d.url);
+        if (d.url && d.url.startsWith('blob:')) URL.revokeObjectURL(d.url);
       });
-      if (brochureUrl) URL.revokeObjectURL(brochureUrl);
+      if (brochureUrl && brochureUrl.startsWith('blob:')) URL.revokeObjectURL(brochureUrl);
+      if (videoUrl && videoUrl.startsWith('blob:')) URL.revokeObjectURL(videoUrl);
     };
   }, []);
 
   const handleAddPhoto = async (file) => {
-    if (!file || photos.length >= 6) return;
+    if (!file) return;
+    if (photos.length >= 5) {
+      Swal.fire({
+        icon: "warning",
+        title: "Limit Reached",
+        text: "You can add a maximum of 5 photos.",
+      });
+      return;
+    }
+    if (file.size > 1 * 1024 * 1024) {
+      Swal.fire({
+        icon: "warning",
+        title: "File Too Large",
+        text: `"${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)} MB. Maximum allowed photo size is 1MB.`,
+      });
+      return;
+    }
+
     const tempId = Date.now() + Math.random();
     setPhotos((prev) => [
       ...prev,
@@ -94,16 +115,41 @@ export function useAddListingForm() {
     ]);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const url = URL.createObjectURL(file);
       setPhotos((prev) =>
         prev.map((p) => (p.id === tempId ? { ...p, url, uploading: false } : p)),
       );
     } catch (err) {
-      console.warn("Image upload failed:", err?.response?.data?.message || err?.message);
+      console.warn("Photo preview failed:", err?.message);
       setPhotos((prev) => prev.filter((p) => p.id !== tempId));
-      Swal.fire({ icon: "error", title: "Upload Failed", text: "Failed to upload photo." });
+      Swal.fire({ icon: "error", title: "Upload Failed", text: "Failed to process photo." });
     }
+  };
+
+  const handleAddVideo = (file) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      Swal.fire({
+        icon: "warning",
+        title: "Video Too Large",
+        text: `"${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)} MB. Maximum allowed video size is 10MB.`,
+      });
+      return;
+    }
+    if (videoUrl && videoUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(videoUrl);
+    }
+    setVideo(file);
+    setVideoUrl(URL.createObjectURL(file));
+  };
+
+  const removeVideo = () => {
+    if (videoUrl && videoUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(videoUrl);
+    }
+    setVideo(null);
+    setVideoUrl(null);
   };
 
   const handleAddDocument = async (file) => {
@@ -189,10 +235,59 @@ export function useAddListingForm() {
       // Combine existing image URLs (from editing) with newly uploaded URLs
       const finalImageUrls = [...imageUrls.filter((url) => !url.startsWith('blob:')), ...uploadedImageUrls];
 
+      // Upload brochure PDF if a file was selected
+      let finalBrochureUrl = brochureUrl && !brochureUrl.startsWith('blob:') ? brochureUrl : null;
+      if (brochure && (brochure instanceof File || brochure.name)) {
+        try {
+          const brochureRes = await uploadBrochure(brochure);
+          if (brochureRes?.brochureUrl) {
+            finalBrochureUrl = brochureRes.brochureUrl;
+            setBrochureUrl(finalBrochureUrl);
+          }
+        } catch (bErr) {
+          console.error("Failed to upload brochure PDF:", bErr);
+        }
+      }
+
+      // Upload any document files
+      const docFiles = documents.filter((d) => d.file).map((d) => d.file);
+      let uploadedDocUrls = [];
+      if (docFiles.length > 0) {
+        for (const docFile of docFiles) {
+          try {
+            const docRes = await uploadBrochure(docFile);
+            if (docRes?.brochureUrl) {
+              uploadedDocUrls.push({ name: docFile.name, url: docRes.brochureUrl, size: docFile.size });
+            }
+          } catch (dErr) {
+            console.error("Failed to upload document file:", dErr);
+          }
+        }
+      }
+      const existingDocUrls = (docUrls || []).filter((d) => {
+        const u = typeof d === 'string' ? d : d?.url;
+        return u && !u.startsWith('blob:');
+      });
+      const finalDocUrls = [...existingDocUrls, ...uploadedDocUrls];
+
+      // Upload video if a file was selected
+      let finalVideoUrl = videoUrl && !videoUrl.startsWith('blob:') ? videoUrl : null;
+      if (video && (video instanceof File || video.name)) {
+        try {
+          const videoRes = await uploadVideo(video);
+          if (videoRes?.videoUrl || (videoRes?.videos && videoRes.videos[0])) {
+            finalVideoUrl = videoRes.videoUrl || videoRes.videos[0];
+            setVideoUrl(finalVideoUrl);
+          }
+        } catch (vErr) {
+          console.error("Failed to upload video:", vErr);
+        }
+      }
+
       if (isEditing && originalListingId) {
-        await updateListing(typeKey, originalListingId, createUpdatedListingData(form, category, subcategory, finalImageUrls, docUrls, brochureUrl, cities));
+        await updateListing(typeKey, originalListingId, createUpdatedListingData(form, category, subcategory, finalImageUrls, finalDocUrls, finalBrochureUrl, finalVideoUrl, cities));
       } else {
-        const listingPayload = createNewListingData(form, category, subcategory, finalImageUrls, docUrls, brochureUrl, cities);
+        const listingPayload = createNewListingData(form, category, subcategory, finalImageUrls, finalDocUrls, finalBrochureUrl, finalVideoUrl, cities);
         const user = getCachedUser() || {};
         await createListing({
           ...listingPayload,
@@ -204,10 +299,6 @@ export function useAddListingForm() {
             city: user.city || listingPayload.city || '',
           },
         });
-      }
-
-      if (brochure) {
-        setBrochureUrl(URL.createObjectURL(brochure));
       }
 
       invalidateListings();
@@ -357,6 +448,8 @@ export function useAddListingForm() {
           }));
         setPhotos(existingImages);
         if (item.brochure) setBrochureUrl(item.brochure);
+        const existingVideo = item.video || item.videoUrl || (Array.isArray(item.videos) && item.videos[0]) || null;
+        if (existingVideo) setVideoUrl(existingVideo);
         setForm(nextForm);
 
         setOriginalListingId(item._id);
@@ -380,13 +473,17 @@ export function useAddListingForm() {
     return () => { cancelled = true; };
   }, [isEditing, editType, editId]);
 
-return {
+  return {
     // State
     step,
     setStep,
     form,
     photos,
     setPhotos,
+    video,
+    setVideo,
+    videoUrl,
+    setVideoUrl,
     documents,
     setDocuments,
     brochure,
@@ -413,6 +510,7 @@ return {
     adminFeedback,
     // Refs
     fileRef,
+    videoRef,
     brochureRef,
     documentRef,
     dragOver,
@@ -422,6 +520,8 @@ return {
     // Handlers
     updateForm,
     handleAddPhoto,
+    handleAddVideo,
+    removeVideo,
     handleAddDocument,
     removePhoto,
     removeDocument,

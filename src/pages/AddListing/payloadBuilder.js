@@ -1,7 +1,7 @@
 import { safeParseInt, safeParseFloat } from "../../utils";
 import { PRICE_UNITS } from "./constants";
 
-export const buildPayload = (form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA = {}) => {
+export const buildPayload = (form, category, subcategory, imageUrls, docUrls, brochureUrl, videoUrl = null, CITY_DATA = {}) => {
   const finalSubcategory = subcategory || form.subcategory || "";
   const cityLabel = CITY_DATA?.[form.city]?.label || form.city || "";
 
@@ -43,6 +43,9 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     pincode: form.pincode || "",
     contact: form.contact || "",
     images: imageUrls || [],
+    video: videoUrl || null,
+    videoUrl: videoUrl || null,
+    videos: videoUrl ? [videoUrl] : [],
     documents: docUrls || [],
     brochure: brochureUrl || null,
   };
@@ -51,18 +54,28 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     "real-estate": {
       ...base,
       subcategory: finalSubcategory || form.subcategory || "",
+      propertyType: finalSubcategory || form.subcategory || "",
       bhk: form.bhk || "",
       bathrooms: form.bathrooms || "",
       area_sqft: form.area_sqft || "",
       area: form.area_sqft ? `${form.area_sqft} Sq.Ft.` : form.area || "",
       furnishing: form.furnishing || "",
       floor: form.floor || "",
+      floors: form.floors || "",
+      towers: form.towers || "",
+      approval: form.approval || "",
+      possession: form.possession || "",
+      possessionStatus: form.possession || "",
+      loanApproved: form.loanApproved === "Yes" || form.loanApproved === true,
       parking: form.parking || "",
       extraRoom: form.extraRoom || "",
       projectCount: Math.max(0, safeParseInt(form.projectCount)),
       totalUnits: Math.max(0, safeParseInt(form.totalUnits)),
       availableUnits: Math.max(0, safeParseInt(form.availableUnits)),
       location: `${form.area || ""}${cityLabel ? `, ${cityLabel}` : ""}`,
+      details: form.description || "",
+      rawPrice: numericPrice || undefined,
+      pdfUrl: brochureUrl || null,
     },
     vehicle: {
       ...base,
@@ -126,8 +139,8 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
   return payloads[category] || base;
 };
 
-export const createNewListingData = (form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA = {}) => {
-  const data = buildPayload(form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA);
+export const createNewListingData = (form, category, subcategory, imageUrls, docUrls, brochureUrl, videoUrl = null, CITY_DATA = {}) => {
+  const data = buildPayload(form, category, subcategory, imageUrls, docUrls, brochureUrl, videoUrl, CITY_DATA);
   const listingId = `LST${Date.now().toString().slice(-6)}`;
   return {
     ...data,
@@ -137,8 +150,8 @@ export const createNewListingData = (form, category, subcategory, imageUrls, doc
   };
 };
 
-export const createUpdatedListingData = (form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA = {}) => {
-  const data = buildPayload(form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA);
+export const createUpdatedListingData = (form, category, subcategory, imageUrls, docUrls, brochureUrl, videoUrl = null, CITY_DATA = {}) => {
+  const data = buildPayload(form, category, subcategory, imageUrls, docUrls, brochureUrl, videoUrl, CITY_DATA);
   return {
     ...data,
     status: "pending",

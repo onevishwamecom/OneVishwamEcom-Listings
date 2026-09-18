@@ -8,6 +8,11 @@ const REMOVE_CONFIRM_STYLE = {
 
 export function MediaStep({
   photos,
+  video,
+  videoUrl,
+  videoRef,
+  handleAddVideo,
+  removeVideo,
   documents,
   brochure,
   setBrochure,
@@ -64,7 +69,7 @@ export function MediaStep({
               Photos <span className="text-red-500">*</span>
             </label>
             <span className="text-xs font-bold text-brand-blue bg-blue-50 px-2 py-0.5 rounded">
-              {photos.length}/6 uploaded
+              {photos.length}/5 uploaded
             </span>
           </div>
 
@@ -92,7 +97,7 @@ export function MediaStep({
               <h4 className="text-sm font-bold text-slate-700 mb-0.5">Drag & Drop photos here</h4>
               <p className="text-xs text-slate-500 font-medium mb-3">or click to browse from your device</p>
               <p className="text-[10px] font-semibold text-slate-400 bg-white inline-block px-2.5 py-0.5 rounded-full border border-slate-100">
-                JPG, PNG, WEBP (Max 5MB each)
+                JPG, PNG, WEBP (Max 1MB each, up to 5 photos)
               </p>
             </div>
           ) : (
@@ -125,7 +130,7 @@ export function MediaStep({
                 </div>
               ))}
 
-              {photos.length < 6 && (
+              {photos.length < 5 && (
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
@@ -159,6 +164,76 @@ export function MediaStep({
 
           {validationErrors.photos && (
             <p className="mt-1.5 text-xs font-semibold text-red-500 animate-fade-in">{validationErrors.photos}</p>
+          )}
+        </div>
+
+        {/* Video Section */}
+        <div className="pt-6 border-t border-slate-100">
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-sm font-semibold text-slate-700">
+              Short Video (Optional)
+            </label>
+            <span className="text-xs font-bold text-brand-blue bg-blue-50 px-2 py-0.5 rounded">
+              {video || videoUrl ? "1/1 uploaded" : "0/1 uploaded"}
+            </span>
+          </div>
+
+          {video || videoUrl ? (
+            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 p-2.5 max-w-md shadow-sm">
+              <div className="aspect-video w-full rounded-xl overflow-hidden bg-black flex items-center justify-center relative">
+                <video
+                  src={videoUrl}
+                  controls
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex items-center justify-between px-2 pt-2.5 text-white">
+                <div className="min-w-0 flex items-center gap-2">
+                  <i className="fa-solid fa-file-video text-brand-gold text-sm" />
+                  <span className="text-xs font-semibold truncate max-w-[220px]">
+                    {video?.name || "Uploaded Video"}
+                  </span>
+                  {video?.size && (
+                    <span className="text-[10px] text-slate-400">
+                      ({(video.size / 1024 / 1024).toFixed(2)} MB)
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={removeVideo}
+                  className="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-bold px-2.5 py-1 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <i className="fa-solid fa-trash text-[10px]" /> Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              onClick={() => videoRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              className="border-2 border-dashed border-slate-200 hover:border-brand-blue rounded-xl p-5 cursor-pointer transition-all bg-slate-50 hover:bg-blue-50/50 text-center"
+            >
+              <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center mx-auto mb-2 text-brand-blue">
+                <i className="fa-solid fa-video text-lg" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-700">Add Short Video</h4>
+              <p className="text-xs text-slate-500 mb-1.5">Upload a video tour or walkthrough</p>
+              <p className="text-[10px] font-semibold text-slate-400 bg-white inline-block px-2.5 py-0.5 rounded-full border border-slate-100">
+                MP4, WebM, MOV (Max 10MB, 1 video only)
+              </p>
+              <input
+                ref={videoRef}
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files[0]) handleAddVideo(e.target.files[0]);
+                  e.target.value = "";
+                }}
+              />
+            </div>
           )}
         </div>
 

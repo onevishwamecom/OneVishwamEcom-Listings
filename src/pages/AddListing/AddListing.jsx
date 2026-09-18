@@ -19,6 +19,10 @@ export default function AddListing() {
     step,
     form,
     photos,
+    video,
+    setVideo,
+    videoUrl,
+    setVideoUrl,
     documents,
     brochure,
     setBrochure,
@@ -42,6 +46,7 @@ export default function AddListing() {
     adminFeedback,
     // Refs
     fileRef,
+    videoRef,
     brochureRef,
     documentRef,
     dragOver,
@@ -49,6 +54,8 @@ export default function AddListing() {
     // Handlers
     updateForm,
     handleAddPhoto,
+    handleAddVideo,
+    removeVideo,
     handleAddDocument,
     removePhoto,
     removeDocument,
@@ -185,7 +192,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === (isEditing ? 1 : 1) && (
+              {step === 1 && (
                 <BasicInfoStep
                   form={form}
                   updateForm={updateForm}
@@ -193,7 +200,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === (isEditing ? 2 : 2) && (
+              {step === 2 && (
                 <DetailsStep
                   form={form}
                   updateForm={updateForm}
@@ -203,7 +210,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === (isEditing ? 3 : 3) && (
+              {step === 3 && (
                 <LocationStep
                   form={form}
                   updateForm={updateForm}
@@ -211,7 +218,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === (isEditing ? 4 : 4) && (
+              {step === 4 && (
                 <PricingStep
                   form={form}
                   updateForm={updateForm}
@@ -221,9 +228,14 @@ export default function AddListing() {
                 />
               )}
 
-              {step === (isEditing ? 6 : 5) && (
+              {step === 5 && (
                 <MediaStep
                   photos={photos}
+                  video={video}
+                  videoUrl={videoUrl}
+                  videoRef={videoRef}
+                  handleAddVideo={handleAddVideo}
+                  removeVideo={removeVideo}
                   documents={documents}
                   brochure={brochure}
                   setBrochure={setBrochure}
@@ -244,7 +256,7 @@ export default function AddListing() {
                 />
               )}
 
-              {step === (isEditing ? 5 : 6) && (
+              {step === 6 && (
                 <ReviewStep
                   form={form}
                   category={category}
@@ -253,9 +265,9 @@ export default function AddListing() {
                   brochure={brochure}
                   brochureUrl={brochureUrl}
                   imageUrls={imageUrls}
+                  videoUrl={videoUrl}
                   docUrls={docUrls}
                   documents={documents}
-                  setStep={setStep}
                   isEditing={isEditing}
                   formatINR={formatINR}
                   adminFeedback={adminFeedback}

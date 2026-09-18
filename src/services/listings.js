@@ -73,6 +73,18 @@ export async function uploadImages(files) {
   return unwrap(await api.post('/upload/images', formData));
 }
 
+export async function uploadBrochure(file) {
+  const formData = new FormData();
+  formData.append('brochure', file);
+  return unwrap(await api.post('/upload/brochure', formData));
+}
+
+export async function uploadVideo(file) {
+  const formData = new FormData();
+  formData.append('video', file);
+  return unwrap(await api.post('/upload/video', formData));
+}
+
 export async function updateListing(type, id, updates) {
   return unwrap(await api.patch(`/listings/${type}/${encodeURIComponent(id)}`, updates));
 }

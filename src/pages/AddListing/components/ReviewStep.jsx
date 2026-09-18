@@ -10,9 +10,9 @@ export function ReviewStep({
   brochure,
   brochureUrl,
   imageUrls,
+  videoUrl,
   docUrls,
   documents,
-  setStep,
   isEditing,
   formatINR,
   adminFeedback,
@@ -41,10 +41,6 @@ export function ReviewStep({
 
       <div className="space-y-4">
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-3">
-            <button onClick={() => setStep(1)} className="text-sm font-bold text-brand-blue hover:text-blue-800 transition-colors">Edit</button>
-          </div>
-
           <div className="p-4">
             <div className="flex items-start gap-4">
               <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${categoryInfo.gradient} flex items-center justify-center text-white text-xl shadow-sm shrink-0`}>
@@ -106,9 +102,6 @@ export function ReviewStep({
 
         {catFields.length > 0 && (
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 relative">
-            <div className="absolute top-0 right-0 p-3">
-              <button onClick={() => setStep(2)} className="text-sm font-bold text-brand-blue hover:text-blue-800 transition-colors">Edit</button>
-            </div>
             <h4 className="text-sm font-bold text-slate-900 mb-3 pb-2 border-b border-slate-100 flex items-center gap-1.5">
               <i className="fa-solid fa-list-check text-slate-400 text-sm" /> Specifications
             </h4>
@@ -124,10 +117,7 @@ export function ReviewStep({
         )}
 
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 relative">
-          <div className="absolute top-0 right-0 p-3">
-            <button onClick={() => setStep(5)} className="text-sm font-bold text-brand-blue hover:text-blue-800 transition-colors">Edit</button>
-          </div>
-          <h4 className="text-sm font-bold text-slate-900 mb-3 pb-2 border-b border-slate-100 flex items-center gap-1.5">
+            <h4 className="text-sm font-bold text-slate-900 mb-3 pb-2 border-b border-slate-100 flex items-center gap-1.5">
             <i className="fa-solid fa-images text-slate-400 text-sm" /> Media Assets
           </h4>
 
@@ -157,6 +147,17 @@ export function ReviewStep({
                   </div>
                 )
               ))}
+            </div>
+          )}
+
+          {videoUrl && (
+            <div className="mt-3">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
+                <i className="fa-solid fa-video text-brand-blue" /> Attached Video
+              </p>
+              <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-black aspect-video max-w-sm">
+                <video src={videoUrl} controls className="w-full h-full object-contain" />
+              </div>
             </div>
           )}
 

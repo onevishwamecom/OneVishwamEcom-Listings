@@ -99,7 +99,22 @@ function ListingDetails() {
   const adminFeedback = getAdminFeedback(listing, ADMIN_FEEDBACKS);
   const timeline = getTimeline(listing, (l) => getAdminFeedback(l, ADMIN_FEEDBACKS));
   const images = Array.isArray(listing?.images) ? listing.images : listing?.image ? [listing.image] : [];
-  const documents = listing.documents || [];
+  const video =
+    listing?.video ||
+    listing?.videoUrl ||
+    (Array.isArray(listing?.videos) && listing.videos.find((v) => typeof v === 'string' && v.trim())) ||
+    null;
+  const documents = [
+    ...(Array.isArray(listing.documents) ? listing.documents : []),
+    ...(listing.brochure && !listing.documents?.some((d) => d.url === listing.brochure)
+      ? [{ name: 'Project Brochure', url: listing.brochure }]
+      : []),
+    ...(listing.pdfUrl &&
+    !listing.documents?.some((d) => d.url === listing.pdfUrl) &&
+    listing.pdfUrl !== listing.brochure
+      ? [{ name: 'Brochure PDF', url: listing.pdfUrl }]
+      : []),
+  ];
   const price = listing?.price !== undefined && listing.price !== null && listing.price !== '' ? formatINR(listing.price) : '';
   const displayTitle = listing.title || listing.name || listing.brand || 'Untitled Listing';
 
@@ -129,7 +144,7 @@ function ListingDetails() {
         {/* Left Column - Main Content */}
         <div className="lg:col-span-2 space-y-5">
           {/* Image Gallery */}
-          <ImageGallery images={images} displayTitle={displayTitle} onImageClick={handleImageClick} selectedImage={selectedImage} />
+          <ImageGallery images={images} video={video} displayTitle={displayTitle} onImageClick={handleImageClick} selectedImage={selectedImage} />
 
           {/* Basic Information */}
           <BasicInformation listing={listing} displayTitle={displayTitle} />

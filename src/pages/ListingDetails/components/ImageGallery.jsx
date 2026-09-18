@@ -1,8 +1,27 @@
 import { SectionCard } from './UIComponents';
 
-export function ImageGallery({ images, displayTitle, onImageClick }) {
+export function ImageGallery({ images, video, displayTitle, onImageClick }) {
+  const videoSrc = video || null;
+
   return (
-    <SectionCard title="Images" icon="fa-images">
+    <SectionCard title="Media & Photos" icon="fa-photo-film">
+      {videoSrc && (
+        <div className="mb-5">
+          <div className="flex items-center gap-2 mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">
+            <i className="fa-solid fa-video text-brand-blue" />
+            <span>Listing Video</span>
+          </div>
+          <div className="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-200 max-h-[360px] flex items-center justify-center shadow-sm">
+            <video
+              src={videoSrc}
+              controls
+              playsInline
+              className="w-full max-h-[360px] object-contain"
+            />
+          </div>
+        </div>
+      )}
+
       {images.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {images.map((url, index) => (
@@ -31,10 +50,12 @@ export function ImageGallery({ images, displayTitle, onImageClick }) {
           ))}
         </div>
       ) : (
-        <div className="aspect-[4/3] flex flex-col items-center justify-center text-slate-300 gap-3 bg-slate-50 rounded-xl border border-slate-100">
-          <i className="fa-solid fa-image text-4xl" aria-hidden="true" />
-          <span className="text-sm font-semibold">No images available</span>
-        </div>
+        !videoSrc && (
+          <div className="aspect-[4/3] flex flex-col items-center justify-center text-slate-300 gap-3 bg-slate-50 rounded-xl border border-slate-100">
+            <i className="fa-solid fa-image text-4xl" aria-hidden="true" />
+            <span className="text-sm font-semibold">No images available</span>
+          </div>
+        )
       )}
     </SectionCard>
   );
