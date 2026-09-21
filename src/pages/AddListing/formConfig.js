@@ -1,6 +1,11 @@
 import { currentYear } from "../../utils";
 
 export const INITIAL_FORM = {
+  vendorName: "",
+  channelPartnerName: "",
+  propertyType: "Residential",
+  bankLoanDetails: "",
+  details: {},
   title: "",
   subtitle: "",
   description: "",

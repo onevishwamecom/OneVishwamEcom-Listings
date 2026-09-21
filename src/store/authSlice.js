@@ -1,5 +1,9 @@
 import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
 import { useSelector, useDispatch } from 'react-redux';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/firebase/config';
+import { resolvePartnerIdentity } from '@/config/partnerDirectory';
+import { setCachedUser } from '@/services/userCache';
 import { authApi } from '@/services/authApi';
 import { listerApi } from '@/services/listerApi';
 import { setAuthTokens, clearAuthTokens, getAccessToken } from '@/services/api';
@@ -10,6 +14,54 @@ export const clearSuccess = createAction('auth/clearSuccess');
 // Backend auth responses carry the account under a type-specific key:
 // user endpoints -> { user }, lister endpoints -> { lister }.
 const extractAccount = (payload) => payload?.user || payload?.lister || null;
+
+export const firebaseEmailLogin = createAsyncThunk(
+  'auth/firebaseEmailLogin',
+  async ({ email, password }, { rejectWithValue }) => {
+    try {
+      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const idToken = await result.user.getIdToken();
+      if (!idToken) {
+        throw new Error('No ID token received from Firebase Auth');
+      }
+
+      localStorage.setItem('accessToken', idToken);
+      localStorage.removeItem('refreshToken');
+
+      const partnerInfo = resolvePartnerIdentity(result.user.email);
+      const userSession = {
+        id: result.user.uid,
+        uid: result.user.uid,
+        email: result.user.email,
+        vendorEmail: result.user.email,
+        fullName: result.user.displayName || partnerInfo.partnerName || 'User',
+        name: result.user.displayName || partnerInfo.partnerName || 'User',
+        role: partnerInfo.role || 'lister',
+        partnerName: partnerInfo.partnerName || '',
+        isVerified: partnerInfo.isVerified || Boolean(result.user.emailVerified),
+        isLocked: partnerInfo.isLocked || false,
+        origin: partnerInfo.origin || undefined,
+      };
+
+      setCachedUser(userSession);
+      return userSession;
+    } catch (err) {
+      let message = 'Login failed';
+      if (err.code === 'auth/user-not-found') {
+        message = 'No account found with this email address.';
+      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        message = 'Invalid email or password. Please try again.';
+      } else if (err.code === 'auth/too-many-requests') {
+        message = 'Too many failed login attempts. Access temporarily disabled for security.';
+      } else if (err.code === 'auth/invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (err.message) {
+        message = err.message;
+      }
+      return rejectWithValue(message);
+    }
+  }
+);
 
 export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
   try {
@@ -250,6 +302,14 @@ builder
         .addCase(clearSuccess, (state) => {
           state.successMessage = null;
         })
+        .addCase(firebaseEmailLogin.pending, handlePending)
+        .addCase(firebaseEmailLogin.fulfilled, (state, action) => {
+          state.loading = false;
+          state.user = action.payload;
+          state.isLoggedIn = true;
+          localStorage.setItem('user', JSON.stringify(state.user));
+        })
+        .addCase(firebaseEmailLogin.rejected, handleRejected)
         .addCase(login.pending, handlePending)
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
@@ -408,6 +468,7 @@ export function useAuth() {
     loading,
     error,
     successMessage,
+    firebaseEmailLogin: (creds) => dispatch(firebaseEmailLogin(creds)),
     login: (creds) => dispatch(login(creds)),
     phoneLogin: (creds) => dispatch(phoneLogin(creds)),
     sendOtp: (phone) => dispatch(sendOtp(phone)),

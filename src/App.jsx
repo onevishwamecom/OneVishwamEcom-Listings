@@ -83,6 +83,7 @@ function App() {
               <Route path="/listings/new" element={<Navigate to="/add-listing" replace />} />
               <Route path="/listings/:listingId" element={<ListingDetails />} />
               <Route path="/add-listing" element={<AddListing />} />
+              <Route path="/add-listing/:categoryType" element={<AddListing />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />
             </Route>

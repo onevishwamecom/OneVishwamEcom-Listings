@@ -45,20 +45,69 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     images: imageUrls || [],
     documents: docUrls || [],
     brochure: brochureUrl || null,
+    vendorName: form.vendorName || "",
+    channelPartnerName: form.channelPartnerName || "",
+    origin: form.origin || undefined,
+    propertyType: form.propertyType || finalSubcategory || "",
+    bankLoanDetails: form.bankLoanDetails || "",
+    loanApproved: Boolean(form.bankLoanDetails && !form.bankLoanDetails.toLowerCase().includes('no')),
+    details: form.details || {},
   };
+
+  const propDetails = form.details || {};
+  const propTitle =
+    propDetails.propertyName ||
+    propDetails.projectName ||
+    form.title ||
+    `${form.propertyType || 'Residential'} Property`;
+  const propPrice = propDetails.expectedPrice || displayPrice || form.price || '';
+  const propArea =
+    propDetails.superBuiltUpArea ||
+    propDetails.totalLandArea ||
+    propDetails.totalLandExtent ||
+    propDetails.carpetArea ||
+    propDetails.builtUpArea ||
+    propDetails.dimensions ||
+    form.area_sqft ||
+    '';
 
   const payloads = {
     "real-estate": {
       ...base,
-      subcategory: finalSubcategory || form.subcategory || "",
-      bhk: form.bhk || "",
-      bathrooms: form.bathrooms || "",
-      area_sqft: form.area_sqft || "",
-      area: form.area_sqft ? `${form.area_sqft} Sq.Ft.` : form.area || "",
-      furnishing: form.furnishing || "",
-      floor: form.floor || "",
-      parking: form.parking || "",
+      title: propTitle,
+      price: propPrice,
+      rawPrice: numericPrice || safeParseFloat(String(propPrice).replace(/[^\d.]/g, '')),
+      numericPrice: numericPrice || safeParseFloat(String(propPrice).replace(/[^\d.]/g, '')),
+      propertyType: form.propertyType || finalSubcategory || "Residential",
+      subcategory: form.propertyType || finalSubcategory || "Residential",
+      vendorName: form.vendorName || base.vendorName || "",
+      channelPartnerName: form.channelPartnerName || base.channelPartnerName || "",
+      origin: form.origin || base.origin || undefined,
+      bankLoanDetails: form.bankLoanDetails || base.bankLoanDetails || "",
+      loanApproved: Boolean(form.bankLoanDetails && !form.bankLoanDetails.toLowerCase().includes('no')),
+      details: propDetails,
+      bhk: propDetails.bhk || form.bhk || "",
+      bathrooms: propDetails.bathrooms || form.bathrooms || "",
+      balconies: safeParseInt(propDetails.balconies) || safeParseInt(form.balconies) || 0,
+      area_sqft: propArea,
+      area: propArea ? `${propArea}` : form.area || "",
+      furnishing: propDetails.furnishing || form.furnishing || "",
+      floor: propDetails.floors || propDetails.totalFloors || form.floor || "",
+      floors: propDetails.floors || propDetails.totalFloors || form.floors || "",
+      facing: propDetails.facing || propDetails.plotFacing || form.facing || "",
+      possession: propDetails.possession || form.possession || "",
+      parking: propDetails.parking || propDetails.parkingCapacity || form.parking || "",
       extraRoom: form.extraRoom || "",
+      approval: propDetails.approvalAuthority || propDetails.approvalZone || form.approval || "",
+      gatedCommunity: propDetails.gatedCommunity === 'Yes',
+      negotiable: propDetails.negotiable === 'Yes' || form.negotiable === true,
+      amenities: Array.isArray(propDetails.amenities)
+        ? propDetails.amenities
+        : Array.isArray(propDetails.utilities)
+        ? propDetails.utilities
+        : Array.isArray(propDetails.waterAvailability)
+        ? propDetails.waterAvailability
+        : form.amenities || [],
       projectCount: Math.max(0, safeParseInt(form.projectCount)),
       totalUnits: Math.max(0, safeParseInt(form.totalUnits)),
       availableUnits: Math.max(0, safeParseInt(form.availableUnits)),

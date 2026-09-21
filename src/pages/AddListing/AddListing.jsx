@@ -1,9 +1,11 @@
+import React, { useState } from "react";
 import Badge from "@/components/ui/Badge";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "@/components/ui/PageHeader";
 import PageContainer, { FormSection, FormActions } from "@/components/ui/PageContainer";
 import Modal from "@/components/ui/Modal";
 import { STEPS, REQUIRED_BY_STEP } from "./formConfig";
+import { CATEGORIES } from "./constants";
 import { CategoryStep } from "./components/CategoryStep";
 import { BasicInfoStep } from "./components/BasicInfoStep";
 import { DetailsStep } from "./components/DetailsStep";
@@ -11,15 +13,20 @@ import { LocationStep } from "./components/LocationStep";
 import { PricingStep } from "./components/PricingStep";
 import { MediaStep } from "./components/MediaStep";
 import { ReviewStep } from "./components/ReviewStep";
+import PropertyListingForm from "./components/property/PropertyListingForm";
 import { useAddListingForm } from "./useAddListingForm";
 
 export default function AddListing() {
+  const navigate = useNavigate();
+  const [realEstatePhase, setRealEstatePhase] = useState(1);
   const {
     // State
     step,
     form,
     photos,
     documents,
+    video,
+    videoPreview,
     brochure,
     setBrochure,
     brochureUrl,
@@ -52,6 +59,10 @@ export default function AddListing() {
     handleAddDocument,
     removePhoto,
     removeDocument,
+    handleVideoSelect,
+    handleRemoveVideo,
+    handleBrochureSelect,
+    handleRemoveBrochure,
     handleSaveDraft,
     handlePublish,
     handleConfirmSubmit,
@@ -110,216 +121,334 @@ export default function AddListing() {
         </div>
       ) : (
         <>
-          <PageHeader
-            title={isEditing ? "Edit Listing" : "List New Product"}
-            subtitle={isEditing
-              ? "Update the details and save your changes"
-              : "Add your product details and submit the listing for admin approval"}
-            action={
-              <Link
-                to="/listings"
-                className="inline-flex items-center gap-2 bg-white text-slate-700 border border-slate-200 px-4 py-2.5 rounded-2xl font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all"
-              >
-                <i className="fa-solid fa-arrow-left text-xs" /> Back to Listed Items
-              </Link>
-            }
-          />
+          {category === 'real-estate' ? (
+            <div className="space-y-6 animate-fade-in">
+              {/* Streamlined Header & Breadcrumbs */}
+              <div className="flex items-center justify-between bg-white px-5 py-3.5 rounded-xl border border-slate-200 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate('/add-listing');
+                      updateForm('category', '');
+                      setStep(0);
+                    }}
+                    className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
+                    title="Back to categories"
+                  >
+                    <i className="fa-solid fa-arrow-left text-xs" />
+                  </button>
+                  <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+                    {isEditing ? "Edit Real Estate Property" : "List Real Estate Property"}
+                  </h1>
+                </div>
 
-          <div className="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-            <div className="bg-slate-50/50 border-b border-slate-100 px-4 py-4">
-              <div className="flex items-start justify-between relative z-10">
-                {effectiveSteps.map((s, i) => {
-                  const stepIndex = i + stepOffset;
-                  const isActive = stepIndex === step;
-                  const isCompleted = stepIndex < step;
-                  const isClickable = stepIndex <= step;
-
-                  return (
-                    <div key={s.id} className="flex flex-col items-center gap-1.5 relative z-10 flex-1">
-                      <button
-                        onClick={() => isClickable && setStep(stepIndex)}
-                        disabled={!isClickable}
-                        className={`relative w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 z-10 ${
-                          isActive
-                            ? "bg-brand-blue text-white shadow-glow-blue scale-110 ring-4 ring-brand-blue/10"
-                            : isCompleted
-                            ? "bg-brand-gold text-brand-navy cursor-pointer hover:bg-brand-gold/90 shadow-sm"
-                            : "bg-white text-slate-300 border-2 border-slate-200 cursor-not-allowed"
-                        }`}
-                      >
-                        {isCompleted ? (
-                          <i className="fa-solid fa-check text-xs" />
-                        ) : (
-                          <i className={`fa-solid ${s.icon} text-sm`} />
-                        )}
-                      </button>
-                      <span
-                        className={`text-[9px] font-bold uppercase tracking-wider hidden sm:block ${
-                          isActive
-                            ? "text-brand-blue"
-                            : isCompleted
-                            ? "text-brand-gold"
-                            : "text-slate-400"
-                        }`}
-                      >
-                        {s.label}
-                      </span>
-                    </div>
-                  );
-                })}
-                <div className="absolute top-[18px] -translate-y-1/2 left-[10%] right-[10%] h-0.5 bg-slate-200 -z-0 rounded-full">
-                  <div
-                    className="h-full bg-brand-blue transition-all duration-500 ease-in-out rounded-full shadow-[0_0_8px_rgba(72,150,230,0.5)]"
-                    style={{ width: `${(effectiveStep / (effectiveSteps.length - 1)) * 100}%` }}
-                  />
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/60">
+                    Step {realEstatePhase} of 3
+                  </span>
                 </div>
               </div>
+
+              <PropertyListingForm
+                form={form}
+                updateForm={updateForm}
+                photos={photos}
+                onAddPhoto={handleAddPhoto}
+                onRemovePhoto={removePhoto}
+                video={video}
+                videoPreview={videoPreview}
+                onVideoSelect={handleVideoSelect}
+                onRemoveVideo={handleRemoveVideo}
+                brochure={brochure}
+                brochureUrl={brochureUrl}
+                onBrochureSelect={handleBrochureSelect}
+                onRemoveBrochure={handleRemoveBrochure}
+                onSubmit={handlePublish}
+                onCancel={() => {
+                  navigate('/add-listing');
+                  updateForm('category', '');
+                  setStep(0);
+                }}
+                onPhaseChange={setRealEstatePhase}
+                submitting={submitting}
+                submitError={submitError}
+              />
             </div>
-
-            <div className="p-4 sm:px-6 sm:pb-6 sm:pt-5">
-              {!isEditing && step === 0 && (
-                <CategoryStep
-                  category={category}
-                  setCategory={setCategory}
-                  isEditing={isEditing}
-                />
-              )}
-
-              {step === (isEditing ? 1 : 1) && (
-                <BasicInfoStep
-                  form={form}
-                  updateForm={updateForm}
-                  validationErrors={validationErrors}
-                />
-              )}
-
-              {step === (isEditing ? 2 : 2) && (
-                <DetailsStep
-                  form={form}
-                  updateForm={updateForm}
-                  category={category}
-                  catFields={catFields}
-                  validationErrors={validationErrors}
-                />
-              )}
-
-              {step === (isEditing ? 3 : 3) && (
-                <LocationStep
-                  form={form}
-                  updateForm={updateForm}
-                  validationErrors={validationErrors}
-                />
-              )}
-
-              {step === (isEditing ? 4 : 4) && (
-                <PricingStep
-                  form={form}
-                  updateForm={updateForm}
-                  validationErrors={validationErrors}
-                  formatINR={formatINR}
-                  category={form.category}
-                />
-              )}
-
-              {step === (isEditing ? 6 : 5) && (
-                <MediaStep
-                  photos={photos}
-                  documents={documents}
-                  brochure={brochure}
-                  setBrochure={setBrochure}
-                  brochureUrl={brochureUrl}
-                  setBrochureUrl={setBrochureUrl}
-                  fileRef={fileRef}
-                  brochureRef={brochureRef}
-                  documentRef={documentRef}
-                  dragOver={dragOver}
-                  setDragOver={setDragOver}
-                  docDragOver={docDragOver}
-                  setDocDragOver={setDocDragOver}
-                  handleAddPhoto={handleAddPhoto}
-                  handleAddDocument={handleAddDocument}
-                  removePhoto={removePhoto}
-                  removeDocument={removeDocument}
-                  validationErrors={validationErrors}
-                />
-              )}
-
-              {step === (isEditing ? 5 : 6) && (
-                <ReviewStep
-                  form={form}
-                  category={category}
-                  subcategory={subcategory}
-                  catFields={catFields}
-                  brochure={brochure}
-                  brochureUrl={brochureUrl}
-                  imageUrls={imageUrls}
-                  docUrls={docUrls}
-                  documents={documents}
-                  setStep={setStep}
-                  isEditing={isEditing}
-                  formatINR={formatINR}
-                  adminFeedback={adminFeedback}
-                />
-              )}
-
-              {submitError && (
-                <div className="mt-5 p-3 rounded-xl bg-red-50 border border-red-100 text-sm font-medium text-red-600 flex items-center gap-2.5 animate-fade-in">
-                  <i className="fa-solid fa-circle-exclamation text-base" />
-                  {submitError}
+          ) : !isEditing && step === 0 ? (
+            <div className="space-y-6 animate-fade-in">
+              {/* Simple Clean Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white px-6 py-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                    Choose Listing Category
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Select what kind of item you are listing to start
+                  </p>
                 </div>
-              )}
 
-              <FormActions>
-                {step > 0 && (
-                  <button
-                    onClick={handleBack}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-brand-blue rounded-xl hover:bg-brand-blue/10 transition-colors"
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  <Link
+                    to="/listings"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all"
                   >
-                    <i className="fa-solid fa-arrow-left text-xs" /> Back
-                  </button>
-                )}
+                    <i className="fa-solid fa-arrow-left text-[11px]" /> Back to Listed Items
+                  </Link>
+                </div>
+              </div>
 
-                {!effectiveIsLastStep ? (
-                  <button
-                    onClick={handleNext}
-                    disabled={!canProceed()}
-                    className="inline-flex items-center gap-2 bg-brand-blue text-white px-7 py-3 rounded-2xl text-sm font-bold shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                  >
-                    Next Step <i className="fa-solid fa-arrow-right text-xs" />
-                  </button>
-                ) : (
-                  <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+              {/* Clean Uniform Category Grid */}
+              <CategoryStep
+                category={category}
+                setCategory={setCategory}
+                isEditing={isEditing}
+              />
+            </div>
+          ) : (
+            <>
+              {/* Category Bar & Switch Category Header for Step >= 1 */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white px-6 py-4 rounded-2xl border border-slate-200/80 shadow-xs mb-6">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center text-base font-bold shadow-xs">
+                    <i className={`fa-solid ${CATEGORIES.find((c) => c.id === category)?.icon || "fa-box"}`} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-black text-slate-900">
+                        {isEditing ? "Edit Listing" : `${CATEGORIES.find((c) => c.id === category)?.label || "Product"} Listing`}
+                      </h2>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-brand-blue border border-blue-100/80">
+                        {CATEGORIES.find((c) => c.id === category)?.label || "Product"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {isEditing
+                        ? "Update details and save your changes"
+                        : "Fill in product specifications and submit for admin approval"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  {!isEditing && (
                     <button
                       type="button"
-                      onClick={handleSaveDraft}
-                      disabled={submitting}
-                      className="inline-flex items-center justify-center gap-2 border-2 border-brand-blue text-brand-blue px-5 py-3 rounded-2xl text-sm font-bold hover:bg-brand-blue/5 hover:border-brand-blue/70 transition-all disabled:opacity-50"
+                      onClick={() => {
+                        navigate('/add-listing');
+                        updateForm('category', '');
+                        setStep(0);
+                      }}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:text-brand-blue hover:border-brand-blue hover:bg-blue-50/50 transition-all cursor-pointer"
                     >
-                      <i className="fa-solid fa-floppy-disk text-slate-400 text-xs" /> Save Draft
+                      <i className="fa-solid fa-arrow-rotate-left text-[11px]" /> Switch Category
                     </button>
-                    <button
-                      onClick={handlePublish}
-                      disabled={submitting}
-                      className="inline-flex items-center justify-center gap-2 bg-brand-gold text-brand-navy px-7 py-3 rounded-2xl text-sm font-bold shadow-glow-gold hover:bg-brand-gold/90 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex-1"
-                    >
-                      {submitting ? (
-                        <i className="fa-solid fa-circle-notch fa-spin text-xs" />
-                      ) : (
-                        <i className="fa-solid fa-paper-plane text-xs" />
-                      )}
-                      {submitting
-                        ? isEditing
-                          ? "Saving..."
-                          : "Submitting..."
-                        : isEditing
-                        ? "Save Changes"
-                        : "Submit for Approval"}
-                    </button>
+                  )}
+                  <Link
+                    to="/listings"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all"
+                  >
+                    <i className="fa-solid fa-arrow-left text-[11px]" /> Back to Listed Items
+                  </Link>
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+                <div className="bg-slate-50/50 border-b border-slate-100 px-4 py-4">
+                  <div className="flex items-start justify-between relative z-10">
+                  {effectiveSteps.map((s, i) => {
+                    const stepIndex = i + stepOffset;
+                    const isActive = stepIndex === step;
+                    const isCompleted = stepIndex < step;
+                    const isClickable = stepIndex <= step;
+
+                    return (
+                      <div key={s.id} className="flex flex-col items-center gap-1.5 relative z-10 flex-1">
+                        <button
+                          onClick={() => isClickable && setStep(stepIndex)}
+                          disabled={!isClickable}
+                          className={`relative w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 z-10 ${
+                            isActive
+                              ? "bg-brand-blue text-white shadow-glow-blue scale-110 ring-4 ring-brand-blue/10"
+                              : isCompleted
+                              ? "bg-brand-gold text-brand-navy cursor-pointer hover:bg-brand-gold/90 shadow-sm"
+                              : "bg-white text-slate-300 border-2 border-slate-200 cursor-not-allowed"
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <i className="fa-solid fa-check text-xs" />
+                          ) : (
+                            <i className={`fa-solid ${s.icon} text-sm`} />
+                          )}
+                        </button>
+                        <span
+                          className={`text-[9px] font-bold uppercase tracking-wider hidden sm:block ${
+                            isActive
+                              ? "text-brand-blue"
+                              : isCompleted
+                              ? "text-brand-gold"
+                              : "text-slate-400"
+                          }`}
+                        >
+                          {s.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div className="absolute top-[18px] -translate-y-1/2 left-[10%] right-[10%] h-0.5 bg-slate-200 -z-0 rounded-full">
+                    <div
+                      className="h-full bg-brand-blue transition-all duration-500 ease-in-out rounded-full shadow-[0_0_8px_rgba(72,150,230,0.5)]"
+                      style={{ width: `${(effectiveStep / (effectiveSteps.length - 1)) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 sm:px-6 sm:pb-6 sm:pt-5">
+                {!isEditing && step === 0 && (
+                  <CategoryStep
+                    category={category}
+                    setCategory={setCategory}
+                    isEditing={isEditing}
+                  />
+                )}
+
+                {step === (isEditing ? 1 : 1) && (
+                  <BasicInfoStep
+                    form={form}
+                    updateForm={updateForm}
+                    validationErrors={validationErrors}
+                  />
+                )}
+
+                {step === (isEditing ? 2 : 2) && (
+                  <DetailsStep
+                    form={form}
+                    updateForm={updateForm}
+                    category={category}
+                    catFields={catFields}
+                    validationErrors={validationErrors}
+                  />
+                )}
+
+                {step === (isEditing ? 3 : 3) && (
+                  <LocationStep
+                    form={form}
+                    updateForm={updateForm}
+                    validationErrors={validationErrors}
+                  />
+                )}
+
+                {step === (isEditing ? 4 : 4) && (
+                  <PricingStep
+                    form={form}
+                    updateForm={updateForm}
+                    validationErrors={validationErrors}
+                    formatINR={formatINR}
+                    category={form.category}
+                  />
+                )}
+
+                {step === (isEditing ? 6 : 5) && (
+                  <MediaStep
+                    photos={photos}
+                    documents={documents}
+                    brochure={brochure}
+                    setBrochure={setBrochure}
+                    brochureUrl={brochureUrl}
+                    setBrochureUrl={setBrochureUrl}
+                    fileRef={fileRef}
+                    brochureRef={brochureRef}
+                    documentRef={documentRef}
+                    dragOver={dragOver}
+                    setDragOver={setDragOver}
+                    docDragOver={docDragOver}
+                    setDocDragOver={setDocDragOver}
+                    handleAddPhoto={handleAddPhoto}
+                    handleAddDocument={handleAddDocument}
+                    removePhoto={removePhoto}
+                    removeDocument={removeDocument}
+                    validationErrors={validationErrors}
+                  />
+                )}
+
+                {step === (isEditing ? 5 : 6) && (
+                  <ReviewStep
+                    form={form}
+                    category={category}
+                    subcategory={subcategory}
+                    catFields={catFields}
+                    brochure={brochure}
+                    brochureUrl={brochureUrl}
+                    imageUrls={imageUrls}
+                    docUrls={docUrls}
+                    documents={documents}
+                    setStep={setStep}
+                    isEditing={isEditing}
+                    formatINR={formatINR}
+                    adminFeedback={adminFeedback}
+                  />
+                )}
+
+                {submitError && (
+                  <div className="mt-5 p-3 rounded-xl bg-red-50 border border-red-100 text-sm font-medium text-red-600 flex items-center gap-2.5 animate-fade-in">
+                    <i className="fa-solid fa-circle-exclamation text-base" />
+                    {submitError}
                   </div>
                 )}
-              </FormActions>
+
+                <FormActions>
+                  {step > 0 && (
+                    <button
+                      onClick={handleBack}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-brand-blue rounded-xl hover:bg-brand-blue/10 transition-colors"
+                    >
+                      <i className="fa-solid fa-arrow-left text-xs" /> Back
+                    </button>
+                  )}
+
+                  {!effectiveIsLastStep ? (
+                    <button
+                      onClick={handleNext}
+                      disabled={!canProceed()}
+                      className="inline-flex items-center gap-2 bg-brand-blue text-white px-7 py-3 rounded-2xl text-sm font-bold shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                    >
+                      Next Step <i className="fa-solid fa-arrow-right text-xs" />
+                    </button>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={handleSaveDraft}
+                        disabled={submitting}
+                        className="inline-flex items-center justify-center gap-2 border-2 border-brand-blue text-brand-blue px-5 py-3 rounded-2xl text-sm font-bold hover:bg-brand-blue/5 hover:border-brand-blue/70 transition-all disabled:opacity-50"
+                      >
+                        <i className="fa-solid fa-floppy-disk text-slate-400 text-xs" /> Save Draft
+                      </button>
+                      <button
+                        onClick={handlePublish}
+                        disabled={submitting}
+                        className="inline-flex items-center justify-center gap-2 bg-brand-gold text-brand-navy px-7 py-3 rounded-2xl text-sm font-bold shadow-glow-gold hover:bg-brand-gold/90 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex-1"
+                      >
+                        {submitting ? (
+                          <i className="fa-solid fa-circle-notch fa-spin text-xs" />
+                        ) : (
+                          <i className="fa-solid fa-paper-plane text-xs" />
+                        )}
+                        {submitting
+                          ? isEditing
+                            ? "Saving..."
+                            : "Submitting..."
+                          : isEditing
+                          ? "Save Changes"
+                          : "Submit for Approval"}
+                      </button>
+                    </div>
+                  )}
+                </FormActions>
+              </div>
             </div>
-          </div>
+          </>
+        )}
         </>
       )}
     </PageContainer>
