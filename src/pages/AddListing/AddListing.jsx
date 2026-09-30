@@ -348,7 +348,7 @@ export default function AddListing() {
                   />
                 )}
 
-                {step === (isEditing ? 6 : 5) && (
+                {step === 5 && (
                   <MediaStep
                     photos={photos}
                     documents={documents}
@@ -371,7 +371,7 @@ export default function AddListing() {
                   />
                 )}
 
-                {step === (isEditing ? 5 : 6) && (
+                {step === 6 && (
                   <ReviewStep
                     form={form}
                     category={category}

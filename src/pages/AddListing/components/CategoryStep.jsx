@@ -8,6 +8,8 @@ import {
   Gem,
   Landmark,
   Wrench,
+  Bed,
+  Laptop,
   Check,
 } from "lucide-react";
 
@@ -67,6 +69,22 @@ export const CATEGORIES_CONFIG = [
     icon: Wrench,
     iconBg: "bg-slate-100 text-slate-700",
     hoverBorder: "hover:border-slate-400",
+  },
+  {
+    id: "bedding",
+    title: "Bedding & Comfort",
+    description: "Mattresses, pillows, bedsheets & sleep comfort essentials",
+    icon: Bed,
+    iconBg: "bg-sky-50 text-sky-600",
+    hoverBorder: "hover:border-sky-300",
+  },
+  {
+    id: "electronics",
+    title: "Electronics",
+    description: "Mobiles, laptops, TV & audio, smart home devices",
+    icon: Laptop,
+    iconBg: "bg-indigo-50 text-indigo-600",
+    hoverBorder: "hover:border-indigo-300",
   },
 ];
 

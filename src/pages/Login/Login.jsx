@@ -6,6 +6,7 @@ import logo from "@/assets/logo.png";
 import Input from "@/components/ui/Input";
 import { AuthBrandPanel } from "@/components/AuthBrandPanel";
 import { normalizePhone } from "@/utils/phone";
+import { isAllowedEmail } from "@/config/allowedCredentials";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -31,7 +32,9 @@ function LoginPage() {
       if (!emailTrim) {
         e.email = "Email address is required";
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
-        e.email = "Enter a valid email address (e.g. name@vishwam.com)";
+        e.email = "Enter a valid email address (e.g. ceo@onevishwam.com)";
+      } else if (!isAllowedEmail(emailTrim)) {
+        e.email = "Access restricted: Only authorized listing accounts are permitted.";
       }
 
       if (!form.password) {

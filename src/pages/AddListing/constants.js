@@ -93,6 +93,32 @@ export const CATEGORIES = [
     textActive: "text-slate-800",
     accent: "slate",
   },
+  {
+    id: "bedding",
+    label: "Bedding & Comfort",
+    icon: "fa-bed",
+    desc: "Orthopedic Mattresses, Pillows, Bedsheets, Comforters & Sleep Comfort",
+    badge: "Sleep & Comfort",
+    popular: ["Mattresses", "Pillows", "Bedsheets", "Comforters", "Cushions"],
+    gradient: "from-sky-500 to-indigo-600",
+    bgSoft: "bg-sky-50/70",
+    borderActive: "border-sky-500",
+    textActive: "text-sky-700",
+    accent: "sky",
+  },
+  {
+    id: "electronics",
+    label: "Electronics",
+    icon: "fa-laptop",
+    desc: "Mobiles, Laptops, TV & Audio, Wearables & Smart Home Appliances",
+    badge: "Tech & Gadgets",
+    popular: ["Mobiles", "Laptops", "TV & Audio", "Smart Wearables", "Appliances"],
+    gradient: "from-indigo-500 to-blue-600",
+    bgSoft: "bg-indigo-50/70",
+    borderActive: "border-indigo-500",
+    textActive: "text-indigo-700",
+    accent: "indigo",
+  },
 ];
 
 export const SUBCATEGORIES = {
@@ -150,6 +176,20 @@ export const SUBCATEGORIES = {
     "Painting",
     "Pest Control",
   ],
+  bedding: [
+    "Mattress",
+    "Pillow",
+    "Bedsheet & Linen",
+    "Comforter & Blanket",
+    "Protector & Cushion",
+  ],
+  electronics: [
+    "Mobile & Tablet",
+    "Laptop & Computer",
+    "TV & Audio",
+    "Home Appliances",
+    "Smart Wearables",
+  ],
 };
 
 export const STATES = [
@@ -186,6 +226,8 @@ export const PRICE_SUFFIXES_BY_CATEGORY = {
   jewellery: ["", "/ gram", "/ piece", "+ Making Charges"],
   finance: ["", "% p.a.", "/ year"],
   service: ["", "/ visit", "/ hour", "/ job"],
+  bedding: ["", "Onwards", "/ piece", "/ set", "/ pair"],
+  electronics: ["", "Onwards", "With Warranty", "EMI Available"],
 };
 
 export const CATEGORY_TO_MOCK = {
@@ -195,6 +237,8 @@ export const CATEGORY_TO_MOCK = {
   garment: "garments",
   jewellery: "jewellery",
   finance: "finance",
+  bedding: "bedding-comfort",
+  electronics: "consumer-electronics",
 };
 
 export const SERVICE_TYPE_TO_CATEGORY = {
@@ -204,6 +248,10 @@ export const SERVICE_TYPE_TO_CATEGORY = {
   garments: "garment",
   jewellery: "jewellery",
   finance: "finance",
+  "bedding-comfort": "bedding",
+  "consumer-electronics": "electronics",
+  bedding: "bedding",
+  electronics: "electronics",
 };
 
 export const CITY_DATA = cities;

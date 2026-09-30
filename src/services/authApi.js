@@ -7,8 +7,42 @@ export const authApi = {
   verifyOtp: ({ phone, otp }) => api.post('/auth/lister/verify-otp', { phone, otp }),
   register: (userData) => api.post('/auth/lister/register', userData),
   emailRegister: (userData) => api.post('/auth/register', userData),
-  fetchMe: () => api.get('/auth/me'),
-  fetchListerMe: () => api.get('/auth/lister/me'),
+  fetchMe: async () => {
+    try {
+      return await api.get('/auth/me');
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 404) {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          try {
+            const user = JSON.parse(stored);
+            return { data: { success: true, data: { user } } };
+          } catch {
+            // ignore
+          }
+        }
+      }
+      throw err;
+    }
+  },
+  fetchListerMe: async () => {
+    try {
+      return await api.get('/auth/lister/me');
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 404) {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          try {
+            const lister = JSON.parse(stored);
+            return { data: { success: true, data: { lister } } };
+          } catch {
+            // ignore
+          }
+        }
+      }
+      throw err;
+    }
+  },
   logout: (refreshToken) => api.post('/auth/logout', { refreshToken }),
   refresh: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
   updateProfile: (body) => api.put('/auth/profile', body),

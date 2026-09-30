@@ -50,38 +50,39 @@ export default function PropertyListingForm({
 
   const { user } = useAuth();
   const partnerInfo = resolvePartnerIdentity(user?.email || user?.vendorEmail);
-  const isPartnerLocked = partnerInfo.isLocked || Boolean(user?.partnerName && (user?.role === 'in_house' || user?.role === 'channel_partner'));
-  const partnerBadge = user?.role === 'in_house' || partnerInfo.role === 'in_house'
-    ? 'One Vishwam (In-House)'
-    : isPartnerLocked
-    ? 'Verified Channel Partner'
-    : '';
+  const userEmail = (user?.email || user?.vendorEmail || '').toLowerCase();
+  const isOneVishwam = user?.role === 'in_house' || partnerInfo?.role === 'in_house' || userEmail.endsWith('@onevishwam.com');
+
+  const resolvedPartnerName = isOneVishwam
+    ? 'One Vishwam'
+    : (user?.partnerName || partnerInfo?.partnerName || user?.fullName || user?.name || user?.displayName || userEmail || 'External Partner');
+
+  const resolvedVendorName = isOneVishwam
+    ? 'One Vishwam'
+    : (user?.fullName || user?.name || user?.partnerName || partnerInfo?.partnerName || user?.displayName || userEmail || 'Independent Owner');
 
   useEffect(() => {
     onPhaseChange?.(activePhase);
   }, [activePhase, onPhaseChange]);
 
-  const vendorName = form.vendorName || '';
-  const channelPartnerName = form.channelPartnerName || (isPartnerLocked ? (partnerInfo.partnerName || user?.partnerName || '') : '');
+  const vendorName = form.vendorName || resolvedVendorName;
+  const channelPartnerName = form.channelPartnerName || resolvedPartnerName;
   const propertyType = form.propertyType || 'Residential';
   const bankLoanDetails = form.bankLoanDetails || '';
   const details = form.details || {};
 
   useEffect(() => {
-    if (isPartnerLocked) {
-      const assigned = partnerInfo.partnerName || user?.partnerName;
-      if (assigned && form.channelPartnerName !== assigned) {
-        updateForm('channelPartnerName', assigned);
-      }
+    if (form.channelPartnerName !== resolvedPartnerName) {
+      updateForm('channelPartnerName', resolvedPartnerName);
     }
-  }, [isPartnerLocked, partnerInfo.partnerName, user?.partnerName, form.channelPartnerName, updateForm]);
+    if (form.vendorName !== resolvedVendorName) {
+      updateForm('vendorName', resolvedVendorName);
+    }
+  }, [resolvedPartnerName, resolvedVendorName, form.channelPartnerName, form.vendorName, updateForm]);
 
-  const isStep1Valid = Boolean(vendorName?.trim() && channelPartnerName?.trim() && propertyType);
+  const isStep1Valid = Boolean(propertyType);
 
   const handleRootChange = (key, val) => {
-    if (key === 'channelPartnerName' && isPartnerLocked) {
-      return;
-    }
     if (key === 'propertyType' && val !== propertyType) {
       updateForm('propertyType', val);
       updateForm('details', {});
@@ -106,11 +107,9 @@ export default function PropertyListingForm({
     }
   };
 
-  // Phase 1 validation
+  // Phase 1 validation (Identity is auto-derived, so only property category selection is validated)
   const validatePhase1 = () => {
     const errs = {};
-    if (!vendorName.trim()) errs.vendorName = 'Vendor / Builder name is required';
-    if (!channelPartnerName.trim()) errs.channelPartnerName = 'Channel Partner Associate is required';
     if (!propertyType) errs.propertyType = 'Please select a property category';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -121,100 +120,44 @@ export default function PropertyListingForm({
     const errs = {};
     const d = details || {};
 
+    const getVal = (dKey, rootKey) => {
+      const v = d[dKey] !== undefined && d[dKey] !== null && String(d[dKey]).trim() !== '' 
+        ? d[dKey] 
+        : (form[rootKey] !== undefined && form[rootKey] !== null ? form[rootKey] : '');
+      return typeof v === 'string' ? v.trim() : (v !== undefined && v !== null ? String(v) : '');
+    };
+
     if (propertyType === 'Residential') {
-      if (!d.propertyName?.trim()) errs.propertyName = 'Property / Project Name is required';
-      if (!d.dimensions?.trim()) errs.dimensions = 'Dimensions are required';
-      if (!d.facing?.trim()) errs.facing = 'Property Facing is required';
-      if (!d.cornerPlot?.trim()) errs.cornerPlot = 'Corner Plot selection is required';
-      if (!d.approvedLayout?.trim()) errs.approvedLayout = 'Approved Layout is required';
-      if (!d.approvalAuthority?.trim()) errs.approvalAuthority = 'Approval Authority is required';
-      if (!d.expectedPrice?.trim()) errs.expectedPrice = 'Expected Price is required';
-      if (!d.negotiable?.trim()) errs.negotiable = 'Negotiable selection is required';
+      if (!getVal('propertyName', 'title')) errs.propertyName = 'Property / Project Name is required';
+      if (!getVal('dimensions', 'area_sqft') && !getVal('dimensions', 'area')) errs.dimensions = 'Dimensions are required';
+      if (!getVal('facing', 'facing')) errs.facing = 'Property Facing is required';
+      if (!getVal('cornerPlot', 'cornerPlot')) errs.cornerPlot = 'Corner Plot selection is required';
+      if (!getVal('approvedLayout', 'approval')) errs.approvedLayout = 'Approved Layout is required';
+      if (!getVal('approvalAuthority', 'approval')) errs.approvalAuthority = 'Approval Authority is required';
+      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
+      if (!getVal('negotiable', 'negotiable')) errs.negotiable = 'Negotiable selection is required';
     } else if (propertyType === 'Flat/Villa' || propertyType === 'Independent House') {
-      if (!d.projectName?.trim()) errs.projectName = 'Project / Society / House Name is required';
-      if (!d.bhk?.trim()) errs.bhk = 'BHK configuration is required';
-      if (!d.superBuiltUpArea?.trim()) errs.superBuiltUpArea = 'Super Built-up Area is required';
-      if (!d.floors?.trim()) errs.floors = 'Floor information is required';
-      if (!d.facing?.trim()) errs.facing = 'Facing is required';
-      if (!d.bathrooms?.trim()) errs.bathrooms = 'Number of Bathrooms is required';
-      if (!d.balconies?.trim()) errs.balconies = 'Number of Balconies is required';
-      if (!d.furnishing?.trim()) errs.furnishing = 'Furnishing Status is required';
-      if (!d.propertyAge?.trim()) errs.propertyAge = 'Property Age is required';
-      if (!d.possession?.trim()) errs.possession = 'Possession Status is required';
-      if (!d.parking?.trim()) errs.parking = 'Parking Availability is required';
-      if (!Array.isArray(d.amenities) || d.amenities.length === 0) errs.amenities = 'Select at least one amenity';
-      if (!d.maintenance?.trim()) errs.maintenance = 'Maintenance selection is required';
-      if (!d.gatedCommunity?.trim()) errs.gatedCommunity = 'Gated Community selection is required';
-      if (!d.gardenTerrace?.trim()) errs.gardenTerrace = 'Garden/Terrace selection is required';
-      if (!d.expectedPrice?.trim()) errs.expectedPrice = 'Expected Price is required';
-      if (!d.negotiable?.trim()) errs.negotiable = 'Negotiable selection is required';
+      if (!getVal('projectName', 'title')) errs.projectName = 'Project / Society / House Name is required';
+      if (!getVal('bhk', 'bhk')) errs.bhk = 'BHK configuration is required';
+      if (!getVal('superBuiltUpArea', 'area_sqft') && !getVal('superBuiltUpArea', 'area')) errs.superBuiltUpArea = 'Super Built-up Area is required';
+      if (!getVal('floors', 'floor')) errs.floors = 'Floor information is required';
+      if (!getVal('facing', 'facing')) errs.facing = 'Facing is required';
+      if (!getVal('bathrooms', 'bathrooms')) errs.bathrooms = 'Number of Bathrooms is required';
+      if (!getVal('balconies', 'balconies')) errs.balconies = 'Number of Balconies is required';
+      if (!getVal('furnishing', 'furnishing')) errs.furnishing = 'Furnishing Status is required';
+      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
     } else if (propertyType === 'Agricultural') {
-      if (!d.totalLandExtent?.trim()) errs.totalLandExtent = 'Total Land Extent is required';
-      if (!d.surveyNumber?.trim()) errs.surveyNumber = 'Survey Number is required';
-      if (!d.landType?.trim()) errs.landType = 'Type of Land is required';
-      if (!d.roadAccess?.trim()) errs.roadAccess = 'Road Access & Width is required';
-      if (!d.waterAvailability?.trim()) errs.waterAvailability = 'Water Availability is required';
-      if (!d.electricity?.trim()) errs.electricity = 'Electricity selection is required';
-      if (!d.currentCrop?.trim()) errs.currentCrop = 'Current Crop / Plantation is required';
-      if (!d.soilType?.trim()) errs.soilType = 'Soil Type is required';
-      if (!d.farmhouse?.trim()) errs.farmhouse = 'Farmhouse availability is required';
-      if (!d.fencing?.trim()) errs.fencing = 'Fencing availability is required';
-      if (!d.expectedPrice?.trim()) errs.expectedPrice = 'Expected Price is required';
-      if (!d.negotiable?.trim()) errs.negotiable = 'Negotiable selection is required';
+      if (!getVal('totalLandExtent', 'area') && !getVal('totalLandExtent', 'area_sqft')) errs.totalLandExtent = 'Total Land Extent is required';
+      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
     } else if (propertyType === 'Commercial') {
-      if (!d.commercialType?.trim()) errs.commercialType = 'Commercial Type is required';
-      if (!d.carpetArea?.trim()) errs.carpetArea = 'Carpet Area is required';
-      if (!d.builtUpArea?.trim()) errs.builtUpArea = 'Built-up Area is required';
-      if (!d.totalFloors?.trim()) errs.totalFloors = 'Total Floors is required';
-      if (!d.facing?.trim()) errs.facing = 'Property Facing is required';
-      if (!d.furnishing?.trim()) errs.furnishing = 'Furnishing Status is required';
-      if (!d.washrooms?.trim()) errs.washrooms = 'Washroom availability is required';
-      if (!d.lift?.trim()) errs.lift = 'Lift availability is required';
-      if (!d.powerBackup?.trim()) errs.powerBackup = 'Power Backup is required';
-      if (!d.parkingCapacity?.trim()) errs.parkingCapacity = 'Parking Capacity is required';
-      if (!d.mainRoadFrontage?.trim()) errs.mainRoadFrontage = 'Main-Road Frontage is required';
-      if (!d.occupancyStatus?.trim()) errs.occupancyStatus = 'Occupancy Status is required';
-      if (!d.rentalIncome?.trim()) errs.rentalIncome = 'Rental Income is required';
-      if (!d.maintenance?.trim()) errs.maintenance = 'Maintenance Charges is required';
-      if (!d.expectedPrice?.trim()) errs.expectedPrice = 'Expected Price is required';
-      if (!d.negotiable?.trim()) errs.negotiable = 'Negotiable selection is required';
+      if (!getVal('commercialType', 'subcategory')) errs.commercialType = 'Commercial Type is required';
+      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
     } else if (propertyType === 'Plot/Land') {
-      if (!d.projectName?.trim()) errs.projectName = 'Project / Layout Name is required';
-      if (!d.plotType?.trim()) errs.plotType = 'Plot Type is required';
-      if (!d.totalLandArea?.trim()) errs.totalLandArea = 'Total Land Area is required';
-      if (!d.plotDimensions?.trim()) errs.plotDimensions = 'Plot Dimensions are required';
-      if (!d.plotFacing?.trim()) errs.plotFacing = 'Plot Facing is required';
-      if (!d.cornerPlot?.trim()) errs.cornerPlot = 'Corner Plot selection is required';
-      if (!d.roadFrontage?.trim()) errs.roadFrontage = 'Road Frontage is required';
-      if (!d.adjoiningRoads?.trim()) errs.adjoiningRoads = 'Adjoining Roads count is required';
-      if (!d.approvalAuthority?.trim()) errs.approvalAuthority = 'Approval Authority is required';
-      if (!d.conversionStatus?.trim()) errs.conversionStatus = 'Conversion Status is required';
-      if (!d.boundaryFencing?.trim()) errs.boundaryFencing = 'Boundary / Fencing is required';
-      if (!Array.isArray(d.utilities) || d.utilities.length === 0) errs.utilities = 'Select at least one utility';
-      if (!d.expectedPrice?.trim()) errs.expectedPrice = 'Expected Price is required';
-      if (!d.negotiable?.trim()) errs.negotiable = 'Negotiable selection is required';
+      if (!getVal('projectName', 'title')) errs.projectName = 'Project / Layout Name is required';
+      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
     } else if (propertyType === 'Industrial') {
-      if (!d.industrialType?.trim()) errs.industrialType = 'Industrial Type is required';
-      if (!d.propertyStatus?.trim()) errs.propertyStatus = 'Property Status is required';
-      if (!d.totalLandArea?.trim()) errs.totalLandArea = 'Total Land Area is required';
-      if (!d.totalBuiltUpArea?.trim()) errs.totalBuiltUpArea = 'Total Built-up Area is required';
-      if (!d.shedDimensions?.trim()) errs.shedDimensions = 'Shed Dimensions are required';
-      if (!d.floors?.trim()) errs.floors = 'Floors count is required';
-      if (!d.roadFrontage?.trim()) errs.roadFrontage = 'Road Frontage is required';
-      if (!d.approachRoadWidth?.trim()) errs.approachRoadWidth = 'Approach Road Width is required';
-      if (!d.heavyVehicleAccess?.trim()) errs.heavyVehicleAccess = 'Heavy Vehicle Access is required';
-      if (!d.powerLoad?.trim()) errs.powerLoad = 'Power Load selection is required';
-      if (!Array.isArray(d.waterAvailability) || d.waterAvailability.length === 0) errs.waterAvailability = 'Select at least one water source';
-      if (!d.approvalZone?.trim()) errs.approvalZone = 'Approval Zone is required';
-      if (!d.pollutionApproval?.trim()) errs.pollutionApproval = 'Pollution Approval is required';
-      if (!d.fireSafetyApproval?.trim()) errs.fireSafetyApproval = 'Fire Safety Approval is required';
-      if (!d.officeSpace?.trim()) errs.officeSpace = 'Office Space availability is required';
-      if (!d.labourQuarters?.trim()) errs.labourQuarters = 'Labour Quarters availability is required';
-      if (!d.loadingArea?.trim()) errs.loadingArea = 'Loading Area availability is required';
-      if (!d.parkingCapacity?.trim()) errs.parkingCapacity = 'Parking Capacity is required';
-      if (!d.suitableIndustries?.trim()) errs.suitableIndustries = 'Suitable Industries is required';
-      if (!d.expectedPrice?.trim()) errs.expectedPrice = 'Expected Price is required';
-      if (!d.negotiable?.trim()) errs.negotiable = 'Negotiable selection is required';
+      if (!getVal('industrialType', 'subcategory')) errs.industrialType = 'Industrial Type is required';
+      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
     }
 
     setErrors(errs);
@@ -361,8 +304,8 @@ export default function PropertyListingForm({
             propertyType={propertyType}
             onChange={handleRootChange}
             errors={errors}
-            isPartnerLocked={isPartnerLocked}
-            partnerBadge={partnerBadge}
+            isOneVishwam={isOneVishwam}
+            user={user}
           />
         )}
 

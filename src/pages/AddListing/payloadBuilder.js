@@ -170,6 +170,25 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
       experience: Math.max(0, safeParseInt(form.experience)),
       location: form.area || "",
     },
+    bedding: {
+      ...base,
+      name: form.title,
+      material: form.material || "",
+      size: form.size || "",
+      thickness: form.thickness || "",
+      firmness: form.firmness || "",
+      brand: form.brand || "",
+      location: `${form.area || ""}${cityLabel ? `, ${cityLabel}` : ""}`,
+    },
+    electronics: {
+      ...base,
+      name: form.title,
+      brand: form.brand || "",
+      model: form.model || "",
+      condition: form.condition || "New",
+      warranty: form.warranty || "",
+      location: `${form.area || ""}${cityLabel ? `, ${cityLabel}` : ""}`,
+    },
   };
 
   return payloads[category] || base;

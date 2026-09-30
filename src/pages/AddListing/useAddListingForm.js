@@ -196,16 +196,18 @@ export function useAddListingForm() {
   };
 
   const handlePublish = () => {
-    const isStepValid = validateStep(
-      form,
-      step,
-      catFields,
-      imageUrls,
-      STEPS,
-      REQUIRED_BY_STEP,
-      setValidationErrors,
-    );
-    if (!isStepValid) return;
+    if (category !== "real-estate") {
+      const isStepValid = validateStep(
+        form,
+        step,
+        catFields,
+        imageUrls,
+        STEPS,
+        REQUIRED_BY_STEP,
+        setValidationErrors,
+      );
+      if (!isStepValid) return;
+    }
     setShowConfirm(true);
   };
 
@@ -384,15 +386,27 @@ export function useAddListingForm() {
         if (cancelled) return;
 
         const nextForm = { ...INITIAL_FORM };
+
+        // 1. Unpack nested item.details subdocument first (where MongoDB stores polymorphic fields)
+        if (item.details && typeof item.details === 'object') {
+          Object.keys(item.details).forEach((dKey) => {
+            if (item.details[dKey] !== undefined && item.details[dKey] !== null && item.details[dKey] !== "") {
+              nextForm[dKey] = item.details[dKey];
+            }
+          });
+        }
+
+        // 2. Unpack top-level properties
         Object.keys(nextForm).forEach((key) => {
           if (item[key] !== undefined && item[key] !== null && item[key] !== "") {
             nextForm[key] = item[key];
           }
         });
-        nextForm.title = item.title || item.name || nextForm.title;
+
+        nextForm.title = item.title || item.name || item.details?.propertyName || item.details?.projectName || nextForm.title;
         nextForm.subtitle = item.subtitle || "";
-        nextForm.description = item.description || "";
-        nextForm.price = item.price || "";
+        nextForm.description = item.description || (typeof item.details === 'string' ? item.details : item.details?.description) || "";
+        nextForm.price = item.price || item.details?.expectedPrice || item.details?.expectedPricePerAcre || "";
         nextForm.priceSuffix = item.priceSuffix || "";
         nextForm.priceType = item.priceType || nextForm.priceType || "fixed";
         nextForm.area = item.area || item.location || "";
@@ -400,12 +414,15 @@ export function useAddListingForm() {
         nextForm.pincode = item.pincode || "";
         nextForm.contact = item.contact || item.contactPhone || "9876543210";
         nextForm.category = serviceType;
+        nextForm.vendorName = item.vendorName || item.details?.vendorName || "";
+        nextForm.channelPartnerName = item.channelPartnerName || item.details?.channelPartnerName || "";
+        nextForm.bankLoanDetails = item.bankLoanDetails || item.details?.bankLoanDetails || "";
 
         // Resolve subcategory robustly
         const rawSubcategory =
           item.subcategory ||
           item.subCategory ||
-          (serviceType === "real-estate" && item.category) ||
+          (serviceType === "real-estate" && (item.category || item.propertyType)) ||
           (serviceType === "vehicle" && (
             item.wheelerType ||
             item.categoryVehicle ||
@@ -415,6 +432,8 @@ export function useAddListingForm() {
           (serviceType === "finance" && (item.serviceType || item.type || item.category)) ||
           (serviceType === "grocery" && item.category) ||
           (serviceType === "garment" && item.category) ||
+          (serviceType === "bedding" && item.category) ||
+          (serviceType === "electronics" && item.category) ||
           "";
 
         const validSubcategories = SUBCATEGORIES[serviceType] || [];
@@ -424,16 +443,23 @@ export function useAddListingForm() {
         nextForm.subcategory = matchedSub || rawSubcategory || "";
 
         if (serviceType === "real-estate") {
-          nextForm.bhk = item.bhk || "";
-          nextForm.bathrooms = item.bathrooms || "";
-          nextForm.area_sqft = item.area_sqft || item.numericArea || (item.area ? String(item.area).replace(/[^\d.]/g, '') : "");
-          nextForm.furnishing = item.furnishing || item.furnishingStatus || "";
-          nextForm.floor = item.floor || "";
-          nextForm.parking = item.parking || "";
+          const d = item.details || {};
+          nextForm.bhk = item.bhk || d.bhk || "";
+          nextForm.bathrooms = item.bathrooms || d.bathrooms || "";
+          nextForm.area_sqft = item.area_sqft || item.numericArea || d.dimensions || (item.area ? String(item.area).replace(/[^\d.]/g, '') : "");
+          nextForm.furnishing = item.furnishing || item.furnishingStatus || d.furnishingStatus || "";
+          nextForm.facing = item.facing || d.facing || d.plotFacing || "";
+          nextForm.cornerPlot = item.cornerPlot || d.cornerPlot || "";
+          nextForm.boundaryWall = item.boundaryWall || d.boundaryWall || "";
+          nextForm.approval = item.approval || d.approvalAuthority || d.approvedLayout || "";
+          nextForm.gatedCommunity = item.gatedCommunity !== undefined ? item.gatedCommunity : d.gatedCommunity;
+          nextForm.negotiable = item.negotiable !== undefined ? item.negotiable : d.negotiable;
+          nextForm.floor = item.floor || d.floors || "";
+          nextForm.parking = item.parking || d.parkingAvailability || "";
           nextForm.extraRoom = item.extraRoom || "";
-          nextForm.projectCount = item.projectCount ?? "";
-          nextForm.totalUnits = item.totalUnits ?? "";
-          nextForm.availableUnits = item.availableUnits ?? "";
+          nextForm.projectCount = item.projectCount ?? d.projectCount ?? "";
+          nextForm.totalUnits = item.totalUnits ?? d.totalUnits ?? "";
+          nextForm.availableUnits = item.availableUnits ?? d.availableUnits ?? "";
         }
         if (serviceType === "vehicle") {
           nextForm.brand = item.brand || item.make || "";
@@ -466,6 +492,19 @@ export function useAddListingForm() {
         if (serviceType === "service") {
           nextForm.serviceType = item.serviceType || item.type || item.category || nextForm.subcategory || nextForm.serviceType;
           nextForm.experience = item.experience ?? "";
+        }
+        if (serviceType === "bedding") {
+          nextForm.material = item.material || "";
+          nextForm.size = item.size || "";
+          nextForm.thickness = item.thickness || "";
+          nextForm.firmness = item.firmness || "";
+          nextForm.brand = item.brand || "";
+        }
+        if (serviceType === "electronics") {
+          nextForm.brand = item.brand || "";
+          nextForm.model = item.model || "";
+          nextForm.condition = item.condition || "";
+          nextForm.warranty = item.warranty || "";
         }
 
         const existingImages = (

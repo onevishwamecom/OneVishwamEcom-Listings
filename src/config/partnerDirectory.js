@@ -8,21 +8,21 @@
  */
 
 export const PARTNER_REGISTRY = {
-  'co@vishwam.com': {
+  'ceo@onevishwam.com': {
     role: 'in_house',
-    partnerName: 'One Vishwam',
+    partnerName: 'One Vishwam (CEO)',
     isVerified: true,
     origin: 'in_house_project',
   },
-  'cp.hassan@vishwam.com': {
-    role: 'channel_partner',
-    partnerName: 'Hassan Prime Properties',
+  'sinchana@onevishwam.com': {
+    role: 'in_house',
+    partnerName: 'One Vishwam (Lead)',
     isVerified: true,
-    origin: 'channel_partner_project',
+    origin: 'in_house_project',
   },
-  'partner1@example.com': {
-    role: 'channel_partner',
-    partnerName: 'Assigned Partner Entity',
+  'test123@gmail.com': {
+    role: 'lister',
+    partnerName: 'Test Lister Entity',
     isVerified: true,
     origin: 'channel_partner_project',
   },

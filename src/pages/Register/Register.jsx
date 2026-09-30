@@ -8,6 +8,7 @@ import Input from "@/components/ui/Input";
 import { OTPInput } from "@/components/ui/OTPInput";
 import { normalizePhone, normalizePhoneForApi } from "@/utils/phone";
 import { sendPhoneOtp, confirmPhoneOtp, getRecaptchaVerifier } from "@/firebase/phoneAuth";
+import { ALLOWED_ACCOUNTS, isAllowedEmail } from "@/config/allowedCredentials";
 
 const RULES = [
   { key: "min", label: "At least 8 characters", test: (v) => v.length >= 8 },
@@ -45,6 +46,7 @@ function validatePhone(phone) {
 function validateEmail(email) {
   if (!email || !email.trim()) return "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Invalid email";
+  if (!isAllowedEmail(email.trim())) return "Access restricted: Registration is limited to authorized listing accounts.";
   return "";
 }
 

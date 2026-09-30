@@ -14,6 +14,12 @@ import cache, { CACHE_TTL } from './cacheService';
  * ============================================================================
  */
 
+// Clear any stale local listing entries stored during offline testing
+try {
+  localStorage.removeItem('user_created_listings');
+  cache.clear();
+} catch {}
+
 /** Deduplicate identical concurrent GETs to the same endpoint. */
 const inFlight = new Map();
 
@@ -33,7 +39,11 @@ function unwrap(response) {
 export function fetchFlatListings() {
   return dedupe('listings', async () => {
     const items = unwrap(await api.get('/listings', { params: { flatten: '1' } }));
-    return Array.isArray(items) ? items : [];
+    const validItems = Array.isArray(items) ? items : [];
+    return validItems.filter((item) => {
+      const id = String(item._id || item.id || '');
+      return !id.startsWith('local_');
+    });
   });
 }
 
@@ -50,6 +60,9 @@ export async function fetchListings() {
 }
 
 export async function fetchListingById(id) {
+  if (String(id).startsWith('local_')) {
+    throw new Error('Listing not found');
+  }
   const items = await fetchFlatListings();
   const found = items.find((item) => item._id === id || item.id === id);
   if (!found) throw new Error('Listing not found');
@@ -57,6 +70,9 @@ export async function fetchListingById(id) {
 }
 
 export async function findListing(type, id) {
+  if (String(id).startsWith('local_')) {
+    throw new Error('Listing not found');
+  }
   const body = unwrap(await api.get(`/listings/${type}/${encodeURIComponent(id)}`));
   const item = body?.item || body;
   if (!item) throw new Error('Listing not found');
@@ -64,7 +80,11 @@ export async function findListing(type, id) {
 }
 
 export async function createListing(payload) {
-  return unwrap(await api.post('/listings', payload));
+  const resp = await api.post('/listings', payload);
+  const unwrapped = unwrap(resp);
+  const created = unwrapped?.item || unwrapped;
+  invalidateListings();
+  return created;
 }
 
 export async function uploadImages(files) {
@@ -86,11 +106,21 @@ export async function uploadVideo(file) {
 }
 
 export async function updateListing(type, id, updates) {
-  return unwrap(await api.patch(`/listings/${type}/${encodeURIComponent(id)}`, updates));
+  const resp = await api.patch(`/listings/${type}/${encodeURIComponent(id)}`, updates);
+  const unwrapped = unwrap(resp);
+  const updated = unwrapped?.item || unwrapped;
+  invalidateListings();
+  return updated;
 }
 
 export async function deleteListing(type, id) {
-  return unwrap(await api.delete(`/listings/${type}/${encodeURIComponent(id)}`));
+  if (String(id).startsWith('local_')) {
+    invalidateListings();
+    return true;
+  }
+  await api.delete(`/listings/${type}/${encodeURIComponent(id)}`);
+  invalidateListings();
+  return true;
 }
 
 /**

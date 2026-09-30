@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, initializeRecaptchaConfig } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,12 +14,6 @@ export const firebaseConfig = {
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-
-if (typeof window !== "undefined") {
-  initializeRecaptchaConfig(auth).catch((err) => {
-    console.warn("initializeRecaptchaConfig:", err);
-  });
-}
 
 export default app;
 

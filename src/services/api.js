@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { auth } from '@/firebase/config';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -74,16 +75,33 @@ export function getTokenExpiry(token) {
 export function refreshAccessToken() {
   if (refreshPromise) return refreshPromise;
 
+  if (auth?.currentUser) {
+    refreshPromise = (async () => {
+      try {
+        const freshToken = await auth.currentUser.getIdToken(true);
+        if (freshToken) {
+          localStorage.setItem('accessToken', freshToken);
+          scheduleTokenRefresh();
+          return { accessToken: freshToken };
+        }
+      } catch (err) {
+        console.warn('Firebase token refresh warning:', err?.message);
+      } finally {
+        refreshPromise = null;
+      }
+      return null;
+    })();
+    return refreshPromise;
+  }
+
   const refreshToken = localStorage.getItem('refreshToken');
   if (!refreshToken) {
-    forceLogout();
     return Promise.reject(new Error('No refresh token available'));
   }
 
   refreshPromise = (async () => {
     try {
       if (!acquireRefreshLock()) {
-        // Another tab is mid-refresh — wait for it, then adopt its tokens.
         await new Promise((resolve) => setTimeout(resolve, REFRESH_LOCK_TTL_MS));
         const adopted = localStorage.getItem('accessToken');
         if (adopted) {
@@ -102,7 +120,9 @@ export function refreshAccessToken() {
       scheduleTokenRefresh();
       return data.data;
     } catch (err) {
-      forceLogout();
+      if (err.response?.status === 401) {
+        forceLogout();
+      }
       throw err;
     } finally {
       releaseRefreshLock();
@@ -123,11 +143,32 @@ export function scheduleTokenRefresh() {
 
   const token = localStorage.getItem('accessToken');
   const expiry = getTokenExpiry(token);
+
+  if (auth?.currentUser) {
+    const remaining = expiry ? expiry - Date.now() : 3500_000;
+    // Refresh 5 minutes before expiry (or in 10 seconds if already close to expiry)
+    const delay = Math.max(10_000, remaining - 5 * 60_000);
+    refreshTimer = setTimeout(async () => {
+      try {
+        if (auth?.currentUser) {
+          const fresh = await auth.currentUser.getIdToken(true);
+          if (fresh) {
+            localStorage.setItem('accessToken', fresh);
+          }
+        }
+      } catch (err) {
+        console.warn('Proactive token renewal warning:', err?.message);
+      } finally {
+        scheduleTokenRefresh();
+      }
+    }, delay);
+    return;
+  }
+
   if (!token || !expiry) return;
 
   const remaining = expiry - Date.now();
   if (remaining <= 0) {
-    // Already expired/expiring — refresh right away (fire-and-forget).
     refreshAccessToken().catch(() => {});
     return;
   }
@@ -166,9 +207,25 @@ scheduleTokenRefresh();
 // Axios interceptors
 // ============================================================================
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(async (config) => {
+  let token = localStorage.getItem('accessToken');
+
+  if (auth?.currentUser) {
+    try {
+      const freshToken = await auth.currentUser.getIdToken();
+      if (freshToken) {
+        token = freshToken;
+        localStorage.setItem('accessToken', token);
+      }
+    } catch {
+      // fallback to cached token
+    }
+  }
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   // FormData must NOT force a Content-Type — the browser sets the multipart
   // boundary. JSON requests keep the application/json default.
   if (config.data instanceof FormData) {
@@ -197,9 +254,21 @@ api.interceptors.response.use(
 
       originalRequest._retry = true;
       try {
-        const result = await refreshAccessToken();
-        originalRequest.headers.Authorization = `Bearer ${result.accessToken}`;
-        return api(originalRequest);
+        let freshToken = null;
+        if (auth?.currentUser) {
+          freshToken = await auth.currentUser.getIdToken(true);
+          if (freshToken) {
+            localStorage.setItem('accessToken', freshToken);
+          }
+        } else {
+          const result = await refreshAccessToken();
+          freshToken = result?.accessToken;
+        }
+
+        if (freshToken) {
+          originalRequest.headers.Authorization = `Bearer ${freshToken}`;
+          return api(originalRequest);
+        }
       } catch (err) {
         return Promise.reject(err);
       }
