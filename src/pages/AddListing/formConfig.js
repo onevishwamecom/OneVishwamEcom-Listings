@@ -1,6 +1,11 @@
 import { currentYear } from "../../utils";
 
 export const INITIAL_FORM = {
+  vendorName: "",
+  channelPartnerName: "",
+  propertyType: "Residential",
+  bankLoanDetails: "",
+  details: {},
   title: "",
   subtitle: "",
   description: "",
@@ -49,6 +54,9 @@ export const INITIAL_FORM = {
   purity: "",
   weight: "",
   gemstone: "",
+  thickness: "",
+  firmness: "",
+  warranty: "",
 };
 
 export const STEPS = [
@@ -110,6 +118,19 @@ export const CATEGORY_FIELDS = {
   service: [
     { name: "serviceType", label: "Service Type", type: "text", placeholder: "e.g. Plumbing, Electrical, AC Repair" },
     { name: "experience", label: "Years of Experience", type: "number", placeholder: "e.g. 3" },
+  ],
+  bedding: [
+    { name: "material", label: "Material / Fill", type: "text", placeholder: "e.g. Memory Foam, Latex, Organic Cotton" },
+    { name: "size", label: "Bed / Mattress Size", type: "select", options: ["Single", "Double", "Queen", "King", "Custom"] },
+    { name: "thickness", label: "Thickness", type: "select", options: ["4 Inches", "6 Inches", "8 Inches", "10 Inches", "12 Inches"] },
+    { name: "firmness", label: "Firmness Level", type: "select", options: ["Soft", "Medium Soft", "Medium Firm", "Firm", "Dual Firm / Orthopedic"] },
+    { name: "brand", label: "Brand", type: "text", placeholder: "e.g. Vishwam Comfort, Sleepwell" },
+  ],
+  electronics: [
+    { name: "brand", label: "Brand", type: "text", placeholder: "e.g. Apple, Samsung, Sony, Dell", required: true },
+    { name: "model", label: "Model Name / No.", type: "text", placeholder: "e.g. iPhone 15 Pro, XPS 15" },
+    { name: "condition", label: "Condition", type: "select", options: ["New", "Refurbished", "Used - Like New", "Used - Good", "Used - Fair"] },
+    { name: "warranty", label: "Warranty Details", type: "text", placeholder: "e.g. 1 Year Official Warranty" },
   ],
 };
 

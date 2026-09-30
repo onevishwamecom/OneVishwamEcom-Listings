@@ -1,7 +1,7 @@
 import { safeParseInt, safeParseFloat } from "../../utils";
 import { PRICE_UNITS } from "./constants";
 
-export const buildPayload = (form, category, subcategory, imageUrls, docUrls, brochureUrl, videoUrl = null, CITY_DATA = {}) => {
+export const buildPayload = (form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA = {}) => {
   const finalSubcategory = subcategory || form.subcategory || "";
   const cityLabel = CITY_DATA?.[form.city]?.label || form.city || "";
 
@@ -43,39 +43,75 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     pincode: form.pincode || "",
     contact: form.contact || "",
     images: imageUrls || [],
-    video: videoUrl || null,
-    videoUrl: videoUrl || null,
-    videos: videoUrl ? [videoUrl] : [],
     documents: docUrls || [],
     brochure: brochureUrl || null,
+    vendorName: form.vendorName || "",
+    channelPartnerName: form.channelPartnerName || "",
+    origin: form.origin || undefined,
+    propertyType: form.propertyType || finalSubcategory || "",
+    bankLoanDetails: form.bankLoanDetails || "",
+    loanApproved: Boolean(form.bankLoanDetails && !form.bankLoanDetails.toLowerCase().includes('no')),
+    details: form.details || {},
   };
+
+  const propDetails = form.details || {};
+  const propTitle =
+    propDetails.propertyName ||
+    propDetails.projectName ||
+    form.title ||
+    `${form.propertyType || 'Residential'} Property`;
+  const propPrice = propDetails.expectedPrice || displayPrice || form.price || '';
+  const propArea =
+    propDetails.superBuiltUpArea ||
+    propDetails.totalLandArea ||
+    propDetails.totalLandExtent ||
+    propDetails.carpetArea ||
+    propDetails.builtUpArea ||
+    propDetails.dimensions ||
+    form.area_sqft ||
+    '';
 
   const payloads = {
     "real-estate": {
       ...base,
-      subcategory: finalSubcategory || form.subcategory || "",
-      propertyType: finalSubcategory || form.subcategory || "",
-      bhk: form.bhk || "",
-      bathrooms: form.bathrooms || "",
-      area_sqft: form.area_sqft || "",
-      area: form.area_sqft ? `${form.area_sqft} Sq.Ft.` : form.area || "",
-      furnishing: form.furnishing || "",
-      floor: form.floor || "",
-      floors: form.floors || "",
-      towers: form.towers || "",
-      approval: form.approval || "",
-      possession: form.possession || "",
-      possessionStatus: form.possession || "",
-      loanApproved: form.loanApproved === "Yes" || form.loanApproved === true,
-      parking: form.parking || "",
+      title: propTitle,
+      price: propPrice,
+      rawPrice: numericPrice || safeParseFloat(String(propPrice).replace(/[^\d.]/g, '')),
+      numericPrice: numericPrice || safeParseFloat(String(propPrice).replace(/[^\d.]/g, '')),
+      propertyType: form.propertyType || finalSubcategory || "Residential",
+      subcategory: form.propertyType || finalSubcategory || "Residential",
+      vendorName: form.vendorName || base.vendorName || "",
+      channelPartnerName: form.channelPartnerName || base.channelPartnerName || "",
+      origin: form.origin || base.origin || undefined,
+      bankLoanDetails: form.bankLoanDetails || base.bankLoanDetails || "",
+      loanApproved: Boolean(form.bankLoanDetails && !form.bankLoanDetails.toLowerCase().includes('no')),
+      details: propDetails,
+      bhk: propDetails.bhk || form.bhk || "",
+      bathrooms: propDetails.bathrooms || form.bathrooms || "",
+      balconies: safeParseInt(propDetails.balconies) || safeParseInt(form.balconies) || 0,
+      area_sqft: propArea,
+      area: propArea ? `${propArea}` : form.area || "",
+      furnishing: propDetails.furnishing || form.furnishing || "",
+      floor: propDetails.floors || propDetails.totalFloors || form.floor || "",
+      floors: propDetails.floors || propDetails.totalFloors || form.floors || "",
+      facing: propDetails.facing || propDetails.plotFacing || form.facing || "",
+      possession: propDetails.possession || form.possession || "",
+      parking: propDetails.parking || propDetails.parkingCapacity || form.parking || "",
       extraRoom: form.extraRoom || "",
+      approval: propDetails.approvalAuthority || propDetails.approvalZone || form.approval || "",
+      gatedCommunity: propDetails.gatedCommunity === 'Yes',
+      negotiable: propDetails.negotiable === 'Yes' || form.negotiable === true,
+      amenities: Array.isArray(propDetails.amenities)
+        ? propDetails.amenities
+        : Array.isArray(propDetails.utilities)
+        ? propDetails.utilities
+        : Array.isArray(propDetails.waterAvailability)
+        ? propDetails.waterAvailability
+        : form.amenities || [],
       projectCount: Math.max(0, safeParseInt(form.projectCount)),
       totalUnits: Math.max(0, safeParseInt(form.totalUnits)),
       availableUnits: Math.max(0, safeParseInt(form.availableUnits)),
       location: `${form.area || ""}${cityLabel ? `, ${cityLabel}` : ""}`,
-      details: form.description || "",
-      rawPrice: numericPrice || undefined,
-      pdfUrl: brochureUrl || null,
     },
     vehicle: {
       ...base,
@@ -134,13 +170,32 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
       experience: Math.max(0, safeParseInt(form.experience)),
       location: form.area || "",
     },
+    bedding: {
+      ...base,
+      name: form.title,
+      material: form.material || "",
+      size: form.size || "",
+      thickness: form.thickness || "",
+      firmness: form.firmness || "",
+      brand: form.brand || "",
+      location: `${form.area || ""}${cityLabel ? `, ${cityLabel}` : ""}`,
+    },
+    electronics: {
+      ...base,
+      name: form.title,
+      brand: form.brand || "",
+      model: form.model || "",
+      condition: form.condition || "New",
+      warranty: form.warranty || "",
+      location: `${form.area || ""}${cityLabel ? `, ${cityLabel}` : ""}`,
+    },
   };
 
   return payloads[category] || base;
 };
 
-export const createNewListingData = (form, category, subcategory, imageUrls, docUrls, brochureUrl, videoUrl = null, CITY_DATA = {}) => {
-  const data = buildPayload(form, category, subcategory, imageUrls, docUrls, brochureUrl, videoUrl, CITY_DATA);
+export const createNewListingData = (form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA = {}) => {
+  const data = buildPayload(form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA);
   const listingId = `LST${Date.now().toString().slice(-6)}`;
   return {
     ...data,
@@ -150,8 +205,8 @@ export const createNewListingData = (form, category, subcategory, imageUrls, doc
   };
 };
 
-export const createUpdatedListingData = (form, category, subcategory, imageUrls, docUrls, brochureUrl, videoUrl = null, CITY_DATA = {}) => {
-  const data = buildPayload(form, category, subcategory, imageUrls, docUrls, brochureUrl, videoUrl, CITY_DATA);
+export const createUpdatedListingData = (form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA = {}) => {
+  const data = buildPayload(form, category, subcategory, imageUrls, docUrls, brochureUrl, CITY_DATA);
   return {
     ...data,
     status: "pending",

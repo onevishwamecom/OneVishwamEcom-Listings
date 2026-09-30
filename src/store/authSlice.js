@@ -1,5 +1,10 @@
 import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
 import { useSelector, useDispatch } from 'react-redux';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/firebase/config';
+import { resolvePartnerIdentity } from '@/config/partnerDirectory';
+import { isAllowedEmail, COMMON_DEFAULT_PASSWORD, getAllowedAccountDetails } from '@/config/allowedCredentials';
+import { setCachedUser } from '@/services/userCache';
 import { authApi } from '@/services/authApi';
 import { listerApi } from '@/services/listerApi';
 import { setAuthTokens, clearAuthTokens, getAccessToken } from '@/services/api';
@@ -10,6 +15,86 @@ export const clearSuccess = createAction('auth/clearSuccess');
 // Backend auth responses carry the account under a type-specific key:
 // user endpoints -> { user }, lister endpoints -> { lister }.
 const extractAccount = (payload) => payload?.user || payload?.lister || null;
+
+export const firebaseEmailLogin = createAsyncThunk(
+  'auth/firebaseEmailLogin',
+  async ({ email, password }, { rejectWithValue }) => {
+    try {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      if (!isAllowedEmail(cleanEmail)) {
+        return rejectWithValue(
+          'Access Restricted: Only authorized listing accounts (ceo@onevishwam.com, sinchana@onevishwam.com, test123@gmail.com) are permitted.'
+        );
+      }
+
+      let userCredential = null;
+      try {
+        userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+      } catch (signInErr) {
+        if (
+          signInErr.code === 'auth/user-not-found' ||
+          signInErr.code === 'auth/invalid-credential'
+        ) {
+          // If the account does not exist yet in Firebase, auto-register it with the predefined credentials
+          try {
+            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+          } catch (createErr) {
+            if (createErr.code === 'auth/email-already-in-use') {
+              throw signInErr;
+            }
+            throw createErr;
+          }
+        } else {
+          throw signInErr;
+        }
+      }
+
+      const firebaseUser = userCredential.user;
+      const idToken = await firebaseUser.getIdToken(true);
+      if (!idToken) {
+        throw new Error('No ID token received from Firebase Auth');
+      }
+
+      localStorage.setItem('accessToken', idToken);
+      localStorage.removeItem('refreshToken');
+
+      const partnerInfo = resolvePartnerIdentity(cleanEmail);
+      const allowedDetails = getAllowedAccountDetails(cleanEmail);
+
+      const userSession = {
+        id: firebaseUser.uid,
+        uid: firebaseUser.uid,
+        email: cleanEmail,
+        vendorEmail: cleanEmail,
+        fullName: allowedDetails?.name || firebaseUser.displayName || partnerInfo.partnerName || 'User',
+        name: allowedDetails?.name || firebaseUser.displayName || partnerInfo.partnerName || 'User',
+        role: partnerInfo.role || allowedDetails?.role || 'lister',
+        partnerName: partnerInfo.partnerName || allowedDetails?.partnerName || '',
+        isVerified: true,
+        isLocked: true,
+        origin: partnerInfo.origin || undefined,
+      };
+
+      setCachedUser(userSession);
+
+      return userSession;
+    } catch (err) {
+      let message = 'Login failed';
+      if (err.code === 'auth/user-not-found') {
+        message = 'No account found with this email address.';
+      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        message = 'Invalid email or password. Please try Vish@123.';
+      } else if (err.code === 'auth/too-many-requests') {
+        message = 'Too many failed login attempts. Access temporarily disabled for security.';
+      } else if (err.code === 'auth/invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (err.message) {
+        message = err.message;
+      }
+      return rejectWithValue(message);
+    }
+  }
+);
 
 export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
   try {
@@ -51,6 +136,9 @@ export const verifyOtp = createAsyncThunk('auth/verifyOtp', async ({ phone, otp 
 
 export const register = createAsyncThunk('auth/register', async (userData, { rejectWithValue }) => {
   try {
+    if (userData?.email && !isAllowedEmail(userData.email)) {
+      return rejectWithValue('Access Restricted: Only authorized listing accounts (ceo@onevishwam.com, sinchana@onevishwam.com, test123@gmail.com) are permitted.');
+    }
     const { data } = await authApi.register(userData);
     setAuthTokens(data.data);
     return data.data;
@@ -61,6 +149,9 @@ export const register = createAsyncThunk('auth/register', async (userData, { rej
 
 export const emailRegister = createAsyncThunk('auth/emailRegister', async (userData, { rejectWithValue }) => {
   try {
+    if (userData?.email && !isAllowedEmail(userData.email)) {
+      return rejectWithValue('Access Restricted: Only authorized listing accounts (ceo@onevishwam.com, sinchana@onevishwam.com, test123@gmail.com) are permitted.');
+    }
     const { data } = await authApi.emailRegister(userData);
     setAuthTokens(data.data);
     return data.data;
@@ -250,6 +341,14 @@ builder
         .addCase(clearSuccess, (state) => {
           state.successMessage = null;
         })
+        .addCase(firebaseEmailLogin.pending, handlePending)
+        .addCase(firebaseEmailLogin.fulfilled, (state, action) => {
+          state.loading = false;
+          state.user = action.payload;
+          state.isLoggedIn = true;
+          localStorage.setItem('user', JSON.stringify(state.user));
+        })
+        .addCase(firebaseEmailLogin.rejected, handleRejected)
         .addCase(login.pending, handlePending)
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
@@ -304,14 +403,13 @@ builder
       })
       .addCase(fetchMe.rejected, (state, action) => {
         state.loading = false;
-        if (action.payload === 'TOKEN_EXPIRED') {
+        if (state.user && getAccessToken()) {
+          state.isLoggedIn = true;
           state.error = null;
         } else {
-          state.error = action.payload;
-        }
-        if (!getAccessToken()) {
           state.user = null;
           state.isLoggedIn = false;
+          state.error = action.payload;
           localStorage.removeItem('user');
         }
       })
@@ -324,14 +422,13 @@ builder
       })
       .addCase(fetchListerMe.rejected, (state, action) => {
         state.loading = false;
-        if (action.payload === 'TOKEN_EXPIRED') {
+        if (state.user && getAccessToken()) {
+          state.isLoggedIn = true;
           state.error = null;
         } else {
-          state.error = action.payload;
-        }
-        if (!getAccessToken()) {
           state.user = null;
           state.isLoggedIn = false;
+          state.error = action.payload;
           localStorage.removeItem('user');
         }
       })
@@ -408,6 +505,7 @@ export function useAuth() {
     loading,
     error,
     successMessage,
+    firebaseEmailLogin: (creds) => dispatch(firebaseEmailLogin(creds)),
     login: (creds) => dispatch(login(creds)),
     phoneLogin: (creds) => dispatch(phoneLogin(creds)),
     sendOtp: (phone) => dispatch(sendOtp(phone)),

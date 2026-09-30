@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { cities, defaultCity } from "../../data/locations";
 import { formatINR } from "../../utils";
@@ -7,23 +7,27 @@ import { INITIAL_FORM, STEPS, CATEGORY_FIELDS, REQUIRED_BY_STEP } from "./formCo
 import { validateStep, canNext } from "./validation";
 import { createNewListingData, createUpdatedListingData } from "./payloadBuilder";
 import { CATEGORY_TO_MOCK, SERVICE_TYPE_TO_CATEGORY, SUBCATEGORIES } from "./constants";
-import { findListing, createListing, updateListing, invalidateListings, uploadImages, uploadBrochure, uploadVideo } from "../../services/listings";
+import { findListing, createListing, updateListing, invalidateListings, uploadImages, uploadVideo, uploadBrochure } from "../../services/listings";
 import { getCachedUser } from "../../services/userCache";
 import { useListingStats } from "../../components/ListingStats";
+import { resolvePartnerIdentity } from "../../config/partnerDirectory";
 
 export function useAddListingForm() {
   const [searchParams] = useSearchParams();
+  const { categoryType } = useParams();
+  const navigate = useNavigate();
   const editId = searchParams.get("edit");
   const editType = searchParams.get("type");
   const isEditing = Boolean(editId && editType);
   const { refresh: refreshStats } = useListingStats();
 
-  const [step, setStep] = useState(isEditing ? 1 : 0);
-  const [form, setForm] = useState(INITIAL_FORM);
+  const initialCategory = categoryType || "";
+  const [step, setStep] = useState(isEditing ? 1 : initialCategory && initialCategory !== "real-estate" ? 1 : 0);
+  const [form, setForm] = useState(initialCategory ? { ...INITIAL_FORM, category: initialCategory } : INITIAL_FORM);
   const [photos, setPhotos] = useState([]);
-  const [video, setVideo] = useState(null);
-  const [videoUrl, setVideoUrl] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [video, setVideo] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
   const [brochure, setBrochure] = useState(null);
   const [brochureUrl, setBrochureUrl] = useState(null);
   const [submitted, setSubmitted] = useState(false);
@@ -37,7 +41,6 @@ export function useAddListingForm() {
   const [adminFeedback, setAdminFeedback] = useState(null);
 
   const fileRef = useRef(null);
-  const videoRef = useRef(null);
   const brochureRef = useRef(null);
   const documentRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
@@ -53,6 +56,40 @@ export function useAddListingForm() {
       setValidationErrors((prev) => ({ ...prev, [key]: null }));
     }
   };
+
+  useEffect(() => {
+    if (categoryType && form.category !== categoryType) {
+      setForm((prev) => ({ ...prev, category: categoryType }));
+      if (categoryType !== "real-estate" && step === 0 && !isEditing) {
+        setStep(1);
+      }
+    } else if (!categoryType && !isEditing && form.category) {
+      setForm((prev) => ({ ...prev, category: "" }));
+      setStep(0);
+    }
+  }, [categoryType]);
+
+  // Pre-fill locked partner identity and in-house tags
+  useEffect(() => {
+    if (!isEditing) {
+      const cachedUser = getCachedUser() || {};
+      const partnerInfo = resolvePartnerIdentity(cachedUser.email || cachedUser.vendorEmail);
+      const assignedPartner = cachedUser.partnerName || partnerInfo.partnerName || '';
+      const assignedRole = cachedUser.role || partnerInfo.role || '';
+      const assignedOrigin = cachedUser.origin || partnerInfo.origin || (assignedRole === 'in_house' ? 'in_house_project' : undefined);
+
+      setForm((prev) => {
+        const updates = {};
+        if (assignedPartner && !prev.channelPartnerName) {
+          updates.channelPartnerName = assignedPartner;
+        }
+        if (assignedOrigin && !prev.origin) {
+          updates.origin = assignedOrigin;
+        }
+        return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
+      });
+    }
+  }, [isEditing]);
 
   const imageUrls = photos.filter((p) => p.url).map((p) => p.url);
   const docUrls = documents.filter((d) => d.url).map((d) => d.url);
@@ -79,35 +116,17 @@ export function useAddListingForm() {
   useEffect(() => {
     return () => {
       photos.forEach((p) => {
-        if (p.url && p.url.startsWith('blob:')) URL.revokeObjectURL(p.url);
+        if (p.url) URL.revokeObjectURL(p.url);
       });
       documents.forEach((d) => {
-        if (d.url && d.url.startsWith('blob:')) URL.revokeObjectURL(d.url);
+        if (d.url) URL.revokeObjectURL(d.url);
       });
-      if (brochureUrl && brochureUrl.startsWith('blob:')) URL.revokeObjectURL(brochureUrl);
-      if (videoUrl && videoUrl.startsWith('blob:')) URL.revokeObjectURL(videoUrl);
+      if (brochureUrl) URL.revokeObjectURL(brochureUrl);
     };
   }, []);
 
   const handleAddPhoto = async (file) => {
-    if (!file) return;
-    if (photos.length >= 5) {
-      Swal.fire({
-        icon: "warning",
-        title: "Limit Reached",
-        text: "You can add a maximum of 5 photos.",
-      });
-      return;
-    }
-    if (file.size > 1 * 1024 * 1024) {
-      Swal.fire({
-        icon: "warning",
-        title: "File Too Large",
-        text: `"${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)} MB. Maximum allowed photo size is 1MB.`,
-      });
-      return;
-    }
-
+    if (!file || photos.length >= 6) return;
     const tempId = Date.now() + Math.random();
     setPhotos((prev) => [
       ...prev,
@@ -115,41 +134,16 @@ export function useAddListingForm() {
     ]);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 300));
       const url = URL.createObjectURL(file);
       setPhotos((prev) =>
         prev.map((p) => (p.id === tempId ? { ...p, url, uploading: false } : p)),
       );
     } catch (err) {
-      console.warn("Photo preview failed:", err?.message);
+      console.warn("Image upload failed:", err?.response?.data?.message || err?.message);
       setPhotos((prev) => prev.filter((p) => p.id !== tempId));
-      Swal.fire({ icon: "error", title: "Upload Failed", text: "Failed to process photo." });
+      Swal.fire({ icon: "error", title: "Upload Failed", text: "Failed to upload photo." });
     }
-  };
-
-  const handleAddVideo = (file) => {
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      Swal.fire({
-        icon: "warning",
-        title: "Video Too Large",
-        text: `"${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)} MB. Maximum allowed video size is 10MB.`,
-      });
-      return;
-    }
-    if (videoUrl && videoUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(videoUrl);
-    }
-    setVideo(file);
-    setVideoUrl(URL.createObjectURL(file));
-  };
-
-  const removeVideo = () => {
-    if (videoUrl && videoUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(videoUrl);
-    }
-    setVideo(null);
-    setVideoUrl(null);
   };
 
   const handleAddDocument = async (file) => {
@@ -202,17 +196,61 @@ export function useAddListingForm() {
   };
 
   const handlePublish = () => {
-    const isStepValid = validateStep(
-      form,
-      step,
-      catFields,
-      imageUrls,
-      STEPS,
-      REQUIRED_BY_STEP,
-      setValidationErrors,
-    );
-    if (!isStepValid) return;
+    if (category !== "real-estate") {
+      const isStepValid = validateStep(
+        form,
+        step,
+        catFields,
+        imageUrls,
+        STEPS,
+        REQUIRED_BY_STEP,
+        setValidationErrors,
+      );
+      if (!isStepValid) return;
+    }
     setShowConfirm(true);
+  };
+
+  const handleVideoSelect = (file) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      Swal.fire({
+        icon: "warning",
+        title: "Video Too Large",
+        text: "Please select a short video under 10MB.",
+      });
+      return;
+    }
+    setVideo(file);
+    if (videoPreview && videoPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    setVideoPreview(URL.createObjectURL(file));
+  };
+
+  const handleRemoveVideo = () => {
+    if (videoPreview && videoPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    setVideo(null);
+    setVideoPreview(null);
+  };
+
+  const handleBrochureSelect = (file) => {
+    if (!file) return;
+    setBrochure(file);
+    if (brochureUrl && brochureUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(brochureUrl);
+    }
+    setBrochureUrl(URL.createObjectURL(file));
+  };
+
+  const handleRemoveBrochure = () => {
+    if (brochureUrl && brochureUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(brochureUrl);
+    }
+    setBrochure(null);
+    setBrochureUrl(null);
   };
 
   const handleConfirmSubmit = async () => {
@@ -235,65 +273,64 @@ export function useAddListingForm() {
       // Combine existing image URLs (from editing) with newly uploaded URLs
       const finalImageUrls = [...imageUrls.filter((url) => !url.startsWith('blob:')), ...uploadedImageUrls];
 
-      // Upload brochure PDF if a file was selected
-      let finalBrochureUrl = brochureUrl && !brochureUrl.startsWith('blob:') ? brochureUrl : null;
-      if (brochure && (brochure instanceof File || brochure.name)) {
-        try {
-          const brochureRes = await uploadBrochure(brochure);
-          if (brochureRes?.brochureUrl) {
-            finalBrochureUrl = brochureRes.brochureUrl;
-            setBrochureUrl(finalBrochureUrl);
-          }
-        } catch (bErr) {
-          console.error("Failed to upload brochure PDF:", bErr);
-        }
-      }
-
-      // Upload any document files
-      const docFiles = documents.filter((d) => d.file).map((d) => d.file);
-      let uploadedDocUrls = [];
-      if (docFiles.length > 0) {
-        for (const docFile of docFiles) {
-          try {
-            const docRes = await uploadBrochure(docFile);
-            if (docRes?.brochureUrl) {
-              uploadedDocUrls.push({ name: docFile.name, url: docRes.brochureUrl, size: docFile.size });
-            }
-          } catch (dErr) {
-            console.error("Failed to upload document file:", dErr);
-          }
-        }
-      }
-      const existingDocUrls = (docUrls || []).filter((d) => {
-        const u = typeof d === 'string' ? d : d?.url;
-        return u && !u.startsWith('blob:');
-      });
-      const finalDocUrls = [...existingDocUrls, ...uploadedDocUrls];
-
-      // Upload video if a file was selected
-      let finalVideoUrl = videoUrl && !videoUrl.startsWith('blob:') ? videoUrl : null;
-      if (video && (video instanceof File || video.name)) {
+      // Upload video if present as a File
+      let finalVideoUrl = form.videoUrl || form.video || null;
+      if (video && typeof video !== 'string') {
         try {
           const videoRes = await uploadVideo(video);
-          if (videoRes?.videoUrl || (videoRes?.videos && videoRes.videos[0])) {
-            finalVideoUrl = videoRes.videoUrl || videoRes.videos[0];
-            setVideoUrl(finalVideoUrl);
-          }
+          finalVideoUrl = videoRes.videoUrl || (videoRes.videos && videoRes.videos[0]) || null;
         } catch (vErr) {
-          console.error("Failed to upload video:", vErr);
+          console.warn("Video upload failed:", vErr?.message);
         }
       }
 
+      // Upload brochure if present as a File
+      let finalBrochureUrl = brochureUrl || form.brochure || null;
+      if (brochure && typeof brochure !== 'string') {
+        try {
+          const brochureRes = await uploadBrochure(brochure);
+          finalBrochureUrl = brochureRes.brochureUrl || brochureRes.url || null;
+        } catch (bErr) {
+          console.warn("Brochure upload failed:", bErr?.message);
+        }
+      }
+
+      const user = getCachedUser() || {};
+      const partnerInfo = resolvePartnerIdentity(user.email || user.vendorEmail);
+      const assignedPartner = user.partnerName || partnerInfo.partnerName || form.channelPartnerName || '';
+      const assignedRole = user.role || partnerInfo.role || 'lister';
+      const assignedOrigin = user.origin || partnerInfo.origin || (assignedRole === 'in_house' ? 'in_house_project' : form.origin);
+
+      const updatedForm = {
+        ...form,
+        channelPartnerName: assignedPartner || form.channelPartnerName,
+        origin: assignedOrigin,
+        videoUrl: finalVideoUrl,
+        video: finalVideoUrl,
+        videos: finalVideoUrl ? [finalVideoUrl] : [],
+        brochure: finalBrochureUrl,
+        pdfUrl: finalBrochureUrl,
+      };
+
       if (isEditing && originalListingId) {
-        await updateListing(typeKey, originalListingId, createUpdatedListingData(form, category, subcategory, finalImageUrls, finalDocUrls, finalBrochureUrl, finalVideoUrl, cities));
+        await updateListing(typeKey, originalListingId, {
+          ...createUpdatedListingData(updatedForm, category, subcategory, finalImageUrls, docUrls, finalBrochureUrl, cities),
+          video: finalVideoUrl,
+          videoUrl: finalVideoUrl,
+          videos: finalVideoUrl ? [finalVideoUrl] : [],
+        });
       } else {
-        const listingPayload = createNewListingData(form, category, subcategory, finalImageUrls, finalDocUrls, finalBrochureUrl, finalVideoUrl, cities);
-        const user = getCachedUser() || {};
+        const listingPayload = createNewListingData(updatedForm, category, subcategory, finalImageUrls, docUrls, finalBrochureUrl, cities);
         await createListing({
           ...listingPayload,
+          origin: assignedOrigin || listingPayload.origin,
+          channelPartnerName: assignedPartner || listingPayload.channelPartnerName,
+          video: finalVideoUrl,
+          videoUrl: finalVideoUrl,
+          videos: finalVideoUrl ? [finalVideoUrl] : [],
           contributor: {
             name: user.fullName || user.name || 'Unknown',
-            type: user.role || 'vendor',
+            type: assignedRole || user.role || 'vendor',
             email: user.email || '',
             contact: user.contact || user.phone || user.mobile || listingPayload.contact || '',
             city: user.city || listingPayload.city || '',
@@ -349,15 +386,27 @@ export function useAddListingForm() {
         if (cancelled) return;
 
         const nextForm = { ...INITIAL_FORM };
+
+        // 1. Unpack nested item.details subdocument first (where MongoDB stores polymorphic fields)
+        if (item.details && typeof item.details === 'object') {
+          Object.keys(item.details).forEach((dKey) => {
+            if (item.details[dKey] !== undefined && item.details[dKey] !== null && item.details[dKey] !== "") {
+              nextForm[dKey] = item.details[dKey];
+            }
+          });
+        }
+
+        // 2. Unpack top-level properties
         Object.keys(nextForm).forEach((key) => {
           if (item[key] !== undefined && item[key] !== null && item[key] !== "") {
             nextForm[key] = item[key];
           }
         });
-        nextForm.title = item.title || item.name || nextForm.title;
+
+        nextForm.title = item.title || item.name || item.details?.propertyName || item.details?.projectName || nextForm.title;
         nextForm.subtitle = item.subtitle || "";
-        nextForm.description = item.description || "";
-        nextForm.price = item.price || "";
+        nextForm.description = item.description || (typeof item.details === 'string' ? item.details : item.details?.description) || "";
+        nextForm.price = item.price || item.details?.expectedPrice || item.details?.expectedPricePerAcre || "";
         nextForm.priceSuffix = item.priceSuffix || "";
         nextForm.priceType = item.priceType || nextForm.priceType || "fixed";
         nextForm.area = item.area || item.location || "";
@@ -365,12 +414,15 @@ export function useAddListingForm() {
         nextForm.pincode = item.pincode || "";
         nextForm.contact = item.contact || item.contactPhone || "9876543210";
         nextForm.category = serviceType;
+        nextForm.vendorName = item.vendorName || item.details?.vendorName || "";
+        nextForm.channelPartnerName = item.channelPartnerName || item.details?.channelPartnerName || "";
+        nextForm.bankLoanDetails = item.bankLoanDetails || item.details?.bankLoanDetails || "";
 
         // Resolve subcategory robustly
         const rawSubcategory =
           item.subcategory ||
           item.subCategory ||
-          (serviceType === "real-estate" && item.category) ||
+          (serviceType === "real-estate" && (item.category || item.propertyType)) ||
           (serviceType === "vehicle" && (
             item.wheelerType ||
             item.categoryVehicle ||
@@ -380,6 +432,8 @@ export function useAddListingForm() {
           (serviceType === "finance" && (item.serviceType || item.type || item.category)) ||
           (serviceType === "grocery" && item.category) ||
           (serviceType === "garment" && item.category) ||
+          (serviceType === "bedding" && item.category) ||
+          (serviceType === "electronics" && item.category) ||
           "";
 
         const validSubcategories = SUBCATEGORIES[serviceType] || [];
@@ -389,16 +443,23 @@ export function useAddListingForm() {
         nextForm.subcategory = matchedSub || rawSubcategory || "";
 
         if (serviceType === "real-estate") {
-          nextForm.bhk = item.bhk || "";
-          nextForm.bathrooms = item.bathrooms || "";
-          nextForm.area_sqft = item.area_sqft || item.numericArea || (item.area ? String(item.area).replace(/[^\d.]/g, '') : "");
-          nextForm.furnishing = item.furnishing || item.furnishingStatus || "";
-          nextForm.floor = item.floor || "";
-          nextForm.parking = item.parking || "";
+          const d = item.details || {};
+          nextForm.bhk = item.bhk || d.bhk || "";
+          nextForm.bathrooms = item.bathrooms || d.bathrooms || "";
+          nextForm.area_sqft = item.area_sqft || item.numericArea || d.dimensions || (item.area ? String(item.area).replace(/[^\d.]/g, '') : "");
+          nextForm.furnishing = item.furnishing || item.furnishingStatus || d.furnishingStatus || "";
+          nextForm.facing = item.facing || d.facing || d.plotFacing || "";
+          nextForm.cornerPlot = item.cornerPlot || d.cornerPlot || "";
+          nextForm.boundaryWall = item.boundaryWall || d.boundaryWall || "";
+          nextForm.approval = item.approval || d.approvalAuthority || d.approvedLayout || "";
+          nextForm.gatedCommunity = item.gatedCommunity !== undefined ? item.gatedCommunity : d.gatedCommunity;
+          nextForm.negotiable = item.negotiable !== undefined ? item.negotiable : d.negotiable;
+          nextForm.floor = item.floor || d.floors || "";
+          nextForm.parking = item.parking || d.parkingAvailability || "";
           nextForm.extraRoom = item.extraRoom || "";
-          nextForm.projectCount = item.projectCount ?? "";
-          nextForm.totalUnits = item.totalUnits ?? "";
-          nextForm.availableUnits = item.availableUnits ?? "";
+          nextForm.projectCount = item.projectCount ?? d.projectCount ?? "";
+          nextForm.totalUnits = item.totalUnits ?? d.totalUnits ?? "";
+          nextForm.availableUnits = item.availableUnits ?? d.availableUnits ?? "";
         }
         if (serviceType === "vehicle") {
           nextForm.brand = item.brand || item.make || "";
@@ -432,6 +493,19 @@ export function useAddListingForm() {
           nextForm.serviceType = item.serviceType || item.type || item.category || nextForm.subcategory || nextForm.serviceType;
           nextForm.experience = item.experience ?? "";
         }
+        if (serviceType === "bedding") {
+          nextForm.material = item.material || "";
+          nextForm.size = item.size || "";
+          nextForm.thickness = item.thickness || "";
+          nextForm.firmness = item.firmness || "";
+          nextForm.brand = item.brand || "";
+        }
+        if (serviceType === "electronics") {
+          nextForm.brand = item.brand || "";
+          nextForm.model = item.model || "";
+          nextForm.condition = item.condition || "";
+          nextForm.warranty = item.warranty || "";
+        }
 
         const existingImages = (
           Array.isArray(item.images)
@@ -448,8 +522,6 @@ export function useAddListingForm() {
           }));
         setPhotos(existingImages);
         if (item.brochure) setBrochureUrl(item.brochure);
-        const existingVideo = item.video || item.videoUrl || (Array.isArray(item.videos) && item.videos[0]) || null;
-        if (existingVideo) setVideoUrl(existingVideo);
         setForm(nextForm);
 
         setOriginalListingId(item._id);
@@ -473,19 +545,19 @@ export function useAddListingForm() {
     return () => { cancelled = true; };
   }, [isEditing, editType, editId]);
 
-  return {
+return {
     // State
     step,
     setStep,
     form,
     photos,
     setPhotos,
-    video,
-    setVideo,
-    videoUrl,
-    setVideoUrl,
     documents,
     setDocuments,
+    video,
+    setVideo,
+    videoPreview,
+    setVideoPreview,
     brochure,
     setBrochure,
     brochureUrl,
@@ -510,7 +582,6 @@ export function useAddListingForm() {
     adminFeedback,
     // Refs
     fileRef,
-    videoRef,
     brochureRef,
     documentRef,
     dragOver,
@@ -520,11 +591,13 @@ export function useAddListingForm() {
     // Handlers
     updateForm,
     handleAddPhoto,
-    handleAddVideo,
-    removeVideo,
     handleAddDocument,
     removePhoto,
     removeDocument,
+    handleVideoSelect,
+    handleRemoveVideo,
+    handleBrochureSelect,
+    handleRemoveBrochure,
     handleSaveDraft,
     handlePublish,
     handleConfirmSubmit,
