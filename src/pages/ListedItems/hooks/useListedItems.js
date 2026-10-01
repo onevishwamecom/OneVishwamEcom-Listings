@@ -24,7 +24,7 @@ export function useListedItems() {
   const perPage = 8;
 
   const tabParam = searchParams.get('status');
-  const activeTab = ['pending', 'approved', 'changes-required'].includes(tabParam) ? tabParam : 'all';
+  const activeTab = ['pending', 'approved', 'changes-required', 'cancelled'].includes(tabParam) ? tabParam : 'all';
 
   const { data: allListings, setData: setAllListings, loading, error, retry } = useCachedData(
     fetchListings,
@@ -56,17 +56,19 @@ export function useListedItems() {
   }, [allListings]);
 
   const statusCounts = useMemo(() => {
-    const counts = { all: items.length, pending: 0, approved: 0, 'changes-required': 0 };
+    const counts = { all: items.length, pending: 0, approved: 0, 'changes-required': 0, cancelled: 0 };
     items.forEach((item) => {
       if (item.status === 'pending') counts.pending += 1;
       else if (item.status === 'approved') counts.approved += 1;
       else if (item.status === 'changes-required') counts['changes-required'] += 1;
+      else if (item.status === 'cancelled' || item.status === 'rejected') counts.cancelled += 1;
     });
     return counts;
   }, [items]);
 
   const tabFiltered = useMemo(() => {
     if (activeTab === 'all') return items;
+    if (activeTab === 'cancelled') return items.filter((item) => item.status === 'cancelled' || item.status === 'rejected');
     return items.filter((item) => item.status === activeTab);
   }, [items, activeTab]);
 

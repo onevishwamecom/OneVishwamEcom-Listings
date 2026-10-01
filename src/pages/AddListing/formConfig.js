@@ -20,6 +20,7 @@ export const INITIAL_FORM = {
   city: "bengaluru",
   area: "",
   pincode: "",
+  landmark: "",
   contact: "",
   bhk: "",
   bathrooms: "",

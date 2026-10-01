@@ -47,6 +47,8 @@ export const STATUS_BADGE = {
   pending: { variant: 'pending', icon: 'fa-clock', label: 'Pending Approval' },
   approved: { variant: 'blue', icon: 'fa-circle-check', label: 'Approved' },
   'changes-required': { variant: 'warning', icon: 'fa-pen-to-square', label: 'Changes Required' },
+  cancelled: { variant: 'danger', icon: 'fa-circle-xmark', label: 'Cancelled' },
+  rejected: { variant: 'danger', icon: 'fa-circle-xmark', label: 'Cancelled' },
 };
 
 export function getCategoryConfig(type, fallback = SERVICE_CONFIG.properties) {

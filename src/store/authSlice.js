@@ -6,6 +6,7 @@ import { resolvePartnerIdentity } from '@/config/partnerDirectory';
 import { isAllowedEmail, COMMON_DEFAULT_PASSWORD, getAllowedAccountDetails } from '@/config/allowedCredentials';
 import { setCachedUser } from '@/services/userCache';
 import { authApi } from '@/services/authApi';
+import api from '@/services/api';
 import { listerApi } from '@/services/listerApi';
 import { setAuthTokens, clearAuthTokens, getAccessToken } from '@/services/api';
 
@@ -21,11 +22,6 @@ export const firebaseEmailLogin = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const cleanEmail = (email || '').trim().toLowerCase();
-      if (!isAllowedEmail(cleanEmail)) {
-        return rejectWithValue(
-          'Access Restricted: Only authorized listing accounts (ceo@onevishwam.com, sinchana@onevishwam.com, test123@gmail.com) are permitted.'
-        );
-      }
 
       let userCredential = null;
       try {
@@ -58,26 +54,38 @@ export const firebaseEmailLogin = createAsyncThunk(
       localStorage.setItem('accessToken', idToken);
       localStorage.removeItem('refreshToken');
 
-      const partnerInfo = resolvePartnerIdentity(cleanEmail);
-      const allowedDetails = getAllowedAccountDetails(cleanEmail);
-
-      const userSession = {
-        id: firebaseUser.uid,
-        uid: firebaseUser.uid,
+      // Sync to MongoDB (same pattern as Vishwam-Frontend)
+      let profileData = {
+        firebaseUid: firebaseUser.uid,
         email: cleanEmail,
-        vendorEmail: cleanEmail,
-        fullName: allowedDetails?.name || firebaseUser.displayName || partnerInfo.partnerName || 'User',
-        name: allowedDetails?.name || firebaseUser.displayName || partnerInfo.partnerName || 'User',
-        role: partnerInfo.role || allowedDetails?.role || 'lister',
-        partnerName: partnerInfo.partnerName || allowedDetails?.partnerName || '',
-        isVerified: true,
-        isLocked: true,
-        origin: partnerInfo.origin || undefined,
+        fullName: firebaseUser.displayName || 'User',
+        role: 'lister',
       };
 
-      setCachedUser(userSession);
+      try {
+        const res = await api.post(
+          '/auth/sync',
+          {
+            firebaseUid: firebaseUser.uid,
+            email: cleanEmail,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          }
+        );
+        if (res.data?.data) {
+          profileData = res.data.data;
+        }
+      } catch (syncErr) {
+        console.warn('[Auth Sync] Backend profile sync deferred:', syncErr.response?.data || syncErr.message);
+      }
 
-      return userSession;
+      localStorage.setItem('user', JSON.stringify(profileData));
+      setCachedUser(profileData);
+
+      return profileData;
     } catch (err) {
       let message = 'Login failed';
       if (err.code === 'auth/user-not-found') {
@@ -88,6 +96,86 @@ export const firebaseEmailLogin = createAsyncThunk(
         message = 'Too many failed login attempts. Access temporarily disabled for security.';
       } else if (err.code === 'auth/invalid-email') {
         message = 'Please enter a valid email address.';
+      } else if (err.message) {
+        message = err.message;
+      }
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const firebaseEmailRegister = createAsyncThunk(
+  'auth/firebaseEmailRegister',
+  async ({ name, email, phone, password }, { rejectWithValue }) => {
+    try {
+      const cleanEmail = (email || '').trim().toLowerCase();
+
+      let userCredential = null;
+      try {
+        userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+      } catch (createErr) {
+        if (createErr.code === 'auth/email-already-in-use') {
+          userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+        } else {
+          throw createErr;
+        }
+      }
+
+      const firebaseUser = userCredential.user;
+      const idToken = await firebaseUser.getIdToken(true);
+      if (!idToken) {
+        throw new Error('No ID token received from Firebase Auth');
+      }
+
+      localStorage.setItem('accessToken', idToken);
+      localStorage.removeItem('refreshToken');
+
+      // Save to MongoDB (same pattern as Vishwam-Frontend)
+      let profileData = {
+        firebaseUid: firebaseUser.uid,
+        email: cleanEmail,
+        fullName: name || firebaseUser.displayName || 'User',
+        name: name || firebaseUser.displayName || 'User',
+        phoneNumber: phone || '',
+        mobile: phone || '',
+        role: 'lister',
+      };
+
+      try {
+        const res = await api.post(
+          '/auth/sync',
+          {
+            firebaseUid: firebaseUser.uid,
+            email: cleanEmail,
+            fullName: name,
+            phoneNumber: phone,
+            mobile: phone,
+            role: 'lister',
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          }
+        );
+        if (res.data?.data) {
+          profileData = res.data.data;
+        }
+      } catch (syncErr) {
+        console.warn('[Auth Sync] Backend profile sync deferred:', syncErr.response?.data || syncErr.message);
+      }
+
+      localStorage.setItem('user', JSON.stringify(profileData));
+      setCachedUser(profileData);
+      return profileData;
+    } catch (err) {
+      let message = 'Registration failed';
+      if (err.code === 'auth/email-already-in-use') {
+        message = 'An account with this email address already exists. Please sign in.';
+      } else if (err.code === 'auth/invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (err.code === 'auth/weak-password') {
+        message = 'Password should be at least 6 characters.';
       } else if (err.message) {
         message = err.message;
       }
@@ -136,9 +224,6 @@ export const verifyOtp = createAsyncThunk('auth/verifyOtp', async ({ phone, otp 
 
 export const register = createAsyncThunk('auth/register', async (userData, { rejectWithValue }) => {
   try {
-    if (userData?.email && !isAllowedEmail(userData.email)) {
-      return rejectWithValue('Access Restricted: Only authorized listing accounts (ceo@onevishwam.com, sinchana@onevishwam.com, test123@gmail.com) are permitted.');
-    }
     const { data } = await authApi.register(userData);
     setAuthTokens(data.data);
     return data.data;
@@ -149,9 +234,6 @@ export const register = createAsyncThunk('auth/register', async (userData, { rej
 
 export const emailRegister = createAsyncThunk('auth/emailRegister', async (userData, { rejectWithValue }) => {
   try {
-    if (userData?.email && !isAllowedEmail(userData.email)) {
-      return rejectWithValue('Access Restricted: Only authorized listing accounts (ceo@onevishwam.com, sinchana@onevishwam.com, test123@gmail.com) are permitted.');
-    }
     const { data } = await authApi.emailRegister(userData);
     setAuthTokens(data.data);
     return data.data;
@@ -198,6 +280,10 @@ export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValu
   } catch (err) {
     clearAuthTokens();
     return rejectWithValue(err.response?.data?.message || 'Logout failed');
+  } finally {
+    // Sign out of Firebase and clear all cached data
+    try { await auth.signOut(); } catch { /* ignore */ }
+    localStorage.removeItem('user');
   }
 });
 
@@ -394,6 +480,15 @@ builder
         localStorage.setItem('user', JSON.stringify(state.user));
       })
       .addCase(emailRegister.rejected, handleRejected)
+      .addCase(firebaseEmailRegister.pending, handlePending)
+      .addCase(firebaseEmailRegister.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+        state.isLoggedIn = true;
+        state.error = null;
+        state.successMessage = 'Registration successful';
+      })
+      .addCase(firebaseEmailRegister.rejected, handleRejected)
       .addCase(fetchMe.pending, (state) => { state.loading = true; })
       .addCase(fetchMe.fulfilled, (state, action) => {
         state.loading = false;
@@ -506,6 +601,7 @@ export function useAuth() {
     error,
     successMessage,
     firebaseEmailLogin: (creds) => dispatch(firebaseEmailLogin(creds)),
+    firebaseEmailRegister: (creds) => dispatch(firebaseEmailRegister(creds)),
     login: (creds) => dispatch(login(creds)),
     phoneLogin: (creds) => dispatch(phoneLogin(creds)),
     sendOtp: (phone) => dispatch(sendOtp(phone)),
