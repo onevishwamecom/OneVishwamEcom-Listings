@@ -93,16 +93,29 @@ export default function ResidentialUnitFields({
             )}
           </div>
 
-          {/* Number Floors */}
+          {/* Floor & Floors/Blocks */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Floor Information <span className="text-red-500">*</span>
+              Floor
+            </label>
+            <input
+              type="text"
+              value={details.floor || ''}
+              onChange={(e) => update('floor', e.target.value)}
+              placeholder="e.g. 20th of 20 Floors"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:border-brand-blue hover:border-slate-300 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Floors / Blocks <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={details.floors || ''}
               onChange={(e) => update('floors', e.target.value)}
-              placeholder="e.g. 4th of 14 Floors or G+2 Floors"
+              placeholder="e.g. B+G+11 Floors · 3 Towers · 6 Blocks"
               className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white outline-none transition-all ${
                 errors.floors
                   ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
@@ -112,6 +125,102 @@ export default function ResidentialUnitFields({
             {errors.floors && (
               <p className="text-[11px] font-medium text-red-500 mt-1">{errors.floors}</p>
             )}
+          </div>
+
+          {/* Towers & Extra Room */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Towers
+            </label>
+            <input
+              type="text"
+              value={details.towers || ''}
+              onChange={(e) => update('towers', e.target.value)}
+              placeholder="e.g. 3 Towers"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:border-brand-blue hover:border-slate-300 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Extra Room
+            </label>
+            <input
+              type="text"
+              value={details.extraRoom || ''}
+              onChange={(e) => update('extraRoom', e.target.value)}
+              placeholder="e.g. Pooja Room, Study"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:border-brand-blue hover:border-slate-300 transition-all"
+            />
+          </div>
+
+          {/* Project & Unit Counts */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Total Projects
+            </label>
+            <input
+              type="number"
+              value={details.projectCount || ''}
+              onChange={(e) => update('projectCount', e.target.value)}
+              placeholder="e.g. 120"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:border-brand-blue hover:border-slate-300 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Total Units
+            </label>
+            <input
+              type="text"
+              value={details.totalUnits || ''}
+              onChange={(e) => update('totalUnits', e.target.value)}
+              placeholder="e.g. 200 Units"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:border-brand-blue hover:border-slate-300 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Available Units
+            </label>
+            <input
+              type="number"
+              value={details.availableUnits || ''}
+              onChange={(e) => update('availableUnits', e.target.value)}
+              placeholder="e.g. 5"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:border-brand-blue hover:border-slate-300 transition-all"
+            />
+          </div>
+
+          {/* Approval Authority */}
+          <div className="md:col-span-2">
+            <RadioGroupWithOther
+              label="Approval Authority"
+              name="approvalAuthority"
+              options={['BDA', 'BBMP', 'BMRDA', 'RERA', 'EOI', 'Other']}
+              value={details.approvalAuthority || details.approval || ''}
+              onChange={(val) => {
+                update('approvalAuthority', val);
+                update('approval', val);
+              }}
+              otherPlaceholder="Specify approval authority (e.g. DTCP / DC Converted)"
+            />
+          </div>
+
+          {/* Bank Loan Approved */}
+          <div>
+            <RadioGroupWithOther
+              label="Bank Loan Approved"
+              name="bankLoanApproved"
+              options={['Yes', 'No']}
+              value={details.bankLoanApproved || (details.loanApproved ? 'Yes' : '')}
+              onChange={(val) => {
+                update('bankLoanApproved', val);
+                update('loanApproved', val === 'Yes');
+              }}
+            />
           </div>
 
           {/* Property Facing */}

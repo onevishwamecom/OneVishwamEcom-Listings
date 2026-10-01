@@ -33,8 +33,6 @@ function LoginPage() {
         e.email = "Email address is required";
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
         e.email = "Enter a valid email address (e.g. ceo@onevishwam.com)";
-      } else if (!isAllowedEmail(emailTrim)) {
-        e.email = "Access restricted: Only authorized listing accounts are permitted.";
       }
 
       if (!form.password) {

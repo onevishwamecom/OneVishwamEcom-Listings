@@ -44,9 +44,8 @@ function validatePhone(phone) {
 }
 
 function validateEmail(email) {
-  if (!email || !email.trim()) return "";
+  if (!email || !email.trim()) return "Email address is required";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Invalid email";
-  if (!isAllowedEmail(email.trim())) return "Access restricted: Registration is limited to authorized listing accounts.";
   return "";
 }
 
@@ -69,7 +68,7 @@ function validateConfirm(password, confirm) {
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const { sendOtp, verifyOtp, register, loading, error, clearError, successMessage } = useAuth();
+  const { sendOtp, verifyOtp, register, firebaseEmailRegister, loading, error, clearError, successMessage } = useAuth();
   
   const [form, setForm] = useState({
     name: "",
@@ -179,7 +178,9 @@ function RegisterPage() {
 
   const canSendOtp = isPhoneValid();
   const canVerifyOtp = isOtpValid();
-  const canRegister = phoneVerified && isNameValid() && isPasswordValid() && isConfirmValid();
+  // Phone OTP requirement temporarily disabled in favor of Firebase Email Authentication
+  // const canRegister = phoneVerified && isNameValid() && isPasswordValid() && isConfirmValid();
+  const canRegister = isNameValid() && isEmailValid() && isPhoneValid() && isPasswordValid() && isConfirmValid();
 
   const handleSendOtp = useCallback(async () => {
     if (!canSendOtp || sendingOtp || loading) return;
@@ -244,17 +245,17 @@ function RegisterPage() {
     if (!canRegister || loading) return;
 
     try {
-      await register({
+      await firebaseEmailRegister({
         name: form.name,
         email: form.email,
         phone: normalizePhoneForApi(form.phone),
         password: form.password,
-        confirmPassword: form.confirm,
-        firebaseIdToken,
       }).unwrap();
+
       Swal.fire({
         icon: "success",
         title: "Account Created!",
+        text: "Signed in successfully with Firebase Auth.",
         timer: 1500,
         showConfirmButton: false,
         toast: true,
@@ -262,30 +263,11 @@ function RegisterPage() {
       });
       navigate("/");
     } catch (err) {
-      if (err?.response?.data?.message) {
-        setServerError(err.response.data.message);
-      }
-      const srvErrors = err?.response?.data?.errors;
-      if (srvErrors && Array.isArray(srvErrors)) {
-        const mapped = {};
-        const fieldMap = { fullName: "name", mobile: "phone", confirmPassword: "confirm" };
-        for (const { field, message } of srvErrors) {
-          const formField = fieldMap[field] || field;
-          if (formField in form) mapped[formField] = message;
-        }
-        if (Object.keys(mapped).length) setErrors(mapped);
-      } else if (srvErrors && typeof srvErrors === "object") {
-        const mapped = {};
-        const fieldMap = { fullName: "name", mobile: "phone", confirmPassword: "confirm" };
-        for (const [fld, msg] of Object.entries(srvErrors)) {
-          const formField = fieldMap[fld] || fld;
-          if (formField in form)
-            mapped[formField] = Array.isArray(msg) ? msg[0] : msg;
-        }
-        if (Object.keys(mapped).length) setErrors(mapped);
-      }
+      const msg = typeof err === "string" ? err : err?.response?.data?.message || err?.message || "Registration failed";
+      setServerError(msg);
+      console.warn("Firebase Email Register Error:", msg);
     }
-  }, [form, canRegister, loading, register, navigate]);
+  }, [form, canRegister, loading, firebaseEmailRegister, navigate]);
 
   const handleResendOtp = useCallback(async () => {
     if (resendCooldown > 0 || loading) return;
@@ -317,7 +299,8 @@ function RegisterPage() {
         ? "bg-brand-gold"
         : "bg-brand-blue";
 
-  const arePasswordFieldsDisabled = !phoneVerified;
+  // Temporarily set to false so password fields are always active for direct registration
+  const arePasswordFieldsDisabled = false;
 
   return (
     <div className="min-h-screen flex bg-slate-50">
@@ -378,13 +361,13 @@ function RegisterPage() {
               )}
             </div>
 
-            {/* Email (Optional) */}
+            {/* Email */}
             <div>
               <label
                 htmlFor="reg-email"
                 className="block text-sm font-semibold text-slate-700 mb-1.5"
               >
-                Email ID <span className="text-slate-400 text-xs font-normal">(Optional)</span>
+                Email ID
               </label>
               <input
                 id="reg-email"
@@ -392,7 +375,7 @@ function RegisterPage() {
                 autoComplete="email"
                 value={form.email}
                 onChange={(e) => handleChange("email", e.target.value)}
-                placeholder="Enter your email (optional)"
+                placeholder="Enter your email address"
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? "reg-email-error" : undefined}
                 className={inputClass("email")}
@@ -426,121 +409,18 @@ function RegisterPage() {
                   aria-describedby={errors.phone ? "reg-phone-error" : undefined}
                   className={inputClass("phone")}
                 />
-                {phoneVerified && (
-                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center text-brand-green">
-                    <i className="fa-solid fa-circle-check text-lg" aria-hidden="true" />
-                  </div>
-                )}
               </div>
               {errors.phone && (
                 <p id="reg-phone-error" className="mt-1.5 text-xs font-medium text-brand-orange" role="alert">
                   {errors.phone}
                 </p>
               )}
-              {phoneVerified && (
-                <p className="mt-1.5 text-xs font-medium text-brand-green flex items-center justify-center gap-1 animate-fade-in">
-                  <i className="fa-solid fa-circle-check" aria-hidden="true" />
-                  Phone number verified successfully
-                </p>
-              )}
             </div>
 
-            {/* Firebase reCAPTCHA Widget */}
-            {!phoneVerified && (
-              <div id="recaptcha-container" className="my-3 flex justify-center"></div>
-            )}
-
-            {/* Send OTP Button */}
-            {!phoneVerified && (
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={sendingOtp || loading || !isPhoneValid() || resendCooldown > 0}
-                  className="w-full rounded-2xl mt-4 bg-gradient-to-r from-brand-blue to-brand-blue/80 py-3.5 text-sm font-bold text-white shadow-glow-blue hover:shadow-glow-blue transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                >
-                  {sendingOtp ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true" />
-                      Sending OTP...
-                    </span>
-                  ) : otpSent ? (
-                    resendCooldown > 0 ? (
-                      <span>Resend OTP in {resendCooldown}s</span>
-                    ) : (
-                      <span>Resend OTP</span>
-                    )
-                  ) : (
-                    "Send OTP"
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* OTP Section */}
-            {(otpSent || phoneVerified) && (
-              <div className="animate-fade-in">
-                <OTPInput
-                  value={form.otp}
-                  onChange={(value) => handleChange("otp", value)}
-                  onComplete={handleVerifyOtp}
-                  disabled={phoneVerified || verifyingOtp || loading}
-                  error={errors.otp}
-                  label={phoneVerified ? "OTP (Verified)" : "OTP"}
-                  id="reg-otp"
-                  autoFocus={otpSent && !phoneVerified}
-                />
-                {!phoneVerified && (
-                  <div className="flex gap-4 mt-6">
-                    <button
-                      type="button"
-                      onClick={handleResendOtp}
-                      disabled={sendingOtp || verifyingOtp || loading || resendCooldown > 0}
-                      className="flex-1 rounded-2xl border border-slate-300 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleVerifyOtp}
-                      disabled={verifyingOtp || loading || !canVerifyOtp}
-                      className="flex-1 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-blue/80 py-3.5 text-sm font-bold text-white shadow-glow-blue hover:shadow-glow-blue transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                    >
-                      {verifyingOtp ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true" />
-                          Verifying...
-                        </span>
-                      ) : (
-                        "Verify OTP"
-                      )}
-                    </button>
-                  </div>
-                )}
-                {phoneVerified && (
-                  <p className="mt-2 text-xs font-medium text-brand-green flex items-center justify-center gap-1 animate-fade-in">
-                    <i className="fa-solid fa-circle-check" aria-hidden="true" />
-                    Phone number verified successfully
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Resend OTP */}
-            {otpSent && !phoneVerified && (
-              <div className="text-center mt-4">
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={loading || resendCooldown > 0}
-                  className="text-sm font-medium text-brand-blue hover:text-brand-blue/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {resendCooldown > 0
-                    ? `Resend OTP in {resendCooldown}s`
-                    : "Resend OTP"}
-                </button>
-              </div>
-            )}
+            {/* Phone OTP Verification temporarily commented out for direct Firebase Email sign up */}
+            {/*
+            <div id="recaptcha-container" className="my-3 flex justify-center"></div>
+            */}
 
             {/* Password */}
             <div>

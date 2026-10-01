@@ -77,6 +77,30 @@ export function LocationStep({ form, updateForm, validationErrors }) {
             inputClassName="font-mono"
           />
         </FormFieldGroup>
+
+        <FormFieldGroup>
+          <Input
+            id="contact"
+            label="Contact Phone"
+            type="tel"
+            value={form.contact}
+            onChange={(e) => updateForm("contact", e.target.value)}
+            placeholder="e.g. 9876543210"
+            error={validationErrors.contact}
+          />
+        </FormFieldGroup>
+
+        <FormFieldGroup className="md:col-span-2">
+          <Input
+            id="landmark"
+            label="Full Address / Landmark"
+            type="text"
+            value={form.landmark}
+            onChange={(e) => updateForm("landmark", e.target.value)}
+            placeholder="e.g. Near Metro Station, Opp. City Mall"
+            error={validationErrors.landmark}
+          />
+        </FormFieldGroup>
       </div>
 
       {form.area && form.city && (

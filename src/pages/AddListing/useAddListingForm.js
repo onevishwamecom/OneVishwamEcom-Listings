@@ -446,20 +446,26 @@ export function useAddListingForm() {
           const d = item.details || {};
           nextForm.bhk = item.bhk || d.bhk || "";
           nextForm.bathrooms = item.bathrooms || d.bathrooms || "";
-          nextForm.area_sqft = item.area_sqft || item.numericArea || d.dimensions || (item.area ? String(item.area).replace(/[^\d.]/g, '') : "");
+          nextForm.area_sqft = item.area_sqft || item.numericArea || d.dimensions || (item.area ? String(item.area) : "");
           nextForm.furnishing = item.furnishing || item.furnishingStatus || d.furnishingStatus || "";
           nextForm.facing = item.facing || d.facing || d.plotFacing || "";
           nextForm.cornerPlot = item.cornerPlot || d.cornerPlot || "";
           nextForm.boundaryWall = item.boundaryWall || d.boundaryWall || "";
           nextForm.approval = item.approval || d.approvalAuthority || d.approvedLayout || "";
+          nextForm.possession = item.possession || d.possession || "";
+          nextForm.loanApproved = item.loanApproved ? "Yes" : (item.bankLoanDetails ? "Yes" : "No");
           nextForm.gatedCommunity = item.gatedCommunity !== undefined ? item.gatedCommunity : d.gatedCommunity;
           nextForm.negotiable = item.negotiable !== undefined ? item.negotiable : d.negotiable;
-          nextForm.floor = item.floor || d.floors || "";
+          nextForm.floor = item.floor || "";
+          nextForm.floors = item.floors || d.floors || "";
+          nextForm.towers = item.towers || d.towers || "";
           nextForm.parking = item.parking || d.parkingAvailability || "";
-          nextForm.extraRoom = item.extraRoom || "";
+          nextForm.extraRoom = item.extraRoom || d.extraRoom || "";
           nextForm.projectCount = item.projectCount ?? d.projectCount ?? "";
           nextForm.totalUnits = item.totalUnits ?? d.totalUnits ?? "";
           nextForm.availableUnits = item.availableUnits ?? d.availableUnits ?? "";
+          nextForm.landmark = item.landmark || d.landmark || "";
+          nextForm.contact = item.contact || d.contact || nextForm.contact;
         }
         if (serviceType === "vehicle") {
           nextForm.brand = item.brand || item.make || "";
@@ -526,7 +532,7 @@ export function useAddListingForm() {
 
         setOriginalListingId(item._id);
 
-        if (item.status === 'changes-required' && item.adminComment) {
+        if ((item.status === 'changes-required' || item.status === 'cancelled' || item.status === 'rejected') && item.adminComment) {
           setAdminFeedback(item.adminComment);
         }
       } catch (err) {

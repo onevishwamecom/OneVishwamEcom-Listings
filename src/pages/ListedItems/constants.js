@@ -5,6 +5,7 @@ export const STATUS_TABS = [
   { id: 'pending', label: 'Pending' },
   { id: 'approved', label: 'Approved' },
   { id: 'changes-required', label: 'Changes Required' },
+  { id: 'cancelled', label: 'Cancelled' },
 ];
 
 export { STATUS_BADGE } from '../../config/listingConfig';
@@ -42,6 +43,12 @@ export const EMPTY_STATE = {
     icon: 'fa-pen-to-square',
     title: 'No changes required',
     subtitle: 'Listings that need edits before approval will appear here.',
+    showCta: false,
+  },
+  cancelled: {
+    icon: 'fa-circle-xmark',
+    title: 'No cancelled listings',
+    subtitle: 'Listings that have been cancelled will appear here.',
     showCta: false,
   },
 };
