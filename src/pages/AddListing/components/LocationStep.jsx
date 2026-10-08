@@ -91,9 +91,31 @@ export function LocationStep({ form, updateForm, validationErrors }) {
         </FormFieldGroup>
 
         <FormFieldGroup className="md:col-span-2">
+          <label className="block text-sm font-semibold text-slate-700 mb-2">
+            Full Address <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            rows={2}
+            id="address"
+            value={form.address}
+            onChange={(e) => updateForm("address", e.target.value)}
+            placeholder="e.g. Building / Door No, Street Name, Plot Details, Whitefield"
+            className={`w-full rounded-2xl border bg-slate-50/50 px-4 py-3 text-sm outline-none resize-none transition-all duration-200 ${
+              validationErrors.address
+                ? "border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 focus:bg-white"
+                : "border-slate-200 focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10 focus:bg-white hover:border-slate-300"
+            }`}
+            required
+          />
+          {validationErrors.address && (
+            <p className="mt-1 text-xs font-semibold text-red-500 animate-fade-in">{validationErrors.address}</p>
+          )}
+        </FormFieldGroup>
+
+        <FormFieldGroup className="md:col-span-2">
           <Input
             id="landmark"
-            label="Full Address / Landmark"
+            label="Landmark / Nearby (Optional)"
             type="text"
             value={form.landmark}
             onChange={(e) => updateForm("landmark", e.target.value)}
@@ -103,11 +125,11 @@ export function LocationStep({ form, updateForm, validationErrors }) {
         </FormFieldGroup>
       </div>
 
-      {form.area && form.city && (
+      {(form.address || form.area || form.city) && (
         <div className="mt-3 p-3 bg-brand-blue/5 border border-brand-blue/20 rounded-xl">
           <p className="text-sm font-medium text-brand-blue flex items-center gap-2">
             <i className="fa-solid fa-location-dot" />
-            {form.area}, {CITY_DATA[form.city]?.label || form.city}, {form.pincode}
+            {[form.address, form.area, CITY_DATA[form.city]?.label || form.city, form.pincode].filter(Boolean).join(", ")}
           </p>
         </div>
       )}

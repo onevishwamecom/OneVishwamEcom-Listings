@@ -62,6 +62,8 @@ function App() {
               {
                 firebaseUid: firebaseUser.uid,
                 email: firebaseUser.email,
+                fullName: firebaseUser.displayName || undefined,
+                role: 'lister',
               },
               {
                 headers: {

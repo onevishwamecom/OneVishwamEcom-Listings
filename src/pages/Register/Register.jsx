@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useAuth } from "@/store/authSlice";
 import logo from "@/assets/logo.png";
@@ -68,11 +68,12 @@ function validateConfirm(password, confirm) {
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { sendOtp, verifyOtp, register, firebaseEmailRegister, loading, error, clearError, successMessage } = useAuth();
   
   const [form, setForm] = useState({
     name: "",
-    email: "",
+    email: location.state?.email || "",
     phone: "",
     otp: "",
     password: "",

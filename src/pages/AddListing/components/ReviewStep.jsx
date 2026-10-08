@@ -91,10 +91,20 @@ export function ReviewStep({
               </div>
             </div>
 
+            {form.address && (
+              <div className="mt-4">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Full Address</p>
+                <p className="text-sm font-medium text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-start gap-2">
+                  <i className="fa-solid fa-location-dot text-brand-blue mt-0.5" />
+                  <span>{form.address}{form.landmark ? ` (Landmark: ${form.landmark})` : ""}</span>
+                </p>
+              </div>
+            )}
+
             {form.description && (
               <div className="mt-4">
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</p>
-                <p className="text-sm font-medium text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">{form.description}</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Detailed Description</p>
+                <p className="text-sm font-medium text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-line">{form.description}</p>
               </div>
             )}
           </div>

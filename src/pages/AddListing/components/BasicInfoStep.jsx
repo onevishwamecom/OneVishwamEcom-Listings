@@ -46,7 +46,7 @@ export function BasicInfoStep({ form, updateForm, validationErrors }) {
 
       <FormFieldGroup>
         <label className="block text-sm font-semibold text-slate-700 mb-2">
-          Detailed Description
+          Detailed Description <span className="text-red-500">*</span>
         </label>
         <textarea
           rows={4}

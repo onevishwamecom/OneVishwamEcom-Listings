@@ -168,6 +168,8 @@ export default function PropertyListingForm({
   const validatePhase3 = () => {
     const errs = {};
     if (!bankLoanDetails.trim()) errs.bankLoanDetails = 'Bank Loan Approval Details are required';
+    if (!form.address?.trim()) errs.address = 'Full Address is required';
+    if (!form.description?.trim()) errs.description = 'Detailed Description is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -364,6 +366,7 @@ export default function PropertyListingForm({
 
         {activePhase === 3 && (
           <Phase3FinalFields
+            form={form}
             bankLoanDetails={bankLoanDetails}
             onChange={handleRootChange}
             photos={photos}
