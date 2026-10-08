@@ -21,6 +21,7 @@ export const INITIAL_FORM = {
   area: "",
   pincode: "",
   landmark: "",
+  address: "",
   contact: "",
   bhk: "",
   bathrooms: "",
@@ -139,7 +140,7 @@ export const REQUIRED_BY_STEP = {
   category: ["category"],
   basic: ["title", "description", "subcategory"],
   details: [],
-  location: ["state", "district", "city", "area", "pincode"],
+  location: ["state", "district", "city", "area", "address", "pincode"],
   pricing: ["price"],
   media: [],
 };

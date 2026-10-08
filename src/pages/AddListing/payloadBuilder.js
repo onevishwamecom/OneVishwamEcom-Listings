@@ -26,6 +26,8 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     displayPrice = form.price || '';
   }
 
+  const formattedLocation = [form.address, form.area, cityLabel].filter(Boolean).join(", ");
+
   const base = {
     title: form.title,
     subtitle: form.subtitle || "",
@@ -40,6 +42,9 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     district: form.district || "Bengaluru Urban",
     city: form.city || "bengaluru",
     area: form.area || "",
+    address: form.address || "",
+    landmark: form.landmark || "",
+    location: formattedLocation || form.area || "",
     pincode: form.pincode || "",
     contact: form.contact || "",
     images: imageUrls || [],

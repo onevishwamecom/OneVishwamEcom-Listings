@@ -409,7 +409,9 @@ export function useAddListingForm() {
         nextForm.price = item.price || item.details?.expectedPrice || item.details?.expectedPricePerAcre || "";
         nextForm.priceSuffix = item.priceSuffix || "";
         nextForm.priceType = item.priceType || nextForm.priceType || "fixed";
-        nextForm.area = item.area || item.location || "";
+        nextForm.area = item.area || "";
+        nextForm.address = item.address || item.landmark || item.details?.address || "";
+        nextForm.landmark = item.landmark || item.details?.landmark || "";
         nextForm.city = item.city || defaultCity;
         nextForm.pincode = item.pincode || "";
         nextForm.contact = item.contact || item.contactPhone || "9876543210";

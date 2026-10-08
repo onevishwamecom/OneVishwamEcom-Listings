@@ -117,6 +117,24 @@ function LoginPage() {
         err?.response?.data?.message ||
         err?.message ||
         "Invalid login credentials. Please try again.";
+
+      if (msg === "USER_NOT_FOUND" || msg.includes("USER_NOT_FOUND") || msg.includes("user-not-found")) {
+        setServerError("User not found. Redirecting to registration page...");
+        Swal.fire({
+          icon: "warning",
+          title: "User Not Found",
+          text: "No account found with these credentials. Redirecting to registration...",
+          timer: 2000,
+          showConfirmButton: false,
+          toast: true,
+          position: "top-end",
+        });
+        setTimeout(() => {
+          navigate("/register", { state: { email: form.email } });
+        }, 1200);
+        return;
+      }
+
       setServerError(msg);
       console.warn("Login failed:", msg);
     }

@@ -14,6 +14,7 @@ const POPULAR_BANKS = [
 ];
 
 export default function Phase3FinalFields({
+  form = {},
   bankLoanDetails = '',
   onChange,
   photos = [],
@@ -102,6 +103,108 @@ export default function Phase3FinalFields({
         accept=".pdf,application/pdf"
         className="hidden"
       />
+
+      {/* Group 0A: Property Location & Address */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div>
+          <h3 className="text-sm font-bold text-slate-800">
+            Property Location & Address <span className="text-red-500">*</span>
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Full physical location, locality, door/plot number, and street details
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Area / Locality
+            </label>
+            <input
+              type="text"
+              value={form.area || ''}
+              onChange={(e) => onChange('area', e.target.value)}
+              placeholder="e.g. Whitefield, Electronic City"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/15 hover:border-slate-300 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              PIN Code
+            </label>
+            <input
+              type="text"
+              value={form.pincode || ''}
+              onChange={(e) => onChange('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="e.g. 560066"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/15 hover:border-slate-300 transition-all font-mono"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Full Address <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              rows={2}
+              value={form.address || ''}
+              onChange={(e) => onChange('address', e.target.value)}
+              placeholder="e.g. Plot #42, 3rd Main Road, Near ITPL Main Entrance, Whitefield, Bengaluru"
+              className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white outline-none resize-none transition-all ${
+                errors.address
+                  ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                  : 'border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/15 hover:border-slate-300'
+              }`}
+            />
+            {errors.address && (
+              <p className="text-[11px] font-medium text-red-500 mt-1">{errors.address}</p>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Landmark / Nearby (Optional)
+            </label>
+            <input
+              type="text"
+              value={form.landmark || ''}
+              onChange={(e) => onChange('landmark', e.target.value)}
+              placeholder="e.g. Opp. City Mall, Next to Hope Farm Metro Station"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/15 hover:border-slate-300 transition-all"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Group 0B: Detailed Property Description */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div>
+          <h3 className="text-sm font-bold text-slate-800">
+            Detailed Description <span className="text-red-500">*</span>
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Comprehensive details highlighting key features, plot layout, accessibility, and highlights
+          </p>
+        </div>
+
+        <div>
+          <textarea
+            rows={4}
+            value={form.description || ''}
+            onChange={(e) => onChange('description', e.target.value)}
+            placeholder="Describe the property in detail. Mention orientation, road width, surrounding developments, connectivity, security, and unique selling points..."
+            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white outline-none resize-none transition-all ${
+              errors.description
+                ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                : 'border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/15 hover:border-slate-300'
+            }`}
+          />
+          {errors.description && (
+            <p className="text-[11px] font-medium text-red-500 mt-1">{errors.description}</p>
+          )}
+        </div>
+      </div>
 
       {/* Group 1: Property Photos */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">

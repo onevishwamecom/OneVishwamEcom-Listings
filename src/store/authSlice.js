@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
 import { useSelector, useDispatch } from 'react-redux';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile as updateFirebaseProfile } from 'firebase/auth';
 import { auth } from '@/firebase/config';
 import { resolvePartnerIdentity } from '@/config/partnerDirectory';
 import { isAllowedEmail, COMMON_DEFAULT_PASSWORD, getAllowedAccountDetails } from '@/config/allowedCredentials';
@@ -23,27 +23,7 @@ export const firebaseEmailLogin = createAsyncThunk(
     try {
       const cleanEmail = (email || '').trim().toLowerCase();
 
-      let userCredential = null;
-      try {
-        userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
-      } catch (signInErr) {
-        if (
-          signInErr.code === 'auth/user-not-found' ||
-          signInErr.code === 'auth/invalid-credential'
-        ) {
-          // If the account does not exist yet in Firebase, auto-register it with the predefined credentials
-          try {
-            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
-          } catch (createErr) {
-            if (createErr.code === 'auth/email-already-in-use') {
-              throw signInErr;
-            }
-            throw createErr;
-          }
-        } else {
-          throw signInErr;
-        }
-      }
+      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
 
       const firebaseUser = userCredential.user;
       const idToken = await firebaseUser.getIdToken(true);
@@ -68,6 +48,7 @@ export const firebaseEmailLogin = createAsyncThunk(
           {
             firebaseUid: firebaseUser.uid,
             email: cleanEmail,
+            role: 'lister',
           },
           {
             headers: {
@@ -88,10 +69,10 @@ export const firebaseEmailLogin = createAsyncThunk(
       return profileData;
     } catch (err) {
       let message = 'Login failed';
-      if (err.code === 'auth/user-not-found') {
-        message = 'No account found with this email address.';
-      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        message = 'Invalid email or password. Please try Vish@123.';
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        message = 'USER_NOT_FOUND';
+      } else if (err.code === 'auth/wrong-password') {
+        message = 'Incorrect password. Please try again.';
       } else if (err.code === 'auth/too-many-requests') {
         message = 'Too many failed login attempts. Access temporarily disabled for security.';
       } else if (err.code === 'auth/invalid-email') {
@@ -122,6 +103,9 @@ export const firebaseEmailRegister = createAsyncThunk(
       }
 
       const firebaseUser = userCredential.user;
+      if (name && name.trim()) {
+        await updateFirebaseProfile(firebaseUser, { displayName: name.trim() }).catch(() => null);
+      }
       const idToken = await firebaseUser.getIdToken(true);
       if (!idToken) {
         throw new Error('No ID token received from Firebase Auth');
