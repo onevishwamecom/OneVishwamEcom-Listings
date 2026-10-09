@@ -7,7 +7,8 @@ import { INITIAL_FORM, STEPS, CATEGORY_FIELDS, REQUIRED_BY_STEP } from "./formCo
 import { validateStep, canNext } from "./validation";
 import { createNewListingData, createUpdatedListingData } from "./payloadBuilder";
 import { CATEGORY_TO_MOCK, SERVICE_TYPE_TO_CATEGORY, SUBCATEGORIES } from "./constants";
-import { findListing, createListing, updateListing, invalidateListings, uploadImages, uploadVideo, uploadBrochure } from "../../services/listings";
+import { findListing, createListing, updateListing, invalidateListings } from "../../services/listings";
+import { uploadMediaToStorage } from "../../services/storageService";
 import { getCachedUser } from "../../services/userCache";
 import { useListingStats } from "../../components/ListingStats";
 import { resolvePartnerIdentity } from "../../config/partnerDirectory";
@@ -258,40 +259,76 @@ export function useAddListingForm() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const typeKey = CATEGORY_TO_MOCK[category] || category;
+      const typeKey = CATEGORY_TO_MOCK[category] || category || 'properties';
+      const targetProductId = originalListingId || `item_${Date.now()}`;
 
-      // Extract File objects from photos for upload (filter out existing images without file)
-      const photoFiles = photos.filter((p) => p.file).map((p) => p.file);
-
-      // Upload new photos to backend
-      let uploadedImageUrls = [];
-      if (photoFiles.length > 0) {
-        const uploadResult = await uploadImages(photoFiles);
-        uploadedImageUrls = uploadResult.images || [];
+      // Upload photos directly to Firebase Storage
+      const finalImageUrls = [];
+      for (const photo of photos) {
+        if (photo.file) {
+          try {
+            const uploadedUrl = await uploadMediaToStorage({
+              category: typeKey,
+              productId: targetProductId,
+              mediaType: 'images',
+              file: photo.file,
+            });
+            finalImageUrls.push(uploadedUrl);
+          } catch (pErr) {
+            console.warn("Firebase image upload failed:", pErr?.message);
+          }
+        } else if (photo.url && !photo.url.startsWith('blob:')) {
+          finalImageUrls.push(photo.url);
+        }
       }
 
-      // Combine existing image URLs (from editing) with newly uploaded URLs
-      const finalImageUrls = [...imageUrls.filter((url) => !url.startsWith('blob:')), ...uploadedImageUrls];
+      // Upload supporting documents to Firebase Storage
+      const finalDocUrls = [];
+      for (const doc of documents) {
+        if (doc.file) {
+          try {
+            const uploadedDocUrl = await uploadMediaToStorage({
+              category: typeKey,
+              productId: targetProductId,
+              mediaType: 'documents',
+              file: doc.file,
+            });
+            finalDocUrls.push(uploadedDocUrl);
+          } catch (dErr) {
+            console.warn("Firebase document upload failed:", dErr?.message);
+          }
+        } else if (doc.url && !doc.url.startsWith('blob:')) {
+          finalDocUrls.push(doc.url);
+        }
+      }
 
       // Upload video if present as a File
       let finalVideoUrl = form.videoUrl || form.video || null;
-      if (video && typeof video !== 'string') {
+      if (video && typeof video !== 'string' && video instanceof File) {
         try {
-          const videoRes = await uploadVideo(video);
-          finalVideoUrl = videoRes.videoUrl || (videoRes.videos && videoRes.videos[0]) || null;
+          finalVideoUrl = await uploadMediaToStorage({
+            category: typeKey,
+            productId: targetProductId,
+            mediaType: 'videos',
+            file: video,
+          });
         } catch (vErr) {
-          console.warn("Video upload failed:", vErr?.message);
+          console.warn("Firebase video upload failed:", vErr?.message);
         }
       }
 
       // Upload brochure if present as a File
       let finalBrochureUrl = brochureUrl || form.brochure || null;
-      if (brochure && typeof brochure !== 'string') {
+      if (brochure && typeof brochure !== 'string' && brochure instanceof File) {
         try {
-          const brochureRes = await uploadBrochure(brochure);
-          finalBrochureUrl = brochureRes.brochureUrl || brochureRes.url || null;
+          finalBrochureUrl = await uploadMediaToStorage({
+            category: typeKey,
+            productId: targetProductId,
+            mediaType: 'documents',
+            file: brochure,
+          });
         } catch (bErr) {
-          console.warn("Brochure upload failed:", bErr?.message);
+          console.warn("Firebase brochure upload failed:", bErr?.message);
         }
       }
 
