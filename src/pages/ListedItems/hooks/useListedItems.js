@@ -6,6 +6,7 @@ import { getDisplayId } from '@/utils';
 import { parsePrice, PRICE_LIMITS, SERVICE_CONFIG } from '../constants';
 import useCachedData from '@/hooks/useCachedData';
 import { fetchListings, deleteListing, invalidateListings } from '@/services/listings';
+import { deleteMediaFromStorage } from '@/services/storageService';
 import { CACHE_TTL } from '@/services/cacheService';
 import { useDebouncedValue } from '@/hooks/useDebounce';
 
@@ -145,6 +146,19 @@ export function useListedItems() {
 
     setBusyId(id);
     try {
+      // Clean up Firebase Storage files associated with this item if any
+      const mediaUrls = [
+        ...(Array.isArray(item?.images) ? item.images : []),
+        ...(Array.isArray(item?.videos) ? item.videos : []),
+        ...(Array.isArray(item?.documents) ? item.documents : []),
+        item?.videoUrl,
+        item?.video,
+        item?.pdfUrl,
+        item?.brochure,
+      ].filter((u) => u && typeof u === 'string' && u.includes('firebasestorage'));
+
+      await Promise.all(mediaUrls.map((url) => deleteMediaFromStorage(url)));
+
       await deleteListing(type, id);
       setAllListings((prev) => {
         const next = { ...prev };
