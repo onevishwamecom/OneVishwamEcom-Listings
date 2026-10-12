@@ -16,7 +16,7 @@ function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, s
   useEffect(() => {
     if (user) {
       setProfileForm({
-        fullName: user.fullName || user.name || '',
+        fullName: user.fullName || '',
         email: user.email || '',
         mobile: user.mobile || '',
         city: user.city || '',
@@ -108,7 +108,7 @@ function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, s
   }`;
 
   const avatarSrc = user?.profileImage?.url || null;
-  const initial = (user?.fullName || user?.name) ? (user.fullName || user.name).charAt(0).toUpperCase() : 'U';
+  const initial = user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U';
 
   return {
     activeTab,

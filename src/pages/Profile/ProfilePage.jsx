@@ -36,8 +36,7 @@ function ProfilePage() {
     handleSavePreferences,
   } = useNotifications(user, updateNotifications);
 
-  const listerId = user?.listerId || user?._id || '—';
-  const accountStatus = (user?.accountStatus || 'active').replace(/-/g, ' ');
+
 
   return (
     <PageContainer>

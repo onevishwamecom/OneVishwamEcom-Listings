@@ -11,7 +11,7 @@ export default function Dashboard() {
   const { total: statsTotal, byType: statsByType, loading, error: statsError, refresh: refreshStats } = useListingStats();
   const stats = { total: statsTotal, byType: statsByType };
 
-  const displayName = user?.fullName || user?.name || 'User';
+  const displayName = user?.fullName || 'User';
   const initial = displayName ? displayName.charAt(0).toUpperCase() : 'U';
 
   const verifyEmailAction = !user?.isEmailVerified ? (
