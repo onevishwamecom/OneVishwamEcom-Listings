@@ -16,7 +16,7 @@ import {
 export const CATEGORIES_CONFIG = [
   {
     id: "real-estate",
-    title: "Real Estate",
+    title: "Properties",
     description: "Plots, villas, apartments, commercial & agricultural land",
     icon: Home,
     iconBg: "bg-blue-50 text-blue-600",

@@ -1,6 +1,6 @@
 export const SERVICE_CONFIG = {
   properties: {
-    label: 'Real Estate',
+    label: 'Properties',
     icon: 'fa-house-chimney',
     color: 'bg-brand-blue/10 text-brand-blue border-brand-blue/25',
     gradient: 'from-brand-blue to-brand-blue/70',
