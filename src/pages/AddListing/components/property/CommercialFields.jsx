@@ -1,5 +1,6 @@
 import React from 'react';
 import RadioGroupWithOther from './RadioGroupWithOther';
+import PossessionStatusSelector from './PossessionStatusSelector';
 
 export default function CommercialFields({
   details = {},
@@ -210,6 +211,19 @@ export default function CommercialFields({
         </div>
 
         <div className="space-y-4">
+          <div className="pt-1">
+            <PossessionStatusSelector
+              propertyType="Commercial"
+              value={details.possessionStatus || details.possession || ""}
+              onChange={(val) => {
+                update("possessionStatus", val);
+                update("possession", val);
+              }}
+              error={errors.possessionStatus || errors.possession}
+              required={false}
+            />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Occupancy Status */}
             <div>

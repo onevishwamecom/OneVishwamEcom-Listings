@@ -262,3 +262,10 @@ export const SERVICE_TYPE_TO_CATEGORY = {
 };
 
 export const CITY_DATA = cities;
+export const POSSESSION_STATUS_OPTIONS = [
+  "Ready to Move In",
+  "Under Construction",
+  "Ready to Occupy",
+  "Ready for Registration",
+  "Resale",
+];

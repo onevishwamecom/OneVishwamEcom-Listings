@@ -55,6 +55,8 @@ export function getCategoryFields(listing) {
     if (listing.area_sqft) fields.push({ label: 'Area', value: `${listing.area_sqft} Sq. Ft.` });
     if (listing.furnishing) fields.push({ label: 'Furnishing', value: listing.furnishing });
     if (listing.floor) fields.push({ label: 'Floor', value: listing.floor });
+    const poss = listing.possessionStatus || listing.possession || listing.details?.possessionStatus || listing.details?.possession;
+    if (poss) fields.push({ label: 'Possession Status', value: poss });
     if (listing.parking) fields.push({ label: 'Parking', value: listing.parking });
     if (listing.extraRoom) fields.push({ label: 'Extra Room', value: listing.extraRoom });
     if (listing.projectCount) fields.push({ label: 'Total Projects', value: listing.projectCount });

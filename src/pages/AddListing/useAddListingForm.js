@@ -491,7 +491,8 @@ export function useAddListingForm() {
           nextForm.cornerPlot = item.cornerPlot || d.cornerPlot || "";
           nextForm.boundaryWall = item.boundaryWall || d.boundaryWall || "";
           nextForm.approval = item.approval || d.approvalAuthority || d.approvedLayout || "";
-          nextForm.possession = item.possession || d.possession || "";
+          nextForm.possession = item.possessionStatus || item.possession || d.possessionStatus || d.possession || "";
+        nextForm.possessionStatus = nextForm.possession;
           nextForm.loanApproved = item.loanApproved ? "Yes" : (item.bankLoanDetails ? "Yes" : "No");
           nextForm.gatedCommunity = item.gatedCommunity !== undefined ? item.gatedCommunity : d.gatedCommunity;
           nextForm.negotiable = item.negotiable !== undefined ? item.negotiable : d.negotiable;

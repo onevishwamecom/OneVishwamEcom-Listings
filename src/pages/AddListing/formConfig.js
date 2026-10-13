@@ -1,4 +1,5 @@
 import { currentYear } from "../../utils";
+import { POSSESSION_STATUS_OPTIONS } from "./constants";
 
 export const INITIAL_FORM = {
   vendorName: "",
@@ -32,6 +33,7 @@ export const INITIAL_FORM = {
   towers: "",
   approval: "",
   possession: "",
+  possessionStatus: "",
   loanApproved: "",
   parking: "",
   extraRoom: "",
@@ -81,7 +83,7 @@ export const CATEGORY_FIELDS = {
     { name: "floors", label: "Floors / Blocks", type: "text", placeholder: "e.g. B+G+11 Floors · 3 Towers · 6 Blocks" },
     { name: "towers", label: "Towers", type: "text", placeholder: "e.g. 3 Towers" },
     { name: "approval", label: "Approval Authority", type: "text", placeholder: "e.g. BDA, BBMP, BMRDA, RERA, EOI" },
-    { name: "possession", label: "Possession Date / Status", type: "text", placeholder: "e.g. Feb 2029 or Ready to Move" },
+    { name: "possessionStatus", label: "Possession Status", type: "select", options: POSSESSION_STATUS_OPTIONS },
     { name: "loanApproved", label: "Bank Loan Approved", type: "select", options: ["Yes", "No"] },
     { name: "parking", label: "Parking", type: "text", placeholder: "e.g. 2 Covered + 2 Open" },
     { name: "extraRoom", label: "Extra Room", type: "text", placeholder: "e.g. Pooja Room, Study" },
