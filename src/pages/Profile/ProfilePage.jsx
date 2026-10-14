@@ -77,9 +77,9 @@ function ProfilePage() {
 
         <div className="p-6 sm:p-8">
           {saveSuccess && (
-            <div className="mb-8 rounded-2xl bg-brand-gold/10 border border-brand-gold/30 p-4 text-sm font-medium text-brand-gold flex items-start gap-3 animate-fade-in" role="status">
-              <i className="fa-solid fa-check-circle mt-0.5" aria-hidden="true" />
-              {saveSuccess}
+            <div className="mb-8 rounded-2xl bg-emerald-50 border border-emerald-200/80 p-4 text-sm font-medium text-emerald-800 flex items-start gap-3 animate-fade-in shadow-sm" role="status">
+              <i className="fa-solid fa-circle-check mt-0.5 text-emerald-600 text-base" aria-hidden="true" />
+              <span>{saveSuccess}</span>
             </div>
           )}
           {saveError && (

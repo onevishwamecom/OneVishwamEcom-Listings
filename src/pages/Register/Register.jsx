@@ -6,7 +6,7 @@ import logo from "@/assets/logo.png";
 import { AuthBrandPanel } from "@/components/AuthBrandPanel";
 import Input from "@/components/ui/Input";
 import { OTPInput } from "@/components/ui/OTPInput";
-import { normalizePhone, normalizePhoneForApi } from "@/utils/phone";
+import { normalizePhone } from "@/utils/phone";
 import { sendPhoneOtp, confirmPhoneOtp, getRecaptchaVerifier } from "@/firebase/phoneAuth";
 import { ALLOWED_ACCOUNTS, isAllowedEmail } from "@/config/allowedCredentials";
 
@@ -249,7 +249,7 @@ function RegisterPage() {
       await firebaseEmailRegister({
         name: form.name,
         email: form.email,
-        phone: normalizePhoneForApi(form.phone),
+        phone: normalizePhone(form.phone) || form.phone.trim(),
         password: form.password,
       }).unwrap();
 
