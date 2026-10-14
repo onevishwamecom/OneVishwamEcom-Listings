@@ -19,7 +19,7 @@ function Sidebar({ collapsed = false, onToggleCollapse }) {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const displayName = user?.fullName || user?.name || "User";
+  const displayName = user?.fullName || "User";
 
   // Close mobile sidebar on route change
   useEffect(() => {

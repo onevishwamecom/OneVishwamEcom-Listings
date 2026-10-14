@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
 import { useSelector, useDispatch } from 'react-redux';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile as updateFirebaseProfile } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile as updateFirebaseProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/firebase/config';
 import { resolvePartnerIdentity } from '@/config/partnerDirectory';
 import { isAllowedEmail, COMMON_DEFAULT_PASSWORD, getAllowedAccountDetails } from '@/config/allowedCredentials';
@@ -13,9 +13,29 @@ import { setAuthTokens, clearAuthTokens, getAccessToken } from '@/services/api';
 export const clearError = createAction('auth/clearError');
 export const clearSuccess = createAction('auth/clearSuccess');
 
+// Helper to strip 91 / +91 country code prefix from user phone/mobile
+export const cleanUserAccount = (account) => {
+  if (!account || typeof account !== 'object') return account;
+  const cleaned = { ...account };
+  ['mobile', 'phoneNumber', 'phone', 'contact'].forEach((key) => {
+    if (cleaned[key]) {
+      const str = String(cleaned[key]).trim();
+      if (str.length === 12 && str.startsWith('91')) {
+        cleaned[key] = str.slice(2);
+      } else if (str.length === 13 && str.startsWith('+91')) {
+        cleaned[key] = str.slice(3);
+      }
+    }
+  });
+  return cleaned;
+};
+
 // Backend auth responses carry the account under a type-specific key:
 // user endpoints -> { user }, lister endpoints -> { lister }.
-const extractAccount = (payload) => payload?.user || payload?.lister || null;
+const extractAccount = (payload) => {
+  const account = payload?.user || payload?.lister || null;
+  return cleanUserAccount(account);
+};
 
 export const firebaseEmailLogin = createAsyncThunk(
   'auth/firebaseEmailLogin',
@@ -115,13 +135,16 @@ export const firebaseEmailRegister = createAsyncThunk(
       localStorage.removeItem('refreshToken');
 
       // Save to MongoDB (same pattern as Vishwam-Frontend)
+      const rawDigits = phone ? String(phone).replace(/\D/g, '') : '';
+      const cleanPhone = rawDigits.length === 12 && rawDigits.startsWith('91') ? rawDigits.slice(2) : rawDigits;
+
       let profileData = {
         firebaseUid: firebaseUser.uid,
         email: cleanEmail,
         fullName: name || firebaseUser.displayName || 'User',
         name: name || firebaseUser.displayName || 'User',
-        phoneNumber: phone || '',
-        mobile: phone || '',
+        phoneNumber: cleanPhone,
+        mobile: cleanPhone,
         role: 'lister',
       };
 
@@ -132,8 +155,8 @@ export const firebaseEmailRegister = createAsyncThunk(
             firebaseUid: firebaseUser.uid,
             email: cleanEmail,
             fullName: name,
-            phoneNumber: phone,
-            mobile: phone,
+            phoneNumber: cleanPhone,
+            mobile: cleanPhone,
             role: 'lister',
           },
           {
@@ -322,10 +345,26 @@ export const uploadProfileImage = createAsyncThunk('auth/uploadProfileImage', as
 
 export const forgotPassword = createAsyncThunk('auth/forgotPassword', async (email, { rejectWithValue }) => {
   try {
-    await authApi.forgotPassword(email);
-    return { email };
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail) {
+      return rejectWithValue('Please enter your email address');
+    }
+    await sendPasswordResetEmail(auth, cleanEmail);
+    // Also notify backend in the background if available
+    authApi.forgotPassword(cleanEmail).catch(() => {});
+    return { email: cleanEmail };
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to send reset email');
+    let message = 'Failed to send password reset email';
+    if (err.code === 'auth/user-not-found') {
+      message = 'No account found with this email address. Please check or register.';
+    } else if (err.code === 'auth/invalid-email') {
+      message = 'Please enter a valid email address.';
+    } else if (err.code === 'auth/too-many-requests') {
+      message = 'Too many requests. Please wait a moment before trying again.';
+    } else if (err.message) {
+      message = err.message;
+    }
+    return rejectWithValue(message);
   }
 });
 
@@ -362,7 +401,10 @@ const storedUser = localStorage.getItem('user');
 let parsedUser = null;
 if (storedUser) {
   try {
-    parsedUser = JSON.parse(storedUser);
+    parsedUser = cleanUserAccount(JSON.parse(storedUser));
+    if (parsedUser) {
+      localStorage.setItem('user', JSON.stringify(parsedUser));
+    }
   } catch {
     localStorage.removeItem('user');
   }
@@ -380,9 +422,10 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setUser(state, action) {
-      state.user = action.payload;
-      state.isLoggedIn = Boolean(action.payload && getAccessToken());
-      if (action.payload) localStorage.setItem('user', JSON.stringify(action.payload));
+      const cleaned = cleanUserAccount(action.payload);
+      state.user = cleaned;
+      state.isLoggedIn = Boolean(cleaned && getAccessToken());
+      if (cleaned) localStorage.setItem('user', JSON.stringify(cleaned));
     },
     clearAuth(state) {
       state.user = null;
@@ -414,9 +457,9 @@ builder
         .addCase(firebaseEmailLogin.pending, handlePending)
         .addCase(firebaseEmailLogin.fulfilled, (state, action) => {
           state.loading = false;
-          state.user = action.payload;
+          state.user = cleanUserAccount(action.payload);
           state.isLoggedIn = true;
-          localStorage.setItem('user', JSON.stringify(state.user));
+          if (state.user) localStorage.setItem('user', JSON.stringify(state.user));
         })
         .addCase(firebaseEmailLogin.rejected, handleRejected)
         .addCase(login.pending, handlePending)
@@ -424,7 +467,7 @@ builder
         state.loading = false;
         state.user = extractAccount(action.payload);
         state.isLoggedIn = true;
-        localStorage.setItem('user', JSON.stringify(state.user));
+        if (state.user) localStorage.setItem('user', JSON.stringify(state.user));
       })
       .addCase(login.rejected, handleRejected)
       .addCase(phoneLogin.pending, handlePending)
@@ -432,7 +475,7 @@ builder
         state.loading = false;
         state.user = extractAccount(action.payload);
         state.isLoggedIn = true;
-        localStorage.setItem('user', JSON.stringify(state.user));
+        if (state.user) localStorage.setItem('user', JSON.stringify(state.user));
       })
       .addCase(phoneLogin.rejected, handleRejected)
       .addCase(sendOtp.pending, handlePending)
@@ -452,7 +495,7 @@ builder
         state.loading = false;
         state.user = extractAccount(action.payload);
         state.isLoggedIn = true;
-        localStorage.setItem('user', JSON.stringify(state.user));
+        if (state.user) localStorage.setItem('user', JSON.stringify(state.user));
         state.successMessage = 'Registration successful';
       })
       .addCase(register.rejected, handleRejected)
@@ -461,24 +504,25 @@ builder
         state.loading = false;
         state.user = extractAccount(action.payload);
         state.isLoggedIn = true;
-        localStorage.setItem('user', JSON.stringify(state.user));
+        if (state.user) localStorage.setItem('user', JSON.stringify(state.user));
       })
       .addCase(emailRegister.rejected, handleRejected)
       .addCase(firebaseEmailRegister.pending, handlePending)
       .addCase(firebaseEmailRegister.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        state.user = cleanUserAccount(action.payload);
         state.isLoggedIn = true;
         state.error = null;
         state.successMessage = 'Registration successful';
+        if (state.user) localStorage.setItem('user', JSON.stringify(state.user));
       })
       .addCase(firebaseEmailRegister.rejected, handleRejected)
       .addCase(fetchMe.pending, (state) => { state.loading = true; })
       .addCase(fetchMe.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        state.user = cleanUserAccount(action.payload);
         state.isLoggedIn = true;
-        localStorage.setItem('user', JSON.stringify(action.payload));
+        if (state.user) localStorage.setItem('user', JSON.stringify(state.user));
       })
       .addCase(fetchMe.rejected, (state, action) => {
         state.loading = false;
@@ -495,9 +539,9 @@ builder
       .addCase(fetchListerMe.pending, (state) => { state.loading = true; })
       .addCase(fetchListerMe.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        state.user = cleanUserAccount(action.payload);
         state.isLoggedIn = true;
-        localStorage.setItem('user', JSON.stringify(action.payload));
+        if (state.user) localStorage.setItem('user', JSON.stringify(state.user));
       })
       .addCase(fetchListerMe.rejected, (state, action) => {
         state.loading = false;
@@ -526,9 +570,9 @@ builder
         localStorage.removeItem('user');
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
-        state.user = { ...state.user, ...action.payload };
+        state.user = cleanUserAccount({ ...state.user, ...action.payload });
         state.successMessage = 'Profile updated successfully';
-        localStorage.setItem('user', JSON.stringify(state.user));
+        if (state.user) localStorage.setItem('user', JSON.stringify(state.user));
       })
       .addCase(updateProfile.rejected, handleRejected)
       .addCase(changePassword.fulfilled, (state) => {

@@ -139,7 +139,7 @@ export default function AddListing() {
                     <i className="fa-solid fa-arrow-left text-xs" />
                   </button>
                   <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
-                    {isEditing ? "Edit Real Estate Property" : "List Real Estate Property"}
+                    {isEditing ? "Edit Property" : "List Property"}
                   </h1>
                 </div>
 

@@ -31,12 +31,12 @@ export function normalizePhone(raw) {
 }
 
 /**
- * Format phone for backend API (adds 91 prefix)
+ * Format phone for API (returns 10-digit number without 91 prefix)
  */
 export function normalizePhoneForApi(raw) {
   const tenDigit = normalizePhone(raw);
   if (!tenDigit) return '';
-  return `91${tenDigit}`;
+  return tenDigit;
 }
 
 export function formatPhoneForDisplay(normalized) {

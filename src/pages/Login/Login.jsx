@@ -291,6 +291,7 @@ function LoginPage() {
             </div>
             <Link
               to="/forgot-password"
+              state={{ email: form.email }}
               className="text-brand-blue hover:text-brand-blue/80 font-bold transition-colors"
             >
               Forgot Password?

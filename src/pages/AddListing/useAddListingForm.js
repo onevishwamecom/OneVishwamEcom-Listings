@@ -366,10 +366,10 @@ export function useAddListingForm() {
           videoUrl: finalVideoUrl,
           videos: finalVideoUrl ? [finalVideoUrl] : [],
           contributor: {
-            name: user.fullName || user.name || 'Unknown',
+            name: user.fullName || 'Unknown',
             type: assignedRole || user.role || 'vendor',
             email: user.email || '',
-            contact: user.contact || user.phone || user.mobile || listingPayload.contact || '',
+            contact: user.mobile || listingPayload.contact || '',
             city: user.city || listingPayload.city || '',
           },
         });
@@ -440,22 +440,22 @@ export function useAddListingForm() {
           }
         });
 
-        nextForm.title = item.title || item.name || item.details?.propertyName || item.details?.projectName || nextForm.title;
+        nextForm.title = item.title || nextForm.title;
         nextForm.subtitle = item.subtitle || "";
-        nextForm.description = item.description || (typeof item.details === 'string' ? item.details : item.details?.description) || "";
-        nextForm.price = item.price || item.details?.expectedPrice || item.details?.expectedPricePerAcre || "";
+        nextForm.description = item.description || "";
+        nextForm.price = item.price || "";
         nextForm.priceSuffix = item.priceSuffix || "";
-        nextForm.priceType = item.priceType || nextForm.priceType || "fixed";
+        nextForm.priceType = item.priceType || "fixed";
         nextForm.area = item.area || "";
-        nextForm.address = item.address || item.landmark || item.details?.address || "";
-        nextForm.landmark = item.landmark || item.details?.landmark || "";
+        nextForm.address = item.address || item.landmark || "";
+        nextForm.landmark = item.landmark || "";
         nextForm.city = item.city || defaultCity;
         nextForm.pincode = item.pincode || "";
-        nextForm.contact = item.contact || item.contactPhone || "9876543210";
+        nextForm.contact = item.contact || "9876543210";
         nextForm.category = serviceType;
-        nextForm.vendorName = item.vendorName || item.details?.vendorName || "";
-        nextForm.channelPartnerName = item.channelPartnerName || item.details?.channelPartnerName || "";
-        nextForm.bankLoanDetails = item.bankLoanDetails || item.details?.bankLoanDetails || "";
+        nextForm.vendorName = item.vendorName || "";
+        nextForm.channelPartnerName = item.channelPartnerName || "";
+        nextForm.bankLoanDetails = item.bankLoanDetails || "";
 
         // Resolve subcategory robustly
         const rawSubcategory =
@@ -491,7 +491,8 @@ export function useAddListingForm() {
           nextForm.cornerPlot = item.cornerPlot || d.cornerPlot || "";
           nextForm.boundaryWall = item.boundaryWall || d.boundaryWall || "";
           nextForm.approval = item.approval || d.approvalAuthority || d.approvedLayout || "";
-          nextForm.possession = item.possession || d.possession || "";
+          nextForm.possession = item.possessionStatus || item.possession || d.possessionStatus || d.possession || "";
+        nextForm.possessionStatus = nextForm.possession;
           nextForm.loanApproved = item.loanApproved ? "Yes" : (item.bankLoanDetails ? "Yes" : "No");
           nextForm.gatedCommunity = item.gatedCommunity !== undefined ? item.gatedCommunity : d.gatedCommunity;
           nextForm.negotiable = item.negotiable !== undefined ? item.negotiable : d.negotiable;

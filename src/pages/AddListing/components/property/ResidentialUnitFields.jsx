@@ -1,6 +1,7 @@
 import React from 'react';
 import RadioGroupWithOther from './RadioGroupWithOther';
 import CheckboxGroupWithOther from './CheckboxGroupWithOther';
+import PossessionStatusSelector from './PossessionStatusSelector';
 
 const AMENITIES_OPTIONS = [
   'Lift',
@@ -291,15 +292,16 @@ export default function ResidentialUnitFields({
           </div>
 
           {/* Possession status */}
-          <div>
-            <RadioGroupWithOther
-              label="Possession Status"
-              name="possession"
-              options={['Ready to Move In', 'Resale', 'Under Construction']}
-              value={details.possession || ''}
-              onChange={(val) => update('possession', val)}
+          <div className="md:col-span-2">
+            <PossessionStatusSelector
+              propertyType={propertyType}
+              value={details.possessionStatus || details.possession || ""}
+              onChange={(val) => {
+                update("possessionStatus", val);
+                update("possession", val);
+              }}
+              error={errors.possessionStatus || errors.possession}
               required
-              error={errors.possession}
             />
           </div>
 

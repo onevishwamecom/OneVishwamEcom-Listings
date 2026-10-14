@@ -3,7 +3,7 @@ import { cities } from "../../data/locations";
 export const CATEGORIES = [
   {
     id: "real-estate",
-    label: "Real Estate",
+    label: "Properties",
     icon: "fa-house-chimney",
     desc: "Plots, Layouts, Villas, Agricultural Land & Commercial Spaces",
     badge: "Channel Partner Intake",
@@ -122,6 +122,11 @@ export const CATEGORIES = [
 ];
 
 export const SUBCATEGORIES = {
+  properties: [
+    "Apartment",
+    "Villa",
+    "Plot"
+  ],
   "real-estate": [
     "Apartment",
     "Villa",
@@ -219,6 +224,7 @@ export const PRICE_UNITS = [
 ];
 
 export const PRICE_SUFFIXES_BY_CATEGORY = {
+  properties: ["", "/ Sq. Ft.", "/ month", "/ year", "Onwards"],
   "real-estate": ["", "/ Sq. Ft.", "/ month", "/ year", "Onwards"],
   vehicle: ["", "Onwards", "EMI Available"],
   grocery: ["", "/ kg", "/ piece", "/ pack", "/ liter", "/ dozen"],
@@ -231,6 +237,7 @@ export const PRICE_SUFFIXES_BY_CATEGORY = {
 };
 
 export const CATEGORY_TO_MOCK = {
+  properties: "properties",
   "real-estate": "properties",
   vehicle: "vehicles",
   grocery: "groceries",
@@ -255,3 +262,10 @@ export const SERVICE_TYPE_TO_CATEGORY = {
 };
 
 export const CITY_DATA = cities;
+export const POSSESSION_STATUS_OPTIONS = [
+  "Ready to Move In",
+  "Under Construction",
+  "Ready to Occupy",
+  "Ready for Registration",
+  "Resale",
+];
