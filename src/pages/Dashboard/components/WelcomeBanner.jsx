@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
 export function WelcomeBanner({ user, verifyEmailAction }) {
-  const displayName = user?.fullName || user?.name || 'User';
+  const displayName = user?.fullName || 'User';
   const initial = displayName ? displayName.charAt(0).toUpperCase() : 'U';
 
   const greeting = (() => {

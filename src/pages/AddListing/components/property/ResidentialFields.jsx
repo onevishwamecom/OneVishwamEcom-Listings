@@ -1,5 +1,6 @@
 import React from 'react';
 import RadioGroupWithOther from './RadioGroupWithOther';
+import PossessionStatusSelector from './PossessionStatusSelector';
 
 export default function ResidentialFields({
   details = {},
@@ -90,6 +91,20 @@ export default function ResidentialFields({
               required
               error={errors.cornerPlot}
               otherPlaceholder="Specify plot positioning"
+            />
+          </div>
+
+          {/* Possession Status */}
+          <div className="md:col-span-2">
+            <PossessionStatusSelector
+              propertyType="Residential"
+              value={details.possessionStatus || details.possession || ""}
+              onChange={(val) => {
+                update("possessionStatus", val);
+                update("possession", val);
+              }}
+              error={errors.possessionStatus || errors.possession}
+              required={false}
             />
           </div>
         </div>

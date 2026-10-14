@@ -58,8 +58,9 @@ export function getCategoryFields(listing) {
     else if (listing.floor) fields.push({ label: 'Floor', value: listing.floor });
     if (listing.towers) fields.push({ label: 'Towers', value: listing.towers });
     if (listing.approval) fields.push({ label: 'Approval', value: listing.approval });
-    if (listing.possession || listing.possessionStatus) fields.push({ label: 'Possession', value: listing.possession || listing.possessionStatus });
     if (listing.furnishing) fields.push({ label: 'Furnishing', value: listing.furnishing });
+    const poss = listing.possessionStatus || listing.possession || listing.details?.possessionStatus || listing.details?.possession;
+    if (poss) fields.push({ label: 'Possession Status', value: poss });
     if (listing.parking) fields.push({ label: 'Parking', value: listing.parking });
     if (listing.extraRoom) fields.push({ label: 'Extra Room', value: listing.extraRoom });
     if (listing.loanApproved) fields.push({ label: 'Bank Loan Approved', value: 'Yes' });

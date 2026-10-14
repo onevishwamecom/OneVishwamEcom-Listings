@@ -1,5 +1,6 @@
 import React from 'react';
 import RadioGroupWithOther from './RadioGroupWithOther';
+import PossessionStatusSelector from './PossessionStatusSelector';
 import CheckboxGroupWithOther from './CheckboxGroupWithOther';
 
 const INDUSTRIAL_WATER_OPTIONS = [
@@ -70,6 +71,20 @@ export default function IndustrialFields({
               required
               error={errors.propertyStatus}
               otherPlaceholder="Specify property status"
+            />
+          </div>
+
+          {/* Possession Status */}
+          <div className="md:col-span-2">
+            <PossessionStatusSelector
+              propertyType="Industrial"
+              value={details.possessionStatus || details.possession || ""}
+              onChange={(val) => {
+                update("possessionStatus", val);
+                update("possession", val);
+              }}
+              error={errors.possessionStatus || errors.possession}
+              required={false}
             />
           </div>
 

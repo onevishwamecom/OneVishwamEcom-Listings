@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE, INITIAL_PROFILE_FORM, validateProfile } from '../constants';
+import { normalizePhone } from '@/utils/phone';
 
 function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, successMessage, error) {
   const [activeTab, setActiveTab] = useState('profile');
@@ -15,10 +16,12 @@ function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, s
 
   useEffect(() => {
     if (user) {
+      const rawMobile = user.mobile || user.phoneNumber || user.phone || '';
+      const cleanMobile = normalizePhone(rawMobile) || String(rawMobile).replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
       setProfileForm({
-        fullName: user.fullName || user.name || '',
+        fullName: user.fullName || '',
         email: user.email || '',
-        mobile: user.mobile || '',
+        mobile: cleanMobile,
         city: user.city || '',
         area: user.area || '',
         pincode: user.pincode || '',
@@ -68,6 +71,18 @@ function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, s
     try {
       await uploadProfileImage(file).unwrap();
       setSaveSuccess('Profile photo updated');
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Profile photo updated successfully',
+        timer: 2000,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'rounded-2xl shadow-xl',
+          title: 'text-xl font-bold text-slate-800',
+          htmlContainer: 'text-sm text-slate-600',
+        },
+      });
     } catch (err) {
       setSaveError(err?.response?.data?.message || err?.message || 'Failed to upload photo');
     } finally {
@@ -77,7 +92,11 @@ function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, s
 
   const handleProfileSave = async (e) => {
     e.preventDefault();
-    const v = validateProfile(profileForm);
+    const cleanMobile = normalizePhone(profileForm.mobile) || (profileForm.mobile || '').trim().replace(/^91(?=\d{10}$)/, '');
+    const v = validateProfile({ ...profileForm, mobile: cleanMobile });
+    // Email and mobile are non-editable fields; do not allow them to produce validation blockers
+    delete v.email;
+    delete v.mobile;
     setProfileErrors(v);
     if (Object.keys(v).length) return;
 
@@ -85,15 +104,31 @@ function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, s
     setSaveError(null);
     setSaveSuccess(null);
     try {
-      await updateProfile({
+      const payload = {
         fullName: profileForm.fullName.trim(),
-        email: profileForm.email.trim(),
-        mobile: profileForm.mobile.trim(),
-        city: profileForm.city,
-        area: profileForm.area,
-        pincode: profileForm.pincode.trim(),
-      }).unwrap();
+        email: (profileForm.email || user?.email || '').trim(),
+        mobile: cleanMobile || (user?.mobile || ''),
+        city: (profileForm.city || '').trim(),
+        area: (profileForm.area || '').trim(),
+      };
+      const cleanPincode = (profileForm.pincode || '').trim();
+      if (cleanPincode) {
+        payload.pincode = cleanPincode;
+      }
+      await updateProfile(payload).unwrap();
       setSaveSuccess('Profile updated successfully');
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Profile updated successfully',
+        timer: 2000,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'rounded-2xl shadow-xl',
+          title: 'text-xl font-bold text-slate-800',
+          htmlContainer: 'text-sm text-slate-600',
+        },
+      });
     } catch (err) {
       setSaveError(err?.response?.data?.message || 'Failed to update profile');
     } finally {
@@ -108,7 +143,7 @@ function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, s
   }`;
 
   const avatarSrc = user?.profileImage?.url || null;
-  const initial = (user?.fullName || user?.name) ? (user.fullName || user.name).charAt(0).toUpperCase() : 'U';
+  const initial = user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U';
 
   return {
     activeTab,

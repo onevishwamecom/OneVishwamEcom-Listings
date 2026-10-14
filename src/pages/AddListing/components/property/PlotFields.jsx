@@ -1,6 +1,7 @@
 import React from 'react';
 import RadioGroupWithOther from './RadioGroupWithOther';
 import CheckboxGroupWithOther from './CheckboxGroupWithOther';
+import PossessionStatusSelector from './PossessionStatusSelector';
 
 const UTILITIES_OPTIONS = [
   'Water connection',
@@ -214,6 +215,20 @@ export default function PlotFields({
               onChange={(val) => update('conversionStatus', val)}
               required
               error={errors.conversionStatus}
+            />
+          </div>
+
+          {/* Possession Status */}
+          <div className="pt-1">
+            <PossessionStatusSelector
+              propertyType="Plot/Land"
+              value={details.possessionStatus || details.possession || ""}
+              onChange={(val) => {
+                update("possessionStatus", val);
+                update("possession", val);
+              }}
+              error={errors.possessionStatus || errors.possession}
+              required={false}
             />
           </div>
 

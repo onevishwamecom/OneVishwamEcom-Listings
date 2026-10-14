@@ -102,7 +102,7 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
       floors: propDetails.floors || propDetails.totalFloors || form.floors || "",
       towers: propDetails.towers || form.towers || "",
       facing: propDetails.facing || propDetails.plotFacing || form.facing || "",
-      possession: propDetails.possession || form.possession || "",
+      possessionStatus: propDetails.possessionStatus || propDetails.possession || form.possessionStatus || form.possession || "",
       parking: propDetails.parking || propDetails.parkingCapacity || form.parking || "",
       extraRoom: propDetails.extraRoom || form.extraRoom || "",
       approval: propDetails.approvalAuthority || propDetails.approvalZone || form.approval || "",
