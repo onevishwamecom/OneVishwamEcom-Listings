@@ -7,7 +7,7 @@ export default function ResidentialFields({
   onChange,
   errors = {},
 }) {
-  const update = (key, val) => onChange(key, val);
+  const update = (keyOrObj, val) => typeof keyOrObj === "object" && keyOrObj !== null ? onChange(keyOrObj) : onChange(keyOrObj, val);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -99,10 +99,7 @@ export default function ResidentialFields({
             <PossessionStatusSelector
               propertyType="Residential"
               value={details.possessionStatus || details.possession || ""}
-              onChange={(val) => {
-                update("possessionStatus", val);
-                update("possession", val);
-              }}
+              onChange={(val) => update({ possessionStatus: val, possession: val })}
               error={errors.possessionStatus || errors.possession}
               required={false}
             />

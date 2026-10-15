@@ -140,7 +140,7 @@ export const CATEGORY_FIELDS = {
 
 export const REQUIRED_BY_STEP = {
   category: ["category"],
-  basic: ["title", "description", "subcategory"],
+  basic: ["title", "subcategory"],
   details: [],
   location: ["state", "district", "city", "area", "address", "pincode"],
   pricing: ["price"],

@@ -99,11 +99,25 @@ export default function PropertyListingForm({
     }
   };
 
-  const handleDetailsChange = (key, val) => {
-    const nextDetails = { ...details, [key]: val };
-    updateForm('details', nextDetails);
-    if (errors[key]) {
-      setErrors((prev) => ({ ...prev, [key]: null }));
+  const handleDetailsChange = (keyOrObj, val) => {
+    if (typeof keyOrObj === 'object' && keyOrObj !== null) {
+      updateForm('details', (prev) => ({
+        ...(typeof prev === 'object' && prev !== null ? prev : {}),
+        ...keyOrObj,
+      }));
+      setErrors((prev) => {
+        const next = { ...prev };
+        Object.keys(keyOrObj).forEach((k) => delete next[k]);
+        return next;
+      });
+      return;
+    }
+    updateForm('details', (prev) => ({
+      ...(typeof prev === 'object' && prev !== null ? prev : {}),
+      [keyOrObj]: val,
+    }));
+    if (errors[keyOrObj]) {
+      setErrors((prev) => ({ ...prev, [keyOrObj]: null }));
     }
   };
 
@@ -169,7 +183,7 @@ export default function PropertyListingForm({
     const errs = {};
     if (!bankLoanDetails.trim()) errs.bankLoanDetails = 'Bank Loan Approval Details are required';
     if (!form.address?.trim()) errs.address = 'Full Address is required';
-    if (!form.description?.trim()) errs.description = 'Detailed Description is required';
+    // Description is optional
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };

@@ -46,7 +46,7 @@ export function BasicInfoStep({ form, updateForm, validationErrors }) {
 
       <FormFieldGroup>
         <label className="block text-sm font-semibold text-slate-700 mb-2">
-          Detailed Description <span className="text-red-500">*</span>
+          Detailed Description <span className="text-xs font-normal text-slate-400 font-sans ml-1">(Optional)</span>
         </label>
         <textarea
           rows={4}
@@ -58,7 +58,6 @@ export function BasicInfoStep({ form, updateForm, validationErrors }) {
               ? "border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 focus:bg-white"
               : "border-slate-200 focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10 focus:bg-white hover:border-slate-300"
           }`}
-          required
         />
         {validationErrors.description && (
           <p className="mt-1 text-xs font-semibold text-red-500 animate-fade-in">{validationErrors.description}</p>

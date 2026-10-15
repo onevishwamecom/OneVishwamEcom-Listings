@@ -181,7 +181,7 @@ export default function Phase3FinalFields({
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
         <div>
           <h3 className="text-sm font-bold text-slate-800">
-            Detailed Description <span className="text-red-500">*</span>
+            Detailed Description <span className="text-xs font-normal text-slate-400">(Optional)</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
             Comprehensive details highlighting key features, plot layout, accessibility, and highlights

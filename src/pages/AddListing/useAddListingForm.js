@@ -52,7 +52,10 @@ export function useAddListingForm() {
   const catFields = CATEGORY_FIELDS[category] || [];
 
   const updateForm = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [key]: typeof value === 'function' ? value(prev[key]) : value,
+    }));
     if (validationErrors[key]) {
       setValidationErrors((prev) => ({ ...prev, [key]: null }));
     }
