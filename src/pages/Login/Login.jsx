@@ -217,7 +217,7 @@ function LoginPage() {
                   label="Email Address"
                   type="email"
                   icon="fa-envelope"
-                  placeholder="e.g. co@vishwam.com"
+                  placeholder="e.g. [EMAIL_ADDRESS]"
                   value={form.email}
                   onChange={(e) => updateField("email", e.target.value)}
                   error={errors.email}
