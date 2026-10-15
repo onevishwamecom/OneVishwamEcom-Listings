@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * PossessionStatusSelector
- * Provides a 1-click toggle and select dropdown tailored dynamically to property type:
+ * 1-click toggle tailored dynamically to property type:
  * - Plot / Land: 'Ready for Registration' vs 'Under Construction'
  * - Flat / Villa / Structural: 'Ready to Occupy' vs 'Under Construction'
  */
@@ -12,28 +12,30 @@ export default function PossessionStatusSelector({
   onChange,
   error = '',
   label = 'Possession Status',
-  required = true,
+  required = false,
 }) {
   const normType = String(propertyType || '').toLowerCase();
-  const isPlot = normType.includes('plot') || normType.includes('land') || normType.includes('agricultural');
+  const isPlot =
+    normType.includes('plot') ||
+    normType.includes('land') ||
+    normType.includes('agricultural');
 
-  // Ternary condition matching user instruction:
+  // Dynamic status labels:
   // Plot -> 'Ready for Registration', Structural -> 'Ready to Occupy'
   const readyLabel = isPlot ? 'Ready for Registration' : 'Ready to Occupy';
   const underConstructionLabel = 'Under Construction';
 
+  const isUnderConstruction =
+    value === underConstructionLabel ||
+    String(value || '').toLowerCase().includes('construction');
+
   const isReady =
-    value === readyLabel ||
-    value === 'Ready for Registration' ||
-    value === 'Ready to Occupy' ||
-    value === 'Ready to Move In' ||
-    value === 'Ready to Move';
-
-  const isUnderConstruction = value === 'Under Construction' || String(value || '').toLowerCase().includes('construction');
-
-  const dropdownOptions = isPlot
-    ? ['Ready for Registration', 'Under Construction']
-    : ['Ready to Occupy', 'Under Construction', 'Ready to Move In', 'Resale'];
+    !isUnderConstruction &&
+    (value === readyLabel ||
+      value === 'Ready for Registration' ||
+      value === 'Ready to Occupy' ||
+      value === 'Ready to Move In' ||
+      value === 'Ready to Move');
 
   const handleSelect = (status) => {
     onChange?.(status);
@@ -105,32 +107,6 @@ export default function PossessionStatusSelector({
             </p>
           </div>
         </button>
-      </div>
-
-      {/* Dropdown for explicit selection */}
-      <div className="relative pt-1">
-        <select
-          value={value || ''}
-          onChange={(e) => handleSelect(e.target.value)}
-          className={`w-full appearance-none px-3.5 py-2.5 rounded-lg border text-xs bg-white outline-none transition-all pr-8 ${
-            error
-              ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-              : 'border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/15 hover:border-slate-300'
-          }`}
-        >
-          <option value="">Select Possession Status</option>
-          {dropdownOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-          {value && !dropdownOptions.includes(value) && (
-            <option value={value}>{value}</option>
-          )}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-          <i className="fa-solid fa-chevron-down text-[10px]" />
-        </div>
       </div>
 
       {error && <p className="text-[11px] font-medium text-red-500 mt-1">{error}</p>}
