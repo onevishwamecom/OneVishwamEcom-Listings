@@ -558,17 +558,7 @@ export default function BulkBatchesView() {
                           }
                           busyId={busyItemId}
                           responsiveMode="scroll"
-                          renderCustomActions={(item) => (
-                            <Button
-                              variant="blue"
-                              size="sm"
-                              icon="fa-pen-to-square"
-                              onClick={() => handleOpenEditModal(batch, item)}
-                              title="Edit details and upload images, video, PDF"
-                            >
-                              Edit / Media
-                            </Button>
-                          )}
+                          onEdit={(item) => handleOpenEditModal(batch, item)}
                           onDelete={(item) => handleDeleteItem(batch.batchId, item)}
                         />
 
