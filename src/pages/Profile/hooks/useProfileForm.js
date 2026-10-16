@@ -19,7 +19,7 @@ function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, s
       const rawMobile = user.mobile || user.phoneNumber || user.phone || '';
       const cleanMobile = normalizePhone(rawMobile) || String(rawMobile).replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
       setProfileForm({
-        fullName: user.fullName || '',
+        name: user.name || user.fullName || '',
         email: user.email || '',
         mobile: cleanMobile,
         city: user.city || '',
@@ -105,7 +105,7 @@ function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, s
     setSaveSuccess(null);
     try {
       const payload = {
-        fullName: profileForm.fullName.trim(),
+        name: (profileForm.name || profileForm.fullName || '').trim(),
         email: (profileForm.email || user?.email || '').trim(),
         mobile: cleanMobile || (user?.mobile || ''),
         city: (profileForm.city || '').trim(),
@@ -143,7 +143,7 @@ function useProfileForm(user, updateProfile, uploadProfileImage, clearSuccess, s
   }`;
 
   const avatarSrc = user?.profileImage?.url || null;
-  const initial = user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U';
+  const initial = user?.name ? user.name.charAt(0).toUpperCase() : (user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U');
 
   return {
     activeTab,

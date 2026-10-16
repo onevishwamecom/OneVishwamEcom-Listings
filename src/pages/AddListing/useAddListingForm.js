@@ -369,7 +369,7 @@ export function useAddListingForm() {
           videoUrl: finalVideoUrl,
           videos: finalVideoUrl ? [finalVideoUrl] : [],
           contributor: {
-            name: user.fullName || 'Unknown',
+            name: user.name || user.fullName || 'Unknown',
             type: assignedRole || user.role || 'vendor',
             email: user.email || '',
             contact: user.mobile || listingPayload.contact || '',

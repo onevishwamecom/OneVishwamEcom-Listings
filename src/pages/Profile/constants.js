@@ -3,10 +3,10 @@ export const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 export function validateProfile(form) {
   const e = {};
-  const name = (form.fullName || '').trim();
-  if (!name) e.fullName = 'Full name is required';
-  else if (name.length < 2) e.fullName = 'Name must be at least 2 characters';
-  else if (name.length > 50) e.fullName = 'Name must be at most 50 characters';
+  const name = (form.name || form.fullName || '').trim();
+  if (!name) e.name = 'Name is required';
+  else if (name.length < 2) e.name = 'Name must be at least 2 characters';
+  else if (name.length > 50) e.name = 'Name must be at most 50 characters';
 
   // Email and mobile are non-editable fields in profile
 
@@ -18,5 +18,5 @@ export function validateProfile(form) {
 }
 
 export const INITIAL_PROFILE_FORM = {
-  fullName: '', email: '', mobile: '', city: '', area: '', pincode: '',
+  name: '', email: '', mobile: '', city: '', area: '', pincode: '',
 };

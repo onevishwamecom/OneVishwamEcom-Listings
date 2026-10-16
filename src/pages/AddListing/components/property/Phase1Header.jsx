@@ -49,7 +49,7 @@ export default function Phase1Header({
 }) {
   const displayName = isOneVishwam
     ? 'One Vishwam'
-    : (channelPartnerName || vendorName || user?.fullName || user?.name || user?.partnerName || user?.email || 'Authenticated Lister');
+    : (channelPartnerName || vendorName || user?.name || user?.partnerName || user?.email || 'Authenticated Lister');
 
   return (
     <div className="space-y-6 animate-fade-in">

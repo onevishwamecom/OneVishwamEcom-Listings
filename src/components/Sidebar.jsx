@@ -19,7 +19,7 @@ function Sidebar({ collapsed = false, onToggleCollapse }) {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const displayName = user?.fullName || "User";
+  const displayName = user?.name || "User";
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -119,7 +119,7 @@ function Sidebar({ collapsed = false, onToggleCollapse }) {
           <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-3">
             <div className="relative">
               <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-blue to-brand-blue/80 flex items-center justify-center text-white font-bold shadow-sm shrink-0">
-                {user?.firstName?.charAt(0)?.toUpperCase() || "U"}
+                {user?.name?.charAt(0)?.toUpperCase() || "U"}
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-brand-gold border-2 border-brand-navy" />
             </div>

@@ -55,11 +55,11 @@ export default function PropertyListingForm({
 
   const resolvedPartnerName = isOneVishwam
     ? 'One Vishwam'
-    : (user?.partnerName || partnerInfo?.partnerName || user?.fullName || user?.name || user?.displayName || userEmail || 'External Partner');
+    : (user?.partnerName || partnerInfo?.partnerName || user?.name || user?.displayName || userEmail || 'External Partner');
 
   const resolvedVendorName = isOneVishwam
     ? 'One Vishwam'
-    : (user?.fullName || user?.name || user?.partnerName || partnerInfo?.partnerName || user?.displayName || userEmail || 'Independent Owner');
+    : (user?.name || user?.partnerName || partnerInfo?.partnerName || user?.displayName || userEmail || 'Independent Owner');
 
   useEffect(() => {
     onPhaseChange?.(activePhase);

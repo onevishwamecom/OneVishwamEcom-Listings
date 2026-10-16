@@ -7,22 +7,22 @@ function ProfileForm({ user, profileForm, profileErrors, inputClass, handleProfi
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
       <div>
-        <label htmlFor="profile-fullName" className="block text-sm font-semibold text-slate-700 mb-2">
-          Full Name
+        <label htmlFor="profile-name" className="block text-sm font-semibold text-slate-700 mb-2">
+          Name
         </label>
         <input
-          id="profile-fullName"
+          id="profile-name"
           type="text"
-          value={profileForm.fullName}
-          onChange={(e) => handleProfileChange('fullName', e.target.value)}
-          aria-invalid={!!profileErrors.fullName}
-          aria-describedby={profileErrors.fullName ? 'profile-fullName-error' : undefined}
-          placeholder="Enter your full name"
-          className={inputClass('fullName', !!profileErrors.fullName)}
+          value={profileForm.name || ''}
+          onChange={(e) => handleProfileChange('name', e.target.value)}
+          aria-invalid={!!profileErrors.name}
+          aria-describedby={profileErrors.name ? 'profile-name-error' : undefined}
+          placeholder="Enter your name"
+          className={inputClass('name', !!profileErrors.name)}
         />
-        {profileErrors.fullName && (
-          <p id="profile-fullName-error" className="mt-2 text-xs font-medium text-brand-orange animate-fade-in" role="alert">
-            {profileErrors.fullName}
+        {profileErrors.name && (
+          <p id="profile-name-error" className="mt-2 text-xs font-medium text-brand-orange animate-fade-in" role="alert">
+            {profileErrors.name}
           </p>
         )}
       </div>

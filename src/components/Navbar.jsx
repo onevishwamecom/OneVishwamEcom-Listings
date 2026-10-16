@@ -70,7 +70,7 @@ function Navbar() {
     }
   }, [dropdownOpen]);
 
-  const displayName = user?.fullName || 'User';
+  const displayName = user?.name || 'User';
 
   const handleLogout = () => confirmLogout({ logout, navigate });
 

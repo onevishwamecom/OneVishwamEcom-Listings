@@ -49,14 +49,25 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     contact: form.contact || "",
     images: imageUrls || [],
     documents: docUrls || [],
-    brochure: brochureUrl || null,
+    pdfUrl: brochureUrl || null,
     vendorName: form.vendorName || "",
     channelPartnerName: form.channelPartnerName || "",
     origin: form.origin || undefined,
     propertyType: form.propertyType || finalSubcategory || "",
     bankLoanDetails: form.bankLoanDetails || "",
     loanApproved: Boolean(form.bankLoanDetails && !form.bankLoanDetails.toLowerCase().includes('no')),
-    details: form.details || {},
+    details: (() => {
+      const d = { ...(form.details || {}) };
+      delete d.channelPartnerName;
+      delete d.vendorName;
+      delete d.propertyName;
+      delete d.expectedPrice;
+      delete d.description;
+      delete d.possessionStatus;
+      delete d.listerId;
+      delete d.negotiable;
+      return d;
+    })(),
   };
 
   const propDetails = form.details || {};

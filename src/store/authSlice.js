@@ -58,7 +58,7 @@ export const firebaseEmailLogin = createAsyncThunk(
       let profileData = {
         firebaseUid: firebaseUser.uid,
         email: cleanEmail,
-        fullName: firebaseUser.displayName || 'User',
+        name: firebaseUser.displayName || 'User',
         role: 'lister',
       };
 
@@ -141,7 +141,6 @@ export const firebaseEmailRegister = createAsyncThunk(
       let profileData = {
         firebaseUid: firebaseUser.uid,
         email: cleanEmail,
-        fullName: name || firebaseUser.displayName || 'User',
         name: name || firebaseUser.displayName || 'User',
         phoneNumber: cleanPhone,
         mobile: cleanPhone,
@@ -154,7 +153,7 @@ export const firebaseEmailRegister = createAsyncThunk(
           {
             firebaseUid: firebaseUser.uid,
             email: cleanEmail,
-            fullName: name,
+            name: name,
             phoneNumber: cleanPhone,
             mobile: cleanPhone,
             role: 'lister',
