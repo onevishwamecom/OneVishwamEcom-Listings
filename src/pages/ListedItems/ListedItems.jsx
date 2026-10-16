@@ -53,12 +53,20 @@ function ListedItems() {
         <div>
           <p className="text-xs text-slate-500 font-medium">Manage and track your submitted products across all review statuses</p>
         </div>
-        <Link
-          to="/add-listing"
-          className="inline-flex items-center justify-center gap-2 bg-brand-gold text-brand-navy px-4 py-2 rounded-xl font-bold text-xs shadow-xs hover:bg-brand-gold/90 transition-all duration-150 active:scale-[0.98] shrink-0"
-        >
-          <i className="fa-solid fa-plus text-xs" aria-hidden="true" /> List New Product
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/bulk-listing"
+            className="inline-flex items-center justify-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-300 px-3.5 py-2 rounded-xl font-bold text-xs shadow-xs hover:bg-emerald-100 transition-all duration-150 shrink-0"
+          >
+            <i className="fa-solid fa-file-excel text-emerald-600" aria-hidden="true" /> Bulk Upload
+          </Link>
+          <Link
+            to="/add-listing"
+            className="inline-flex items-center justify-center gap-2 bg-brand-gold text-brand-navy px-4 py-2 rounded-xl font-bold text-xs shadow-xs hover:bg-brand-gold/90 transition-all duration-150 active:scale-[0.98] shrink-0"
+          >
+            <i className="fa-solid fa-plus text-xs" aria-hidden="true" /> List New Product
+          </Link>
+        </div>
       </div>
 
       {error ? (

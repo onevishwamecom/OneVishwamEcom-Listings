@@ -231,6 +231,12 @@ export default function AddListing() {
                 </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-center">
+                  <Link
+                    to="/bulk-listing"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all shadow-sm"
+                  >
+                    <i className="fa-solid fa-file-excel text-emerald-600 text-[11px]" /> Bulk Excel Upload
+                  </Link>
                   {!isEditing && (
                     <button
                       type="button"

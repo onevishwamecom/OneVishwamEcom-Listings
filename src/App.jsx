@@ -22,6 +22,7 @@ const ListedItems = lazy(() => import('./pages/ListedItems'));
 const ListingDetails = lazy(() => import('./pages/ListingDetails'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Profile = lazy(() => import('./pages/Profile'));
+const BulkListing = lazy(() => import('./pages/BulkListing'));
 
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAuth();
@@ -163,6 +164,8 @@ function App() {
               <Route path="/listings/:listingId" element={<ListingDetails />} />
               <Route path="/add-listing" element={<AddListing />} />
               <Route path="/add-listing/:categoryType" element={<AddListing />} />
+              <Route path="/bulk-listing" element={<BulkListing />} />
+              <Route path="/bulk-order" element={<Navigate to="/bulk-listing" replace />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />
             </Route>

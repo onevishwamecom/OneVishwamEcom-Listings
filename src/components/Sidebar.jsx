@@ -9,6 +9,7 @@ const menuItems = [
   { label: "Dashboard", icon: "fa-gauge-high", href: "/" },
   { label: "Listed Items", icon: "fa-list", href: "/listings" },
   { label: "List New Product", icon: "fa-plus", href: "/add-listing" },
+  { label: "Bulk Upload", icon: "fa-file-excel", href: "/bulk-listing" },
   { label: "Notifications", icon: "fa-bell", href: "/notifications" },
   { label: "Profile", icon: "fa-user", href: "/profile" },
 ];

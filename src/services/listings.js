@@ -87,6 +87,16 @@ export async function createListing(payload) {
   return created;
 }
 
+export async function bulkUploadListings(formData) {
+  const resp = await api.post('/listings/bulk-upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  invalidateListings();
+  return resp.data;
+}
+
 export async function uploadImages(files) {
   const formData = new FormData();
   files.forEach((file) => formData.append('images', file));
