@@ -4,7 +4,8 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfi
 import { auth } from '@/firebase/config';
 import { resolvePartnerIdentity } from '@/config/partnerDirectory';
 import { isAllowedEmail, COMMON_DEFAULT_PASSWORD, getAllowedAccountDetails } from '@/config/allowedCredentials';
-import { setCachedUser } from '@/services/userCache';
+import { setCachedUser, clearCachedUser } from '@/services/userCache';
+import cache from '@/services/cacheService';
 import { authApi } from '@/services/authApi';
 import api from '@/services/api';
 import { listerApi } from '@/services/listerApi';
@@ -278,18 +279,31 @@ export const fetchListerMe = createAsyncThunk('auth/fetchListerMe', async (_, { 
   }
 });
 
-export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
+export const logout = createAsyncThunk('auth/logout', async (_, { dispatch, rejectWithValue }) => {
   try {
     const refreshToken = localStorage.getItem('refreshToken');
-    await authApi.logout(refreshToken);
+    // Immediate synchronous teardown so no background query runs unauthenticated
     clearAuthTokens();
+    cache.clear();
+    cache.setScope(null);
+    clearCachedUser();
+    dispatch(clearAuth());
+
+    if (refreshToken) {
+      await authApi.logout(refreshToken).catch(() => {});
+    }
   } catch (err) {
-    clearAuthTokens();
     return rejectWithValue(err.response?.data?.message || 'Logout failed');
   } finally {
-    // Sign out of Firebase and clear all cached data
+    // Sign out of Firebase and clean all state
     try { await auth.signOut(); } catch { /* ignore */ }
+    clearAuthTokens();
+    cache.clear();
+    cache.setScope(null);
+    clearCachedUser();
+    dispatch(clearAuth());
     localStorage.removeItem('user');
+    window.dispatchEvent(new Event('auth:logout'));
   }
 });
 
@@ -553,6 +567,12 @@ builder
           state.error = action.payload;
           localStorage.removeItem('user');
         }
+      })
+      .addCase(logout.pending, (state) => {
+        state.user = null;
+        state.isLoggedIn = false;
+        state.error = null;
+        state.successMessage = null;
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;

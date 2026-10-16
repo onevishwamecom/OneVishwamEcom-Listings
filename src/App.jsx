@@ -124,6 +124,11 @@ function App() {
           } catch {
             store.dispatch(clearAuth());
           }
+        } else {
+          cache.clear();
+          cache.setScope(null);
+          clearCachedUser();
+          store.dispatch(clearAuth());
         }
       }
     });
@@ -165,7 +170,9 @@ function App() {
               <Route path="/add-listing" element={<AddListing />} />
               <Route path="/add-listing/:categoryType" element={<AddListing />} />
               <Route path="/bulk-listing" element={<BulkListing />} />
+              <Route path="/bulk-listing/:categoryType" element={<BulkListing />} />
               <Route path="/bulk-order" element={<Navigate to="/bulk-listing" replace />} />
+              <Route path="/bulk-order/:categoryType" element={<Navigate to="/bulk-listing" replace />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />
             </Route>

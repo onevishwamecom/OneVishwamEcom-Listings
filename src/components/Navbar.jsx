@@ -32,6 +32,10 @@ function Navbar() {
   const pageTitle = getPageTitle(location.pathname);
 
   useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
     let cancelled = false;
     const loadCount = () => {
       fetchNotifications()
@@ -46,7 +50,7 @@ function Navbar() {
       cancelled = true;
       unsubscribe();
     };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     function handleClickOutside(e) {

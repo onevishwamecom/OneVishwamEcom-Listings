@@ -23,7 +23,7 @@ export function useAddListingForm() {
   const { refresh: refreshStats } = useListingStats();
 
   const initialCategory = categoryType || "";
-  const [step, setStep] = useState(isEditing ? 1 : initialCategory && initialCategory !== "real-estate" ? 1 : 0);
+  const [step, setStep] = useState(isEditing ? 1 : initialCategory && initialCategory !== "properties" && initialCategory !== "real-estate" ? 1 : 0);
   const [form, setForm] = useState(initialCategory ? { ...INITIAL_FORM, category: initialCategory } : INITIAL_FORM);
   const [photos, setPhotos] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -64,7 +64,7 @@ export function useAddListingForm() {
   useEffect(() => {
     if (categoryType && form.category !== categoryType) {
       setForm((prev) => ({ ...prev, category: categoryType }));
-      if (categoryType !== "real-estate" && step === 0 && !isEditing) {
+      if (categoryType !== "properties" && categoryType !== "real-estate" && step === 0 && !isEditing) {
         setStep(1);
       }
     } else if (!categoryType && !isEditing && form.category) {
@@ -200,7 +200,7 @@ export function useAddListingForm() {
   };
 
   const handlePublish = () => {
-    if (category !== "real-estate") {
+    if (category !== "properties" && category !== "real-estate") {
       const isStepValid = validateStep(
         form,
         step,
@@ -464,7 +464,7 @@ export function useAddListingForm() {
         const rawSubcategory =
           item.subcategory ||
           item.subCategory ||
-          (serviceType === "real-estate" && (item.category || item.propertyType)) ||
+          ((serviceType === "properties" || serviceType === "real-estate") && (item.category || item.propertyType)) ||
           (serviceType === "vehicle" && (
             item.wheelerType ||
             item.categoryVehicle ||
@@ -484,7 +484,7 @@ export function useAddListingForm() {
         );
         nextForm.subcategory = matchedSub || rawSubcategory || "";
 
-        if (serviceType === "real-estate") {
+        if (serviceType === "properties" || serviceType === "real-estate") {
           const d = item.details || {};
           nextForm.bhk = item.bhk || d.bhk || "";
           nextForm.bathrooms = item.bathrooms || d.bathrooms || "";

@@ -74,7 +74,7 @@ export const STEPS = [
 ];
 
 export const CATEGORY_FIELDS = {
-  "real-estate": [
+  properties: [
     { name: "bhk", label: "BHK", type: "text", placeholder: "e.g. 2, 3 & 4 BHK or EOI" },
     { name: "bathrooms", label: "Bathrooms", type: "select", options: ["1", "2", "3", "4+"] },
     { name: "area_sqft", label: "Area / Size", type: "text", placeholder: "e.g. 1348 - 2016 Sq.ft or 4+4 Acres" },

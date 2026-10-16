@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export const PROPERTY_TYPES = [
   {
@@ -91,6 +92,35 @@ export default function Phase1Header({
             <span>Auto-linked from auth session — no manual entry needed</span>
           </div>
         </div>
+      </div>
+
+      {/* ── Bulk Excel Listing Quick Option ── */}
+      <div className="rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-blue-50/60 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-start sm:items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <i className="fa-solid fa-file-excel text-lg" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                Bulk Excel Listing Available
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                Fast Intake
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Have multiple properties to list? Upload them all at once using our official Excel template.
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/bulk-listing/properties"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm hover:shadow shrink-0 cursor-pointer"
+        >
+          <i className="fa-solid fa-cloud-arrow-up" />
+          <span>Bulk Upload Properties</span>
+        </Link>
       </div>
 
       {/* Balanced Equal Property Category Selector */}

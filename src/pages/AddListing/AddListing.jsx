@@ -18,7 +18,7 @@ import { useAddListingForm } from "./useAddListingForm";
 
 export default function AddListing() {
   const navigate = useNavigate();
-  const [realEstatePhase, setRealEstatePhase] = useState(1);
+  const [propertiesPhase, setPropertiesPhase] = useState(1);
   const {
     // State
     step,
@@ -121,7 +121,7 @@ export default function AddListing() {
         </div>
       ) : (
         <>
-          {category === 'real-estate' ? (
+          {(category === 'properties' || category === 'real-estate') ? (
             <div className="space-y-6 animate-fade-in">
               {/* Streamlined Header & Breadcrumbs */}
               <div className="flex items-center justify-between bg-white px-5 py-3.5 rounded-xl border border-slate-200 shadow-xs">
@@ -144,8 +144,14 @@ export default function AddListing() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <Link
+                    to="/bulk-listing/properties"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all shadow-sm"
+                  >
+                    <i className="fa-solid fa-file-excel text-emerald-600 text-[11px]" /> Bulk Excel Upload
+                  </Link>
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/60">
-                    Step {realEstatePhase} of 3
+                    Step {propertiesPhase} of 3
                   </span>
                 </div>
               </div>
@@ -170,7 +176,7 @@ export default function AddListing() {
                   updateForm('category', '');
                   setStep(0);
                 }}
-                onPhaseChange={setRealEstatePhase}
+                onPhaseChange={setPropertiesPhase}
                 submitting={submitting}
                 submitError={submitError}
               />
@@ -232,7 +238,7 @@ export default function AddListing() {
 
                 <div className="flex items-center gap-2 self-end sm:self-center">
                   <Link
-                    to="/bulk-listing"
+                    to={`/bulk-listing/${category || 'properties'}`}
                     className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all shadow-sm"
                   >
                     <i className="fa-solid fa-file-excel text-emerald-600 text-[11px]" /> Bulk Excel Upload

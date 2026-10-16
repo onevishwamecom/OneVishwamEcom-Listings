@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import * as XLSX from 'xlsx';
 
 /**
@@ -36,7 +37,7 @@ export function getCategorySlug(category) {
   if (norm === 'jewellery' || norm === 'jewelry') {
     return 'jewellery';
   }
-  return norm || 'product';
+  return norm || 'properties';
 }
 
 /**
@@ -59,7 +60,6 @@ export function validateUploadedFilename(filename, expectedCategory) {
   }
 
   const clean = filename.trim();
-  // Regex: <category>_bulklisting_<8 digits>_<4 to 6 digits>.xlsx (allowing optional copy suffix like ' (1)')
   const regex = /^([a-zA-Z0-9_-]+)_bulklisting_(\d{8}_\d{4,6})(?:\s*\(\d+\))?\.xlsx$/i;
   const match = clean.match(regex);
 
@@ -87,409 +87,744 @@ export function validateUploadedFilename(filename, expectedCategory) {
   };
 }
 
-/**
- * Category-specific Template Definitions (Headers + Realistic Sample Rows)
- */
-export const TEMPLATE_CONFIGS = {
+// ─────────────────────────────────────────────────────────────────────────────
+// Category-Specific Sheet Configurations
+// Properties has all 7 official property types from the project specification
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const MULTI_SHEET_CONFIGS = {
   properties: {
-    categoryLabel: 'Properties / Real Estate',
-    headers: [
-      'Title*',
-      'Property Type*',
-      'Subcategory',
-      'Purpose',
-      'Price*',
-      'Price Suffix',
-      'City*',
-      'Area / Locality*',
-      'Pincode*',
-      'Address*',
-      'BHK',
-      'Bathrooms',
-      'Balconies',
-      'Super Built-up Area',
-      'Facing',
-      'Furnishing Status',
-      'Possession Status',
-      'Bank Loan Available',
-      'Amenities',
-      'Description',
-      'Images',
-    ],
-    sampleRows: [
-      [
-        'Luxury 3 BHK Villa in Whitefield',
-        'Flat/Villa',
-        'Villa',
-        'Sell',
-        '₹ 1.85 Cr',
-        'Negotiable',
-        'Bengaluru',
-        'Whitefield',
-        '560066',
-        'Near Hope Farm Junction, Whitefield',
-        '3 BHK',
-        '3',
-        '2',
-        '2400 sq.ft',
-        'East',
-        'Semi-Furnished',
-        'Ready to Move In',
-        'SBI, HDFC approved',
-        'Swimming Pool, Gym, Power Backup, Clubhouse, CCTV, Children Play Area',
-        'Premium standalone villa with private garden, Italian marble flooring and solar water heater.',
-        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c',
-      ],
-      [
-        'BMRDA Approved Residential Plot',
-        'Plot/Land',
-        'Plot',
-        'Sell',
-        '₹ 42 Lakh',
-        'Fixed',
-        'Bengaluru',
-        'Sarjapur Road',
-        '562125',
-        'Near Sompura Gate, Sarjapur',
-        '',
-        '',
-        '',
-        '1200 sq.ft (30x40)',
-        'North',
-        '',
-        'Ready to Move In',
-        'Yes',
-        'Water Connection, Electricity, Underground Drainage, Black Top Roads',
-        'Gated layout plot with clear titles, immediate registration and bank loan assistance.',
-        'https://images.unsplash.com/photo-1500382017468-9049fed747ef',
-      ],
-    ],
-    instructions: [
-      ['Column', 'Description', 'Allowed / Suggested Values'],
-      ['Title*', 'Clear headline for the property listing', 'e.g. Luxury 3 BHK Villa in Whitefield'],
-      ['Property Type*', 'Main property category', 'Residential, Flat/Villa, Plot/Land, Commercial, Agricultural, Industrial, Independent House'],
-      ['Price*', 'Asking price (with or without ₹)', 'e.g. ₹ 1.85 Cr, 42 Lakh, 8500000'],
-      ['City*', 'City where property is located', 'e.g. Bengaluru, Mysore, Hyderabad'],
-      ['Area / Locality*', 'Locality or neighborhood', 'e.g. Whitefield, Indiranagar, HSR Layout'],
-      ['Pincode*', '6-digit postal code', 'e.g. 560066'],
-      ['Address*', 'Full or street address', 'e.g. Near Hope Farm Junction, Whitefield'],
-      ['Furnishing Status', 'State of furnishing', 'Furnished, Semi-Furnished, Unfurnished'],
-      ['Possession Status', 'Current possession stage', 'Ready to Move In, Under Construction'],
-      ['Bank Loan Available', 'Financing availability', 'Yes, No, or bank names like SBI / HDFC'],
-      ['Amenities', 'Comma-separated amenities', 'e.g. Lift, Power Backup, Gym, Pool, Security'],
-      ['Images', 'Public image URLs separated by comma', 'Optional; up to 6 image URLs'],
+    categoryLabel: 'Properties',
+    sheets: [
+      {
+        sheetName: 'Flats & Apartments',
+        subcategoryId: 'Flat/Villa',
+        headers: [
+          'Title*',
+          'Project / Apartment Name*',
+          'BHK*',
+          'Super Built-up Area (Sq.Ft)*',
+          'Carpet Area (Sq.Ft)',
+          'Price (₹)*',
+          'Price Suffix',
+          'Floor*',
+          'Total Floors / Towers',
+          'Facing*',
+          'Bathrooms*',
+          'Balconies*',
+          'Furnishing Status*',
+          'Possession Status*',
+          'Parking*',
+          'City*',
+          'Area / Locality*',
+          'Pincode',
+          'Address*',
+          'Bank Loan Approved',
+          'Amenities',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: 'Independent House & Villa',
+        subcategoryId: 'Independent House',
+        headers: [
+          'Title*',
+          'House / Villa Name*',
+          'BHK*',
+          'Built-up Area (Sq.Ft)*',
+          'Plot Area (Sq.Ft)',
+          'Plot Dimensions',
+          'Price (₹)*',
+          'Price Suffix',
+          'Floors (G+1, G+2)*',
+          'Facing*',
+          'Bathrooms*',
+          'Balconies',
+          'Furnishing Status*',
+          'Parking*',
+          'Gated Community',
+          'Garden / Terrace',
+          'City*',
+          'Area / Locality*',
+          'Pincode',
+          'Address*',
+          'Bank Loan Approved',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: 'Plots & Land',
+        subcategoryId: 'Plot/Land',
+        headers: [
+          'Title*',
+          'Layout / Project Name*',
+          'Plot Type*',
+          'Total Land Area (Sq.Ft)*',
+          'Plot Dimensions*',
+          'Price (₹)*',
+          'Price per Sq.Ft',
+          'Facing*',
+          'Corner Plot*',
+          'Approval Authority*',
+          'Boundary Wall / Fencing',
+          'Road Facing Width (Ft)',
+          'Conversion Status',
+          'Gated Community',
+          'Utilities Available',
+          'City*',
+          'Area / Locality*',
+          'Pincode',
+          'Address*',
+          'Bank Loan Approved',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: 'Residential (Layout)',
+        subcategoryId: 'Residential',
+        headers: [
+          'Title*',
+          'Property / Project Name*',
+          'Dimensions / Area (Sq.Ft)*',
+          'Facing*',
+          'Corner Plot',
+          'Approved Layout',
+          'Approval Authority*',
+          'Price (₹)*',
+          'Negotiable',
+          'City*',
+          'Area / Locality*',
+          'Pincode',
+          'Address*',
+          'Bank Loan Approved',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: 'Commercial Spaces',
+        subcategoryId: 'Commercial',
+        headers: [
+          'Title*',
+          'Commercial Type*',
+          'Carpet Area (Sq.Ft)*',
+          'Built-up Area (Sq.Ft)',
+          'Price (₹)*',
+          'Total Floors / Floor Level',
+          'Main Road Frontage (Ft)',
+          'Washrooms*',
+          'Lift Available',
+          'Power Backup',
+          'Parking Capacity',
+          'Occupancy Status',
+          'Rental Income (₹/Month)',
+          'City*',
+          'Area / Locality*',
+          'Pincode',
+          'Address*',
+          'Bank Loan Approved',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: 'Agricultural Land',
+        subcategoryId: 'Agricultural',
+        headers: [
+          'Title*',
+          'Total Land Extent (Acres / Guntas)*',
+          'Land Type*',
+          'Price Total (₹)*',
+          'Price Per Acre (₹)',
+          'Water Availability*',
+          'Electricity Availability*',
+          'Current Crop / Plantation',
+          'Soil Type',
+          'Road Access Width (Ft)',
+          'Fencing Available',
+          'Farmhouse Available',
+          'Survey Number',
+          'City / Taluk*',
+          'Village / Locality*',
+          'Pincode',
+          'Address*',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: 'Industrial Property',
+        subcategoryId: 'Industrial',
+        headers: [
+          'Title*',
+          'Industrial Type*',
+          'Plot Area (Sq.Ft / Acres)*',
+          'Shed / Built-up Area (Sq.Ft)',
+          'Price (₹)*',
+          'Power Load (HP / KVA)*',
+          'Industrial Zone / Area*',
+          'Approach Road Width (Ft)',
+          'Heavy Vehicle / Container Access',
+          'Office Space Available',
+          'Labour Quarters Available',
+          'Pollution Board NOC Status',
+          'Fire Safety Approval',
+          'City*',
+          'Area / Industrial Estate*',
+          'Pincode',
+          'Address*',
+          'Description',
+        ],
+        sampleRows: [],
+      },
     ],
   },
 
   vehicle: {
-    categoryLabel: 'Vehicles',
-    headers: [
-      'Brand*',
-      'Model*',
-      'Year*',
-      'Vehicle Type*',
-      'Condition*',
-      'Fuel Type*',
-      'Transmission',
-      'KM Driven',
-      'Price*',
-      'City*',
-      'Location / Area*',
-      'Pincode*',
-      'Description',
-      'Images',
-    ],
-    sampleRows: [
-      [
-        'Hyundai',
-        'Creta SX(O) 1.5 Diesel',
-        '2022',
-        '4-wheeler',
-        'old',
-        'Diesel',
-        'Automatic',
-        '28000',
-        '₹ 16.5 Lakh',
-        'Bengaluru',
-        'Indiranagar',
-        '560038',
-        'Single owner, comprehensive insurance valid till Dec 2026, showroom service records.',
-        'https://images.unsplash.com/photo-1549399542-7e3f8b79c341',
-      ],
-      [
-        'Royal Enfield',
-        'Classic 350 Stealth Black',
-        '2023',
-        '2-wheeler',
-        'old',
-        'Petrol',
-        'Manual',
-        '8500',
-        '₹ 1.95 Lakh',
-        'Bengaluru',
-        'Koramangala',
-        '560034',
-        'Mint condition, dual-channel ABS, custom alloy wheels and backrest installed.',
-        'https://images.unsplash.com/photo-1558981403-c5f9899a28bc',
-      ],
-    ],
-    instructions: [
-      ['Column', 'Description', 'Allowed / Suggested Values'],
-      ['Brand*', 'Manufacturer name', 'e.g. Hyundai, Toyota, Honda, Royal Enfield, Tata'],
-      ['Model*', 'Model name and variant', 'e.g. Creta SX, Innova Crysta, Classic 350'],
-      ['Year*', 'Manufacturing year', 'e.g. 2022, 2023, 2024'],
-      ['Vehicle Type*', 'Wheeler classification', '4-wheeler, 2-wheeler, 3-wheeler, commercial'],
-      ['Condition*', 'Condition of vehicle', 'new, old'],
-      ['Fuel Type*', 'Propulsion type', 'Petrol, Diesel, Electric, CNG'],
-      ['Transmission', 'Gearbox type', 'Manual, Automatic, CVT, DCT, AMT'],
-      ['KM Driven', 'Odometer reading in kilometers', 'e.g. 28000'],
-      ['Price*', 'Selling price', 'e.g. ₹ 16.5 Lakh or 1650000'],
-      ['City*', 'City where vehicle is available', 'e.g. Bengaluru'],
-      ['Pincode*', '6-digit pincode', 'e.g. 560038'],
+    categoryLabel: 'Vehicle',
+    sheets: [
+      {
+        sheetName: '4-Wheelers & Cars',
+        subcategoryId: '4-wheeler',
+        headers: [
+          'Title*',
+          'Brand*',
+          'Model*',
+          'Year*',
+          'Condition*',
+          'Fuel Type*',
+          'Transmission*',
+          'KM Driven*',
+          'Price (₹)*',
+          'City*',
+          'Location / Area*',
+          'Pincode',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: '2-Wheelers & Bikes',
+        subcategoryId: '2-wheeler',
+        headers: [
+          'Title*',
+          'Brand*',
+          'Model*',
+          'Year*',
+          'Condition*',
+          'Fuel Type*',
+          'KM Driven*',
+          'Price (₹)*',
+          'City*',
+          'Location / Area*',
+          'Pincode',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: 'Commercial Vehicles',
+        subcategoryId: 'commercial',
+        headers: [
+          'Title*',
+          'Brand*',
+          'Model*',
+          'Year*',
+          'Condition*',
+          'Fuel Type*',
+          'KM Driven*',
+          'Price (₹)*',
+          'City*',
+          'Location / Area*',
+          'Pincode',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: 'Electric Vehicles',
+        subcategoryId: 'electric',
+        headers: [
+          'Title*',
+          'Brand*',
+          'Model*',
+          'Year*',
+          'Condition*',
+          'Fuel Type*',
+          'KM Driven*',
+          'Price (₹)*',
+          'City*',
+          'Location / Area*',
+          'Pincode',
+          'Description',
+        ],
+        sampleRows: [],
+      },
     ],
   },
 
   grocery: {
-    categoryLabel: 'Grocery & Farm Produce',
-    headers: [
-      'Product Name*',
-      'Category*',
-      'Subcategory',
-      'Price*',
-      'Unit*',
-      'Stock Quantity',
-      'Brand',
-      'Organic',
-      'City*',
-      'Description',
-      'Images',
-    ],
-    sampleRows: [
-      [
-        'Organic Premium Basmati Rice',
-        'Grains & Pulses',
-        'Rice',
-        '₹ 180',
-        'kg',
-        '100',
-        'FarmFresh',
-        'Yes',
-        'Bengaluru',
-        'Naturally aged long-grain basmati rice grown with zero pesticides.',
-        'https://images.unsplash.com/photo-1586201375761-83865001e31c',
-      ],
-      [
-        'Cold-Pressed Virgin Coconut Oil',
-        'Oils & Ghee',
-        'Cooking Oil',
-        '₹ 320',
-        'liter',
-        '50',
-        'PureNature',
-        'Yes',
-        'Bengaluru',
-        '100% natural cold pressed wood-churned coconut oil from Malabar coconuts.',
-        'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1',
-      ],
-    ],
-    instructions: [
-      ['Column', 'Description', 'Allowed / Suggested Values'],
-      ['Product Name*', 'Full product title', 'e.g. Organic Basmati Rice'],
-      ['Category*', 'Grocery category', 'Grains & Pulses, Fruits & Vegetables, Dairy & Eggs, Oils & Ghee, Spices, Snacks'],
-      ['Price*', 'Price per unit (e.g. ₹ 180)', 'e.g. 180, ₹ 180'],
-      ['Unit*', 'Packaging unit', 'kg, gm, liter, ml, pack, piece'],
-      ['Organic', 'Whether organically certified', 'Yes / No'],
+    categoryLabel: 'Grocery',
+    sheets: [
+      {
+        sheetName: 'Daily Essentials',
+        subcategoryId: 'Daily Essentials',
+        headers: [
+          'Product Name*',
+          'Category*',
+          'Unit*',
+          'Stock*',
+          'Brand',
+          'Organic',
+          'Price (₹)*',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: 'Fruits & Vegetables',
+        subcategoryId: 'Fruits & Vegetables',
+        headers: [
+          'Product Name*',
+          'Category*',
+          'Unit*',
+          'Stock*',
+          'Brand',
+          'Organic',
+          'Price (₹)*',
+          'Description',
+        ],
+        sampleRows: [],
+      },
     ],
   },
 
   garment: {
-    categoryLabel: 'Garments & Apparel',
-    headers: [
-      'Product Name*',
-      'Category*',
-      'Subcategory',
-      'Size*',
-      'Color',
-      'Material',
-      'Price*',
-      'Quantity',
-      'Brand',
-      'Description',
-      'Images',
-    ],
-    sampleRows: [
-      [
-        'Men Premium Pure Linen Casual Shirt',
-        'Men',
-        'Casual Shirts',
-        'L',
-        'Sky Blue',
-        '100% Linen',
-        '₹ 1,799',
-        '25',
-        'Vishwam Collection',
-        'Breathable pure linen shirt with mandarin collar, ideal for summer and casual wear.',
-        'https://images.unsplash.com/photo-1596755094514-f87e34085b2c',
-      ],
-      [
-        'Handloom Pure Silk Kanjeevaram Saree',
-        'Women',
-        'Sarees',
-        'Free Size',
-        'Royal Maroon & Gold',
-        'Pure Silk with Zari',
-        '₹ 8,499',
-        '10',
-        'Heritage Weaves',
-        'Authentic hand-woven silk saree with rich contrast pallu and unstitched blouse piece.',
-        'https://images.unsplash.com/photo-1610030469983-98e550d6193c',
-      ],
-    ],
-    instructions: [
-      ['Column', 'Description', 'Allowed / Suggested Values'],
-      ['Product Name*', 'Product title', 'e.g. Men Pure Linen Shirt'],
-      ['Category*', 'Gender/Department', 'Men, Women, Kids, Unisex'],
-      ['Size*', 'Garment size', 'S, M, L, XL, XXL, Free Size, 32, 34, 36'],
-      ['Price*', 'Selling price', 'e.g. ₹ 1,799'],
+    categoryLabel: 'Garments',
+    sheets: [
+      {
+        sheetName: "Men's Wear",
+        subcategoryId: 'Men',
+        headers: [
+          'Product Name*',
+          'Category*',
+          'Subcategory',
+          'Size*',
+          'Color',
+          'Material',
+          'Quantity*',
+          'Brand',
+          'Price (₹)*',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: "Women's Wear",
+        subcategoryId: 'Women',
+        headers: [
+          'Product Name*',
+          'Category*',
+          'Subcategory',
+          'Size*',
+          'Color',
+          'Material',
+          'Quantity*',
+          'Brand',
+          'Price (₹)*',
+          'Description',
+        ],
+        sampleRows: [],
+      },
     ],
   },
 
   jewellery: {
     categoryLabel: 'Jewellery',
-    headers: [
-      'Item Name / Title*',
-      'Category*',
-      'Metal Type*',
-      'Purity*',
-      'Weight (Grams)*',
-      'Price*',
-      'Making Charges',
-      'Gender',
-      'Certified',
-      'Description',
-      'Images',
-    ],
-    sampleRows: [
-      [
-        '22K BIS Hallmarked Temple Gold Necklace',
-        'Necklaces',
-        'Gold',
-        '22K',
-        '32.5',
-        '₹ 2,45,000',
-        '₹ 6,500',
-        'Women',
-        'Yes',
-        'Traditional antique finish 916 gold temple necklace featuring Lakshmi motif.',
-        'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f',
-      ],
-      [
-        'Solitaire Diamond Engagement Ring',
-        'Rings',
-        'Diamond',
-        '18K White Gold / VVS1',
-        '4.2',
-        '₹ 85,000',
-        '₹ 3,000',
-        'Women',
-        'Yes',
-        'IGI certified 0.50 ct round brilliant diamond set in 18K white gold prong setting.',
-        'https://images.unsplash.com/photo-1605100804763-247f67b3557e',
-      ],
-    ],
-    instructions: [
-      ['Column', 'Description', 'Allowed / Suggested Values'],
-      ['Item Name*', 'Name of jewellery piece', 'e.g. 22K Gold Temple Necklace'],
-      ['Metal Type*', 'Precious metal', 'Gold, Silver, Diamond, Platinum'],
-      ['Purity*', 'Karat or fineness', '22K, 18K, 14K, 925 Silver, 950 Platinum'],
-      ['Weight (Grams)*', 'Net weight in grams', 'e.g. 32.5, 4.2'],
-      ['Price*', 'Estimated or total price', 'e.g. ₹ 2,45,000'],
-      ['Certified', 'Certification status', 'Yes / No'],
+    sheets: [
+      {
+        sheetName: 'Gold Jewellery',
+        subcategoryId: 'Gold',
+        headers: [
+          'Jewellery Name / Title*',
+          'Category*',
+          'Metal Type*',
+          'Purity*',
+          'Weight (Grams)*',
+          'Price (₹)*',
+          'Making Charges',
+          'Gender',
+          'Certified',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+      {
+        sheetName: 'Diamond Jewellery',
+        subcategoryId: 'Diamond',
+        headers: [
+          'Jewellery Name / Title*',
+          'Category*',
+          'Metal Type*',
+          'Purity*',
+          'Weight (Grams)*',
+          'Price (₹)*',
+          'Making Charges',
+          'Gender',
+          'Certified',
+          'Description',
+        ],
+        sampleRows: [],
+      },
     ],
   },
 };
 
 /**
- * Fallback config for any other category (Finance, Services, Bedding)
+ * Fallback config lookup
  */
-function getTemplateConfig(category) {
+export function getCategoryMultiSheetConfig(category) {
   const slug = getCategorySlug(category);
-  return TEMPLATE_CONFIGS[slug] || TEMPLATE_CONFIGS.properties;
+  return MULTI_SHEET_CONFIGS[slug] || MULTI_SHEET_CONFIGS.properties;
 }
 
 /**
- * Generates and downloads the Excel template file
+ * Browser download helper for buffer
  */
-export function downloadCategoryTemplate(category) {
+function downloadBufferAsFile(buffer, filename) {
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
+ * Generates and downloads the official Excel template file with:
+ * 1. Dedicated sheets for each individual subcategory (e.g. 7 property types: Flats, House, Plots, Commercial, etc.)
+ * 2. Non-editable table headers (Locked Row 1 with Sheet Protection)
+ * 3. Unlocked rows (Rows 2-300) so listers can type, paste, and edit inventory freely
+ */
+export async function downloadCategoryTemplate(category) {
   const slug = getCategorySlug(category);
-  const config = getTemplateConfig(slug);
+  const config = getCategoryMultiSheetConfig(slug);
   const timestamp = generateBulkListingTimestamp();
   const filename = getBulkListingFilename(slug, timestamp);
 
-  // 1. Create main data worksheet
-  const dataSheetData = [config.headers, ...config.sampleRows];
-  const dataSheet = XLSX.utils.aoa_to_sheet(dataSheetData);
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'OneVishwam';
+  workbook.created = new Date();
 
-  // Auto-fit column widths
-  const colWidths = config.headers.map((h, colIdx) => {
-    let maxLen = h.length;
-    config.sampleRows.forEach((row) => {
-      const val = row[colIdx] ? String(row[colIdx]) : '';
-      if (val.length > maxLen) maxLen = Math.min(val.length, 40);
+  // Create worksheets for each subcategory
+  for (const sheetDef of config.sheets) {
+    const sheet = workbook.addWorksheet(sheetDef.sheetName, {
+      views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }], // Freeze Row 1 header
     });
-    return { wch: Math.max(maxLen + 4, 15) };
+
+    const headers = sheetDef.headers;
+
+    // Set columns with auto width
+    sheet.columns = headers.map((header) => ({
+      header,
+      key: header.replace(/[^a-zA-Z0-9]/g, '_'),
+      width: Math.max(header.length + 5, 20),
+    }));
+
+    // Row 1: Header styling + LOCKED PROTECTION
+    const headerRow = sheet.getRow(1);
+    headerRow.height = 30;
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Segoe UI' };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF1E3A8A' }, // Deep Brand Navy Blue
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF64748B' } },
+        bottom: { style: 'medium', color: { argb: 'FF0F172A' } },
+        left: { style: 'thin', color: { argb: 'FF64748B' } },
+        right: { style: 'thin', color: { argb: 'FF64748B' } },
+      };
+      // TABLE HEADERS ARE NON-EDITABLE (LOCKED)
+      cell.protection = { locked: true };
+    });
+
+    // Pre-unlock rows 2 through 300 for clean user data entry (no sample rows added)
+    for (let r = 2; r <= 300; r++) {
+      const row = sheet.getRow(r);
+      row.height = 22;
+      for (let c = 1; c <= headers.length; c++) {
+        const cell = row.getCell(c);
+        cell.protection = { locked: false }; // UNLOCKED FOR DATA ENTRY
+      }
+    }
+
+    // Sheet Protection:
+    // Locks the Row 1 headers from any editing/deleting,
+    // while explicitly allowing users to select and edit unlocked data rows!
+    await sheet.protect('', {
+      selectLockedCells: true,
+      selectUnlockedCells: true,
+      formatCells: true,
+      formatColumns: true,
+      formatRows: true,
+      insertColumns: false,
+      insertRows: true,
+      deleteColumns: false,
+      deleteRows: true,
+      sort: true,
+      autoFilter: true,
+      objects: true,
+    });
+  }
+
+  // Add Instructions & Guide tab
+  const guideSheet = workbook.addWorksheet('Instructions & Guide', {
+    views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
   });
-  dataSheet['!cols'] = colWidths;
 
-  // 2. Create Instructions sheet
-  const instructionSheet = XLSX.utils.aoa_to_sheet(config.instructions);
-  instructionSheet['!cols'] = [{ wch: 25 }, { wch: 35 }, { wch: 45 }];
+  guideSheet.columns = [
+    { header: 'Rule / Section', key: 'section', width: 28 },
+    { header: 'Details & Instructions', key: 'details', width: 60 },
+    { header: 'Examples / Allowed Values', key: 'examples', width: 45 },
+  ];
 
-  // 3. Assemble workbook
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, dataSheet, 'Template');
-  XLSX.utils.book_append_sheet(workbook, instructionSheet, 'Instructions & Guide');
+  const guideHeaderRow = guideSheet.getRow(1);
+  guideHeaderRow.height = 30;
+  guideHeaderRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Segoe UI' };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF0F766E' }, // Teal
+    };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    cell.protection = { locked: true };
+  });
 
-  // 4. Download file
-  XLSX.writeFile(workbook, filename);
+  const guideData = [
+    [
+      'Subcategory Sheets',
+      'Each tab represents a specific subcategory (e.g. Flats & Apartments, Plots & Land, Commercial Spaces, etc.).',
+      'Select the tab matching your inventory type.',
+    ],
+    [
+      'Non-Editable Headers',
+      'Table headers (Row 1) are locked and protected to maintain database integrity.',
+      'Do not attempt to alter or delete column headers.',
+    ],
+    [
+      'Entering Data',
+      'Enter one product per row starting from Row 2. You can fill multiple sheets in this workbook.',
+      'Leave unused sheets empty — the system scans all sheets and automatically collects populated rows.',
+    ],
+    [
+      'Mandatory Columns',
+      'Columns ending with an asterisk (*) like Title*, Price*, City* are required.',
+      'Ensure required columns have valid values.',
+    ],
+    [
+      'Filename Format',
+      'Keep the exact downloaded filename format when uploading.',
+      `${slug}_bulklisting_YYYYMMDD_HHmmss.xlsx`,
+    ],
+    [
+      'Multimedia Upload Workflow (Portal First)',
+      'Excel is dedicated to your listing product data (title, price, specs, descriptions). After uploading this spreadsheet on the portal, you will be prompted: "Do you want to upload images or multimedia for this?"',
+      'Streamlined 2-step process: Upload spreadsheet → Attach multimedia on portal',
+    ],
+    [
+      'Editing Media in Uploaded Batches',
+      'In the Lister portal (Listings > Bulk Batches), expand your batch and click "Edit" on any item to upload or change images (max 5, ≤1MB each), video (≤10MB), and PDF brochure (≤2MB).',
+      'Instant cloud upload to Firebase Storage',
+    ],
+  ];
+
+  guideData.forEach((rowVals) => {
+    const row = guideSheet.addRow(rowVals);
+    row.height = 24;
+    row.eachCell((cell) => {
+      cell.font = { size: 10, name: 'Segoe UI', color: { argb: 'FF334155' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      cell.protection = { locked: true };
+    });
+  });
+
+  await guideSheet.protect('', {
+    selectLockedCells: true,
+    selectUnlockedCells: true,
+  });
+
+  // Write buffer and trigger browser download
+  const buffer = await workbook.xlsx.writeBuffer();
+  downloadBufferAsFile(buffer, filename);
 
   return {
     filename,
     timestamp,
     category: slug,
+    sheetCount: config.sheets.length,
   };
 }
 
 /**
- * Parses client-side Excel file for instant UI preview and validation
+ * Parses client-side Excel file for UI preview by scanning ALL sheets,
+ * including extracting any embedded picture shapes inserted via VBA or Place in Cell.
  */
 export async function parseExcelFileForPreview(file, expectedCategory) {
   const arrayBuffer = await file.arrayBuffer();
+
+  // 1. Load with ExcelJS to inspect and extract any embedded pictures
+  const excelJsWb = new ExcelJS.Workbook();
+  let hasExcelJs = false;
+  try {
+    await excelJsWb.xlsx.load(arrayBuffer);
+    hasExcelJs = true;
+  } catch (err) {
+    console.warn('ExcelJS could not inspect embedded images:', err);
+  }
+
+  // 2. Load with SheetJS for tabular data parsing
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) {
+  if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
     throw new Error('Excel file has no worksheets');
   }
 
-  const sheet = workbook.Sheets[sheetName];
-  const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  const allRows = [];
+  const sheetBreakdown = {};
 
-  if (!rawRows || rawRows.length === 0) {
-    throw new Error('Excel sheet contains no data rows');
+  for (const sheetName of workbook.SheetNames) {
+    const lower = sheetName.toLowerCase().trim();
+    if (lower.includes('instruction') || lower.includes('guide') || lower.includes('readme')) {
+      continue;
+    }
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    // Extract embedded images from this worksheet if ExcelJS loaded
+    const embeddedImagesByRow = {};
+    if (hasExcelJs) {
+      try {
+        const jsSheet = excelJsWb.getWorksheet(sheetName);
+        if (jsSheet && typeof jsSheet.getImages === 'function') {
+          const sheetImages = jsSheet.getImages() || [];
+          sheetImages.forEach((imgObj) => {
+            try {
+              const rowAnchor = imgObj.range?.tl ? Math.floor(imgObj.range.tl.row) + 1 : null;
+              if (rowAnchor && rowAnchor >= 2) {
+                const imgInfo = excelJsWb.getImage(imgObj.imageId);
+                if (imgInfo && imgInfo.buffer) {
+                  const ext = imgInfo.extension || 'png';
+                  const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
+                  const blob = new Blob([imgInfo.buffer], { type: mime });
+                  const imgFile = new File([blob], `excel_img_r${rowAnchor}_${imgObj.imageId}.${ext}`, { type: mime });
+                  if (!embeddedImagesByRow[rowAnchor]) embeddedImagesByRow[rowAnchor] = [];
+                  if (embeddedImagesByRow[rowAnchor].length < 5) {
+                    embeddedImagesByRow[rowAnchor].push(imgFile);
+                  }
+                }
+              }
+            } catch (imgErr) {
+              console.warn('Error reading single image in worksheet:', imgErr);
+            }
+          });
+        }
+      } catch (sheetErr) {
+        console.warn('Error processing worksheet images:', sheetErr);
+      }
+    }
+
+    const validRows = rawRows.filter((r) => {
+      const vals = Object.values(r).filter((v) => v !== '' && v !== null && v !== undefined);
+      if (vals.length === 0) return false;
+
+      // Filter out instruction or placeholder rows
+      const title = String(
+        r['Title*'] ||
+          r.Title ||
+          r.title ||
+          r['Product Name*'] ||
+          r['Jewellery Name / Title*'] ||
+          r.Name ||
+          ''
+      );
+      const price = String(r['Price (₹)*'] || r['Price*'] || r.Price || r.price || '');
+      if (title.toLowerCase().includes('sample') && price.toLowerCase().includes('example')) {
+        return false;
+      }
+      return true;
+    });
+
+    if (validRows.length > 0) {
+      sheetBreakdown[sheetName] = validRows.length;
+      validRows.forEach((r, rowIdxInValid) => {
+        const rawImg1 = r['Image 1'] || r['Image 1 (Max 1MB)'] || r['Image 1*'] || '';
+        const rawImg2 = r['Image 2'] || r['Image 2 (Max 1MB)'] || '';
+        const rawImg3 = r['Image 3'] || r['Image 3 (Max 1MB)'] || '';
+        const rawImg4 = r['Image 4'] || r['Image 4 (Max 1MB)'] || '';
+        const rawImg5 = r['Image 5'] || r['Image 5 (Max 1MB)'] || '';
+        const legacyImages = r['Images (Max 5, ≤1MB each)'] || r['Image URLs'] || r.Images || r.images || '';
+
+        const rawVideo = r['Video'] || r['Video (Max 10MB)'] || r['Video (Max 1, ≤10MB)'] || r['Video URL'] || r.Video || r.video || '';
+        const rawPdf = r['PDF / Brochure'] || r['PDF / Brochure (Max 2MB)'] || r['PDF / Brochure (Max 1, ≤2MB)'] || r['PDF URL'] || r.Brochure || r.pdfUrl || '';
+
+        // Row 1 is header, data rows start at row 2
+        const sheetRowNum = rowIdxInValid + 2;
+        const rowExtractedImages = embeddedImagesByRow[sheetRowNum] || [];
+
+        const discreteCols = [rawImg1, rawImg2, rawImg3, rawImg4, rawImg5];
+        const legacyList = legacyImages
+          ? String(legacyImages)
+              .split(/[\n,;]+/)
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .filter((s) => !s.startsWith('['))
+          : [];
+
+        // Build fixed 5-slot array for Image 1 to Image 5
+        const initial5Images = [null, null, null, null, null];
+        for (let s = 0; s < 5; s++) {
+          if (rowExtractedImages[s]) {
+            initial5Images[s] = rowExtractedImages[s];
+          } else if (discreteCols[s] && String(discreteCols[s]).trim() && !String(discreteCols[s]).trim().startsWith('[')) {
+            initial5Images[s] = String(discreteCols[s]).trim();
+          } else if (legacyList[s]) {
+            initial5Images[s] = legacyList[s];
+          }
+        }
+
+        allRows.push({
+          ...r,
+          _sheetName: sheetName,
+          _initialImages: initial5Images,
+          _initialVideo: String(rawVideo).trim().replace(/^\[.*\]$/, '') || null,
+          _initialPdf: String(rawPdf).trim().replace(/^\[.*\]$/, '') || null,
+        });
+      });
+    }
   }
 
-  const slug = getCategorySlug(expectedCategory);
-
-  // Filter out any instruction/header repetition rows
-  const cleanRows = rawRows.filter((r) => {
-    const vals = Object.values(r).filter((v) => v !== '' && v !== null && v !== undefined);
-    return vals.length > 0;
-  });
+  if (allRows.length === 0) {
+    throw new Error('None of the sheets in the uploaded Excel file contain valid data rows.');
+  }
 
   return {
-    sheetName,
-    totalRows: cleanRows.length,
-    rows: cleanRows,
+    sheetNames: Object.keys(sheetBreakdown),
+    sheetBreakdown,
+    totalRows: allRows.length,
+    rows: allRows,
   };
 }

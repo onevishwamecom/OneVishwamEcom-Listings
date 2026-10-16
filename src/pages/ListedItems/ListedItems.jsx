@@ -1,12 +1,22 @@
-import { Link } from 'react-router-dom';
-import PageContainer from '@/components/ui/PageContainer';
-import EmptyState from '@/components/ui/EmptyState';
+import { useSearchParams } from 'react-router-dom';
+import {
+  PageContainer,
+  EmptyState,
+  ListingTable,
+  Button,
+  SegmentedTabs,
+  FilterPills,
+  SearchInput,
+} from '@/components/ui';
 import { ListingsPageSkeleton, ErrorState } from '@/components/skeleton';
 import { STATUS_TABS, EMPTY_STATE, SERVICE_CONFIG, SORT_OPTIONS } from './constants';
 import { useListedItems } from './hooks/useListedItems';
-import { renderActions, renderStatus, renderMobileCard, renderTableRow, renderProductCell, renderCategory, renderLocation, renderDate } from './components/renderers';
+import BulkBatchesView from './components/BulkBatchesView';
 
 function ListedItems() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewMode = searchParams.get('view') === 'bulk' || searchParams.get('tab') === 'bulk' ? 'bulk' : 'items';
+
   const {
     loading,
     error,
@@ -30,13 +40,6 @@ function ListedItems() {
     handleDelete,
   } = useListedItems();
 
-  const renderActionsBound = (item, align) => renderActions(item, align, busyId, handleDelete);
-  const renderStatusBound = (item) => renderStatus(item);
-  const renderMobileCardBound = (item, index) => renderMobileCard(item, index, renderActionsBound, renderStatusBound);
-  const renderTableRowBound = (item, index) => renderTableRow(
-    item, index, renderActionsBound, renderProductCell, renderCategory, renderLocation, renderDate, renderStatusBound
-  );
-
   const activeEmpty = EMPTY_STATE[activeTab] || EMPTY_STATE.all;
   const tabHasItems = filtered.length > 0;
   const showNoResults = tabHasItems && filtered.length === 0;
@@ -54,22 +57,57 @@ function ListedItems() {
           <p className="text-xs text-slate-500 font-medium">Manage and track your submitted products across all review statuses</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
+          <Button
             to="/bulk-listing"
-            className="inline-flex items-center justify-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-300 px-3.5 py-2 rounded-xl font-bold text-xs shadow-xs hover:bg-emerald-100 transition-all duration-150 shrink-0"
+            variant="emerald-outline"
+            size="md"
+            icon="fa-file-excel"
           >
-            <i className="fa-solid fa-file-excel text-emerald-600" aria-hidden="true" /> Bulk Upload
-          </Link>
-          <Link
+            Bulk Upload
+          </Button>
+          <Button
             to="/add-listing"
-            className="inline-flex items-center justify-center gap-2 bg-brand-gold text-brand-navy px-4 py-2 rounded-xl font-bold text-xs shadow-xs hover:bg-brand-gold/90 transition-all duration-150 active:scale-[0.98] shrink-0"
+            variant="gold"
+            size="md"
+            icon="fa-plus"
           >
-            <i className="fa-solid fa-plus text-xs" aria-hidden="true" /> List New Product
-          </Link>
+            List New Product
+          </Button>
         </div>
       </div>
 
-      {error ? (
+      {/* ── View Switcher: Individual Listings vs Grouped Bulk Batches ── */}
+      <SegmentedTabs
+        tabs={[
+          {
+            id: 'individual',
+            label: `Individual Listings (${statusCounts.all})`,
+            icon: 'fa-table-list',
+          },
+          {
+            id: 'bulk',
+            label: 'Bulk Upload Batches',
+            icon: 'fa-layer-group',
+            activeColor: 'emerald',
+          },
+        ]}
+        activeTab={viewMode === 'bulk' ? 'bulk' : 'individual'}
+        onChange={(tabId) => {
+          const next = new URLSearchParams(searchParams);
+          if (tabId === 'bulk') {
+            next.set('view', 'bulk');
+          } else {
+            next.delete('view');
+            next.delete('tab');
+          }
+          setSearchParams(next, { replace: true });
+        }}
+        className="mb-4"
+      />
+
+      {viewMode === 'bulk' ? (
+        <BulkBatchesView />
+      ) : error ? (
         <ErrorState
           icon="fa-triangle-exclamation"
           title="Unable to load listings"
@@ -83,51 +121,26 @@ function ListedItems() {
             
             {/* ── Status Tabs Bar ── */}
             <div className="p-3 border-b border-slate-100 bg-slate-50/50">
-              <div className="overflow-x-auto scrollbar-hide">
-                <nav className="flex gap-1 min-w-max items-center" aria-label="Listing statuses">
-                  {STATUS_TABS.map((tab) => {
-                    const isActive = activeTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => selectTab(tab.id)}
-                        aria-current={isActive ? 'page' : undefined}
-                        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all duration-150 ${
-                          isActive
-                            ? 'bg-brand-blue text-white shadow-xs'
-                            : 'text-slate-600 hover:bg-slate-200/60 hover:text-slate-900'
-                        }`}
-                      >
-                        {tab.label}
-                        <span
-                          className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-md text-[10px] font-extrabold ${
-                            isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
-                          }`}
-                        >
-                          {statusCounts[tab.id]}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
+              <FilterPills
+                tabs={STATUS_TABS.map((tab) => ({
+                  id: tab.id,
+                  label: tab.label,
+                  count: statusCounts[tab.id],
+                }))}
+                activeTab={activeTab}
+                onChange={selectTab}
+                ariaLabel="Listing statuses"
+              />
             </div>
 
             {/* ── Search & Filter Controls ── */}
             <div className="p-3 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_180px_180px] gap-2">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <i className="fa-solid fa-magnifying-glass text-xs" aria-hidden="true" />
-                </div>
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by title, category, city..."
-                  aria-label="Search listings"
-                  className="w-full rounded-lg border bg-white pl-8 pr-3 py-1.5 text-xs outline-none transition-all duration-150 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 hover:border-slate-300"
-                />
-              </div>
+              <SearchInput
+                value={search}
+                onChange={(val) => setSearch(val)}
+                placeholder="Search by title, category, city..."
+                aria-label="Search listings"
+              />
 
               <div className="relative">
                 <select
@@ -171,12 +184,14 @@ function ListedItems() {
                   subtitle={activeEmpty.subtitle}
                   action={
                     activeEmpty.showCta ? (
-                      <Link
+                      <Button
                         to="/add-listing"
-                        className="inline-flex items-center gap-2 bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-brand-blue/90 transition-all duration-150"
+                        variant="primary"
+                        size="md"
+                        icon="fa-plus"
                       >
-                        <i className="fa-solid fa-plus text-xs" aria-hidden="true" /> List New Product
-                      </Link>
+                        List New Product
+                      </Button>
                     ) : undefined
                   }
                 />
@@ -188,43 +203,29 @@ function ListedItems() {
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 mb-0.5">No items match your search</h3>
                 <p className="text-xs text-slate-500 mb-3">Try a different keyword, category or sort option.</p>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon="fa-rotate-left"
                   onClick={() => {
                     setSearch('');
                     setCategoryFilter('all');
                     setSort('newest');
                   }}
-                  className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors"
                 >
-                  <i className="fa-solid fa-rotate-left text-[10px]" aria-hidden="true" /> Clear filters
-                </button>
+                  Clear filters
+                </Button>
               </div>
             ) : (
-              <>
-                {/* Desktop table */}
-                <div className="hidden lg:block overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50/90 border-b border-slate-100">
-                        <th className="px-4 py-2.5 text-[10px] uppercase tracking-wider font-extrabold text-slate-500">Product</th>
-                        <th className="px-4 py-2.5 text-[10px] uppercase tracking-wider font-extrabold text-slate-500">Category</th>
-                        <th className="px-4 py-2.5 text-[10px] uppercase tracking-wider font-extrabold text-slate-500">Location</th>
-                        <th className="px-4 py-2.5 text-[10px] uppercase tracking-wider font-extrabold text-slate-500">Date</th>
-                        <th className="px-4 py-2.5 text-[10px] uppercase tracking-wider font-extrabold text-slate-500">Status</th>
-                        <th className="px-4 py-2.5 text-[10px] uppercase tracking-wider font-extrabold text-slate-500 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {pageItems.map((item, index) => renderTableRowBound(item, index))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile cards */}
-                <div className="lg:hidden divide-y divide-slate-100">
-                  {pageItems.map((item, index) => renderMobileCardBound(item, index))}
-                </div>
-              </>
+              <ListingTable
+                items={pageItems}
+                columns={['product', 'category', 'location', 'date', 'status', 'actions']}
+                portal="lister"
+                onDelete={handleDelete}
+                busyId={busyId}
+                currentPage={currentPage}
+                perPage={perPage}
+              />
             )}
 
             {/* Pagination */}

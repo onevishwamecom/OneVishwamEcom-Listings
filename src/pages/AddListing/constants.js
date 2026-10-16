@@ -2,7 +2,7 @@ import { cities } from "../../data/locations";
 
 export const CATEGORIES = [
   {
-    id: "real-estate",
+    id: "properties",
     label: "Properties",
     icon: "fa-house-chimney",
     desc: "Plots, Layouts, Villas, Agricultural Land & Commercial Spaces",
@@ -249,7 +249,8 @@ export const CATEGORY_TO_MOCK = {
 };
 
 export const SERVICE_TYPE_TO_CATEGORY = {
-  properties: "real-estate",
+  properties: "properties",
+  "real-estate": "properties",
   vehicles: "vehicle",
   groceries: "grocery",
   garments: "garment",

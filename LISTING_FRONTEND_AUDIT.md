@@ -8,7 +8,7 @@
 
 ## 1. Overview & Architecture
 
-The **Vishwam Listings Admin** portal is a React 18 + Vite SPA designed for managing marketplace listings across multiple categories (Real Estate, Vehicles, Groceries, Garments, Jewellery, Finance, Bedding, Electronics).
+The **Vishwam Listings Admin** portal is a React 18 + Vite SPA designed for managing marketplace listings across multiple categories (Properties, Vehicles, Groceries, Garments, Jewellery, Finance, Bedding, Electronics).
 
 * **Framework:** React 18 with Vite build tool
 * **State Management:** Redux Toolkit (`@reduxjs/toolkit`) + React Redux
@@ -38,7 +38,7 @@ The **Vishwam Listings Admin** portal is a React 18 + Vite SPA designed for mana
 ## 3. Category & Form Support
 
 The portal provides end-to-end support for 8 categories:
-1. **Real Estate** (`properties`)
+1. **Properties** (`properties`)
 2. **Vehicles** (`vehicles`)
 3. **Groceries** (`groceries`)
 4. **Garments** (`garments`)

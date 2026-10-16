@@ -1,4 +1,4 @@
-import api from './api';
+import api, { getAccessToken } from './api';
 import cache, { CACHE_TTL } from './cacheService';
 
 /**
@@ -37,7 +37,13 @@ function unwrap(response) {
 
 /** Raw flat list from GET /listings?flatten=1 — shared by all listing data. */
 export function fetchFlatListings() {
+  // If no auth token is available (e.g. after logout or unauthenticated), do NOT call the API
+  if (!getAccessToken()) {
+    return Promise.resolve([]);
+  }
+
   return dedupe('listings', async () => {
+    if (!getAccessToken()) return [];
     const items = unwrap(await api.get('/listings', { params: { flatten: '1' } }));
     const validItems = Array.isArray(items) ? items : [];
     return validItems.filter((item) => {
@@ -49,6 +55,7 @@ export function fetchFlatListings() {
 
 /** All listings grouped by `_type` (the shape the stats/list pages expect). */
 export async function fetchListings() {
+  if (!getAccessToken()) return {};
   const items = await fetchFlatListings();
   const grouped = {};
   for (const item of items) {
@@ -59,14 +66,28 @@ export async function fetchListings() {
   return grouped;
 }
 
-export async function fetchListingById(id) {
-  if (String(id).startsWith('local_')) {
+export async function fetchListingById(id, typeHint) {
+  if (!getAccessToken()) throw new Error('Not authenticated');
+  const cleanId = String(id || '').trim();
+  if (cleanId.startsWith('local_')) {
     throw new Error('Listing not found');
   }
   const items = await fetchFlatListings();
-  const found = items.find((item) => item._id === id || item.id === id);
-  if (!found) throw new Error('Listing not found');
-  return found;
+  const found = items.find((item) => String(item._id) === cleanId || String(item.id) === cleanId);
+  if (found) return found;
+
+  // Direct backend fallback across known modules
+  const candidateTypes = [typeHint, 'properties', 'vehicle', 'grocery', 'garment', 'jewellery'].filter(Boolean);
+  for (const t of candidateTypes) {
+    try {
+      const item = await findListing(t, cleanId);
+      if (item) return { ...item, _type: t };
+    } catch {
+      // try next candidate
+    }
+  }
+
+  throw new Error('Listing not found');
 }
 
 export async function findListing(type, id) {
@@ -95,6 +116,64 @@ export async function bulkUploadListings(formData) {
   });
   invalidateListings();
   return resp.data;
+}
+
+export async function recordTemplateDownloadLog(data) {
+  try {
+    const resp = await api.post('/bulk-listing/download-log', data);
+    return unwrap(resp);
+  } catch (err) {
+    try {
+      const resp = await api.post('/listings/bulk/download-log', data);
+      return unwrap(resp);
+    } catch {
+      return null;
+    }
+  }
+}
+
+export async function fetchBulkBatches(params = {}) {
+  try {
+    const resp = await api.get('/bulk-listing/batches', { params });
+    return unwrap(resp) || [];
+  } catch (err) {
+    const resp = await api.get('/listings/bulk/batches', { params });
+    return unwrap(resp) || [];
+  }
+}
+
+export async function fetchBulkBatchById(batchId) {
+  try {
+    const resp = await api.get(`/bulk-listing/batches/${encodeURIComponent(batchId)}`);
+    return unwrap(resp);
+  } catch (err) {
+    const resp = await api.get(`/listings/bulk/batches/${encodeURIComponent(batchId)}`);
+    return unwrap(resp);
+  }
+}
+
+export async function addItemToBatch(batchId, itemData) {
+  const resp = await api.post(`/bulk-listing/batches/${encodeURIComponent(batchId)}/items`, itemData);
+  invalidateListings();
+  return unwrap(resp);
+}
+
+export async function updateBatchItem(batchId, itemId, updates) {
+  const resp = await api.put(`/bulk-listing/batches/${encodeURIComponent(batchId)}/items/${encodeURIComponent(itemId)}`, updates);
+  invalidateListings();
+  return unwrap(resp);
+}
+
+export async function deleteBatchItem(batchId, itemId) {
+  const resp = await api.delete(`/bulk-listing/batches/${encodeURIComponent(batchId)}/items/${encodeURIComponent(itemId)}`);
+  invalidateListings();
+  return unwrap(resp);
+}
+
+export async function deleteBatch(batchId) {
+  const resp = await api.delete(`/bulk-listing/batches/${encodeURIComponent(batchId)}`);
+  invalidateListings();
+  return unwrap(resp);
 }
 
 export async function uploadImages(files) {

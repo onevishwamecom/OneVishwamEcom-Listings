@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { PageContainer, PageHeader } from "../../components/ui/PageContainer";
 import { CATEGORIES } from "../AddListing/constants";
@@ -7,21 +7,33 @@ import {
   downloadCategoryTemplate,
   validateUploadedFilename,
   getCategorySlug,
-  getBulkListingFilename,
   parseExcelFileForPreview,
 } from "../../utils/bulkTemplateGenerator";
-import { bulkUploadListings } from "../../services/listings";
+import { bulkUploadListings, recordTemplateDownloadLog } from "../../services/listings";
 
 export default function BulkListing() {
   const navigate = useNavigate();
+  const { categoryType } = useParams();
+  const [searchParams] = useSearchParams();
   const fileInputRef = useRef(null);
 
-  // Supported bulk upload categories (focus on top 5 marketplace categories)
+  // Supported bulk upload categories (focus on top marketplace categories)
   const bulkCategories = CATEGORIES.filter((c) =>
-    ["real-estate", "vehicle", "grocery", "garment", "jewellery"].includes(c.id)
+    ["properties", "vehicle", "grocery", "garment", "jewellery"].includes(c.id)
   );
 
-  const [selectedCategory, setSelectedCategory] = useState(bulkCategories[0]?.id || "real-estate");
+  // Determine active category from route param (/bulk-listing/:categoryType) or query (?category=...)
+  const rawParam = categoryType || searchParams.get("category") || "properties";
+  const normalizedCategory = (rawParam === "real-estate" || rawParam === "realestate") ? "properties" : rawParam;
+
+  const currentCategoryObj =
+    bulkCategories.find((c) => c.id === normalizedCategory) ||
+    CATEGORIES.find((c) => c.id === normalizedCategory) ||
+    bulkCategories[0];
+
+  const selectedCategory = currentCategoryObj.id;
+  const canonicalSlug = getCategorySlug(selectedCategory);
+
   const [downloadedFilename, setDownloadedFilename] = useState("");
   const [downloadTimestamp, setDownloadTimestamp] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
@@ -34,30 +46,36 @@ export default function BulkListing() {
   const [uploadResult, setUploadResult] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const currentCategoryObj = bulkCategories.find((c) => c.id === selectedCategory) || bulkCategories[0];
-  const canonicalSlug = getCategorySlug(selectedCategory);
+  // Upload progress tracking
+  const [uploadStatusText, setUploadStatusText] = useState("");
+  const [uploadProgressPercent, setUploadProgressPercent] = useState(0);
+
+  // Reset file state if category changes
+  useEffect(() => {
+    handleClearFile();
+  }, [selectedCategory]);
 
   // Handle template download
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
     setIsDownloading(true);
     try {
-      const res = downloadCategoryTemplate(selectedCategory);
+      const res = await downloadCategoryTemplate(selectedCategory);
       setDownloadedFilename(res.filename);
       setDownloadTimestamp(res.timestamp);
 
+      // Record persistent audit log in backend
+      recordTemplateDownloadLog({
+        category: selectedCategory,
+        filename: res.filename,
+        timestamp: res.timestamp,
+      }).catch((logErr) => console.warn("Could not log template download:", logErr));
+
       Swal.fire({
         icon: "success",
-        title: "Template Downloaded!",
-        html: `
-          <div class="text-left text-sm space-y-2">
-            <p>Your Excel template <b>${res.filename}</b> has been downloaded.</p>
-            <div class="p-2.5 bg-blue-50 text-blue-800 rounded-lg text-xs">
-              <i class="fa-solid fa-circle-info mr-1"></i>
-              <b>Important:</b> Please keep this exact filename format (<code>${canonicalSlug}_bulklisting_${res.timestamp}.xlsx</code>) when you upload.
-            </div>
-          </div>
-        `,
-        confirmButtonColor: "#2563eb",
+        title: "Template Downloaded",
+        text: `Template saved: ${res.filename}`,
+        timer: 2000,
+        showConfirmButton: false,
       });
     } catch (err) {
       console.error("Template download error:", err);
@@ -130,7 +148,7 @@ export default function BulkListing() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Submit bulk listing
+  // Submit bulk listing and prompt user for multimedia upload
   const handleSubmit = async () => {
     if (!uploadedFile || !fileValidation?.valid) {
       Swal.fire({
@@ -142,39 +160,43 @@ export default function BulkListing() {
     }
 
     setIsSubmitting(true);
+    setUploadProgressPercent(30);
+    setUploadStatusText("Uploading Excel spreadsheet...");
+
     try {
       const formData = new FormData();
       formData.append("file", uploadedFile);
       formData.append("category", selectedCategory);
 
+      setUploadProgressPercent(60);
+      setUploadStatusText("Processing listings and validating rows...");
+
       const result = await bulkUploadListings(formData);
+      setUploadProgressPercent(100);
       setUploadResult(result);
 
+      const batchId = result?.batchId || "";
+      const insertedCount = result?.insertedCount || previewData?.totalRows || 0;
+
+      // Post-upload prompt: Upload multimedia or view batches
       Swal.fire({
         icon: "success",
-        title: "Upload Successful!",
-        html: `
-          <div class="text-left space-y-3 text-sm">
-            <p class="font-medium text-slate-800">
-              Successfully processed <b>${result?.insertedCount || previewData?.totalRows || 0}</b> listing(s)!
-            </p>
-            <div class="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-xs space-y-1">
-              <p class="font-bold flex items-center gap-1.5 text-amber-800">
-                <i class="fa-solid fa-clock-rotate-left"></i> Status: Pending Admin Review
-              </p>
-              <p>All items have been queued in pending status. Once our administration team verifies the details, they will go live on One Vishwam.</p>
-            </div>
-          </div>
-        `,
-        confirmButtonText: "View My Listings (Pending)",
-        confirmButtonColor: "#2563eb",
+        title: "Batch Created!",
+        text: `${insertedCount} listings uploaded as batch ${batchId}. Would you like to upload multimedia now?`,
         showCancelButton: true,
-        cancelButtonText: "Upload More",
+        confirmButtonText: '<i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Upload Media',
+        cancelButtonText: 'View Batches',
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#64748b',
+        customClass: {
+          confirmButton: 'rounded-xl px-4 py-2 font-bold text-xs',
+          cancelButton: 'rounded-xl px-4 py-2 font-bold text-xs',
+        },
       }).then((res) => {
-        if (res.isConfirmed) {
-          navigate("/listings?status=pending");
+        if (res.isConfirmed && batchId) {
+          navigate(`/listings?view=bulk&batchId=${encodeURIComponent(batchId)}&openMedia=1`);
         } else {
-          handleClearFile();
+          navigate("/listings?view=bulk");
         }
       });
     } catch (err) {
@@ -188,6 +210,8 @@ export default function BulkListing() {
       });
     } finally {
       setIsSubmitting(false);
+      setUploadProgressPercent(0);
+      setUploadStatusText("");
     }
   };
 
@@ -195,159 +219,67 @@ export default function BulkListing() {
     <PageContainer>
       {/* ── Page Header ── */}
       <PageHeader
-        title="Bulk Product Listing"
-        subtitle="Download category-specific Excel templates, fill your inventory, and upload in bulk."
+        title={`${currentCategoryObj.label} Bulk Upload`}
+        subtitle="Upload multiple listings at once via Excel spreadsheet."
         action={
           <div className="flex items-center gap-2">
             <Link
-              to="/add-listing"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
+              to="/listings?view=bulk"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-xs"
             >
-              <i className="fa-solid fa-plus text-xs text-brand-blue"></i>
-              Single Listing Form
+              <i className="fa-solid fa-layer-group text-slate-500" />
+              View Batches
             </Link>
             <Link
-              to="/listings?status=pending"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-all shadow-sm"
+              to={selectedCategory === "properties" ? "/add-listing" : `/add-listing/${selectedCategory}`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-brand-blue bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-all shadow-xs"
             >
-              <i className="fa-solid fa-hourglass-half text-xs"></i>
-              Pending Approvals
+              <i className="fa-solid fa-plus text-xs" />
+              Single Listing
             </Link>
           </div>
         }
       />
 
-      {/* ── Progress & Workflow Banner ── */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial-gradient from-blue-500/10 to-transparent pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1.5 max-w-xl">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-400/30">
-              <i className="fa-solid fa-bolt text-amber-400"></i> Fast Multi-Item Intake
-            </span>
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight">
-              List Tens or Hundreds of Items in Minutes
-            </h2>
-            <p className="text-slate-300 text-sm leading-relaxed">
-              Select your category below, download the official Excel template, add your records, and upload.
-              Uploaded items are automatically placed in <span className="text-amber-300 font-semibold">Pending Review</span> for prompt admin approval.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 shrink-0">
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
-              <span className="block text-xl font-bold text-blue-300">1</span>
-              <span className="text-[11px] text-slate-300">Pick Category</span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
-              <span className="block text-xl font-bold text-amber-300">2</span>
-              <span className="text-[11px] text-slate-300">Get Template</span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
-              <span className="block text-xl font-bold text-emerald-300">3</span>
-              <span className="text-[11px] text-slate-300">Upload & Save</span>
-            </div>
-          </div>
-        </div>
+      {/* ── Category Quick Switcher ── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-5">
+        {bulkCategories.map((cat) => {
+          const isActive = cat.id === selectedCategory;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => navigate(`/bulk-listing/${cat.id}`)}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                isActive
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              <i className={`fa-solid ${cat.icon} ${isActive ? "text-blue-400" : "text-slate-400"}`} />
+              <span>{cat.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="space-y-8">
-        {/* ── STEP 1: Select Category ── */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+      <div className="space-y-5">
+        {/* ── STEP 1: Download Template ── */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-brand-blue font-bold text-sm">
+              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 text-brand-blue font-extrabold text-xs shrink-0">
                 1
               </span>
               <div>
-                <h3 className="text-base font-bold text-slate-900">Select Listing Category</h3>
-                <p className="text-xs text-slate-500">Each category has its own tailored Excel columns and instructions</p>
-              </div>
-            </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">
-              Active: {currentCategoryObj.label}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-            {bulkCategories.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCategory(cat.id);
-                    handleClearFile();
-                  }}
-                  className={`flex flex-col items-start p-4 rounded-xl border text-left transition-all duration-200 relative ${
-                    isSelected
-                      ? "border-brand-blue bg-blue-50/60 ring-2 ring-brand-blue/30 shadow-md"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60"
-                  }`}
-                >
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-colors ${
-                      isSelected
-                        ? "bg-brand-blue text-white shadow-sm"
-                        : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
-                    }`}
-                  >
-                    <i className={`fa-solid ${cat.icon} text-lg`}></i>
-                  </div>
-                  <span className={`font-bold text-sm ${isSelected ? "text-brand-blue" : "text-slate-900"}`}>
-                    {cat.label}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-bold text-slate-900">Download Template</h3>
+                  <span className="font-mono text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                    {canonicalSlug}_bulklisting_*.xlsx
                   </span>
-                  <span className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{cat.desc}</span>
-
-                  {isSelected && (
-                    <span className="absolute top-3 right-3 text-brand-blue">
-                      <i className="fa-solid fa-circle-check text-base"></i>
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── STEP 2: Download Template Button & Guidelines ── */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-brand-blue font-bold text-sm">
-                2
-              </span>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Download Official Excel Template</h3>
-                <p className="text-xs text-slate-500">
-                  Pre-configured with headers, valid dropdowns, sample rows, and format rules
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-50/80 rounded-xl p-5 border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-5">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  <i className="fa-solid fa-file-excel mr-1"></i> Microsoft Excel (.xlsx)
-                </span>
-                <span className="text-xs text-slate-500">
-                  Category: <b>{currentCategoryObj.label}</b>
-                </span>
-              </div>
-
-              <div className="text-xs text-slate-600 space-y-1">
-                <p>
-                  <b>Naming convention:</b> When downloaded, the template is named:
-                </p>
-                <div className="font-mono text-xs font-bold text-indigo-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 inline-block">
-                  {canonicalSlug}_bulklisting_YYYYMMDD_HHmmss.xlsx
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  <i className="fa-solid fa-triangle-exclamation text-amber-500 mr-1"></i>
-                  The uploaded file name must match this pattern so the backend routes and parses it accurately.
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Pre-configured multi-sheet Excel spreadsheet for {currentCategoryObj.label}
                 </p>
               </div>
             </div>
@@ -356,45 +288,40 @@ export default function BulkListing() {
               type="button"
               onClick={handleDownloadTemplate}
               disabled={isDownloading}
-              className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 shrink-0 transform active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all shrink-0 disabled:opacity-50"
             >
               {isDownloading ? (
                 <>
-                  <i className="fa-solid fa-spinner fa-spin"></i>
+                  <i className="fa-solid fa-spinner fa-spin" />
                   <span>Generating...</span>
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-file-arrow-down text-lg"></i>
-                  <span>Download {currentCategoryObj.label} Template</span>
+                  <i className="fa-solid fa-file-arrow-down" />
+                  <span>Download {currentCategoryObj.label} Template (.xlsx)</span>
                 </>
               )}
             </button>
           </div>
         </div>
 
-        {/* ── STEP 3: Upload Excel File ── */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        {/* ── STEP 2: Upload Excel File ── */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-brand-blue font-bold text-sm">
-                3
+              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 text-brand-blue font-extrabold text-xs shrink-0">
+                2
               </span>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Upload Filled Excel File</h3>
-                <p className="text-xs text-slate-500">
-                  Drop your saved file here. Filename will be verified against the download pattern.
-                </p>
-              </div>
+              <h3 className="text-sm font-bold text-slate-900">Upload Filled Spreadsheet</h3>
             </div>
 
             {uploadedFile && (
               <button
                 type="button"
                 onClick={handleClearFile}
-                className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1"
+                className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
               >
-                <i className="fa-solid fa-trash-can"></i> Remove File
+                <i className="fa-solid fa-trash-can" /> Remove
               </button>
             )}
           </div>
@@ -405,14 +332,14 @@ export default function BulkListing() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${
+            className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
               isDragOver
-                ? "border-brand-blue bg-blue-50/80 scale-[1.01]"
+                ? "border-brand-blue bg-blue-50/70"
                 : uploadedFile
                 ? fileValidation?.valid
                   ? "border-emerald-400 bg-emerald-50/30"
                   : "border-rose-400 bg-rose-50/30"
-                : "border-slate-300 hover:border-brand-blue hover:bg-slate-50/70"
+                : "border-slate-300 hover:border-brand-blue hover:bg-slate-50/50"
             }`}
           >
             <input
@@ -428,104 +355,82 @@ export default function BulkListing() {
             />
 
             {!uploadedFile ? (
-              <div className="space-y-3">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-50 text-brand-blue flex items-center justify-center shadow-inner">
-                  <i className="fa-solid fa-cloud-arrow-up text-2xl"></i>
+              <div className="space-y-1 py-2">
+                <div className="w-10 h-10 mx-auto rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center mb-2">
+                  <i className="fa-solid fa-cloud-arrow-up text-lg" />
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-800">
-                    Click to browse or drag and drop your Excel file here
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Accepts <b>.xlsx</b> or <b>.xls</b> up to 25MB
-                  </p>
-                </div>
-                <div className="pt-1">
-                  <span className="inline-block px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium font-mono">
-                    Expected: {canonicalSlug}_bulklisting_YYYYMMDD_HHmmss.xlsx
-                  </span>
-                </div>
+                <p className="text-xs font-bold text-slate-800">
+                  Drop your .xlsx here, or <span className="text-brand-blue underline">browse</span>
+                </p>
+                <p className="text-[11px] text-slate-400 font-mono">
+                  Format: {canonicalSlug}_bulklisting_*.xlsx
+                </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                <div
-                  className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center shadow-sm ${
-                    fileValidation?.valid ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                  }`}
-                >
+              <div className="space-y-1.5 py-1">
+                <div className="flex items-center justify-center gap-2">
                   <i
                     className={`fa-solid ${
-                      fileValidation?.valid ? "fa-file-circle-check" : "fa-file-circle-xmark"
-                    } text-2xl`}
-                  ></i>
+                      fileValidation?.valid ? "fa-circle-check text-emerald-600" : "fa-circle-xmark text-rose-600"
+                    } text-base`}
+                  />
+                  <span className="font-mono text-xs font-bold text-slate-800">{uploadedFile.name}</span>
+                  <span className="text-[11px] text-slate-400">
+                    ({(uploadedFile.size / 1024).toFixed(1)} KB)
+                  </span>
                 </div>
 
-                <div>
-                  <p className="font-mono text-sm font-bold text-slate-900">{uploadedFile.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Size: {(uploadedFile.size / 1024).toFixed(1)} KB · Last Modified:{" "}
-                    {new Date(uploadedFile.lastModified).toLocaleString()}
+                {!fileValidation?.valid && (
+                  <p className="text-xs text-rose-600 font-medium">
+                    {fileValidation?.error}
                   </p>
-                </div>
-
-                {/* Validation Status Badge */}
-                {fileValidation?.valid ? (
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    <i className="fa-solid fa-circle-check text-emerald-600"></i>
-                    Filename verified! Matches template pattern ({canonicalSlug}_bulklisting_{fileValidation.timestamp}.xlsx)
-                  </div>
-                ) : (
-                  <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs text-left max-w-lg mx-auto space-y-1">
-                    <p className="font-bold flex items-center gap-1.5 text-rose-900">
-                      <i className="fa-solid fa-triangle-exclamation"></i> Filename Validation Failed
-                    </p>
-                    <p>{fileValidation?.error}</p>
-                    <p className="text-slate-600 mt-1">
-                      💡 Tip: Download the template first or rename your file to match{" "}
-                      <code>{canonicalSlug}_bulklisting_YYYYMMDD_HHmmss.xlsx</code>.
-                    </p>
-                  </div>
                 )}
               </div>
             )}
           </div>
 
-          {/* ── STEP 4: Pre-Upload Preview Table ── */}
+          {/* Pre-Upload Preview Table */}
           {previewLoading && (
-            <div className="p-6 text-center text-slate-500 text-sm">
-              <i className="fa-solid fa-spinner fa-spin mr-2"></i> Reading Excel data...
+            <div className="py-4 text-center text-slate-500 text-xs">
+              <i className="fa-solid fa-spinner fa-spin mr-1.5" /> Reading Excel data...
             </div>
           )}
 
           {previewData && previewData.rows && previewData.rows.length > 0 && (
-            <div className="space-y-4 pt-4 border-t border-slate-100 animate-fade-in">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 bg-blue-100 text-brand-blue rounded-lg font-bold text-xs">
-                    {previewData.totalRows} Item(s) Detected
+            <div className="space-y-3 pt-3 border-t border-slate-100 animate-fade-in">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-1 bg-blue-50 text-brand-blue rounded-lg font-bold text-xs border border-blue-100">
+                    {previewData.totalRows} Product(s) Found
                   </span>
-                  <span className="text-xs text-slate-500">
-                    Sheet: <b>{previewData.sheetName}</b>
-                  </span>
+                  {previewData.sheetBreakdown &&
+                    Object.entries(previewData.sheetBreakdown).map(([sheetName, count]) => (
+                      <span
+                        key={sheetName}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600"
+                      >
+                        <span>{sheetName}:</span>
+                        <b className="text-slate-900">{count}</b>
+                      </span>
+                    ))}
                 </div>
 
-                <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1 rounded-lg border border-amber-200">
-                  <i className="fa-solid fa-hourglass-half"></i>
-                  Will be submitted with Pending Admin Approval status
-                </div>
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200">
+                  <i className="fa-solid fa-clock-rotate-left text-[10px]" />
+                  Pending Review
+                </span>
               </div>
 
-              {/* Responsive preview table */}
-              <div className="overflow-x-auto border border-slate-200 rounded-xl max-h-80 overflow-y-auto">
-                <table className="w-full text-left text-xs text-slate-700">
-                  <thead className="bg-slate-100 text-slate-800 font-bold uppercase tracking-wider text-[10px] sticky top-0 z-10 border-b border-slate-200">
+              {/* Clean Preview Table */}
+              <div className="overflow-x-auto border border-slate-200 rounded-xl max-h-72 overflow-y-auto">
+                <table className="w-full text-left text-xs text-slate-700 whitespace-nowrap">
+                  <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] sticky top-0 z-20 border-b border-slate-200">
                     <tr>
-                      <th className="py-2.5 px-3">#</th>
-                      <th className="py-2.5 px-3">Title / Name</th>
-                      <th className="py-2.5 px-3">Type / Category</th>
-                      <th className="py-2.5 px-3">Price</th>
-                      <th className="py-2.5 px-3">Location / City</th>
-                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2 px-3">#</th>
+                      <th className="py-2 px-3">Subcategory</th>
+                      <th className="py-2 px-3">Title / Name</th>
+                      <th className="py-2 px-3">Price</th>
+                      <th className="py-2 px-3">Location</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -535,32 +440,26 @@ export default function BulkListing() {
                         row["Product Name*"] ||
                         row["Brand*"] ||
                         row["Item Name / Title*"] ||
+                        row["Jewellery Name / Title*"] ||
                         row.Title ||
                         row.Name ||
-                        `Product ${idx + 1}`;
-
-                      const type =
-                        row["Property Type*"] ||
-                        row["Vehicle Type*"] ||
-                        row["Category*"] ||
-                        row.Category ||
-                        currentCategoryObj.label;
-
-                      const price = row["Price*"] || row.Price || "-";
+                        `Item ${idx + 1}`;
+                      const price = row["Price (₹)*"] || row["Price*"] || row.Price || "-";
                       const city = row["City*"] || row.City || row.Location || "-";
 
                       return (
-                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                        <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
                           <td className="py-2 px-3 font-mono text-slate-400">{idx + 1}</td>
-                          <td className="py-2 px-3 font-semibold text-slate-900 max-w-xs truncate">{title}</td>
-                          <td className="py-2 px-3 text-slate-600">{type}</td>
-                          <td className="py-2 px-3 font-bold text-emerald-700">{price}</td>
-                          <td className="py-2 px-3 text-slate-600">{city}</td>
                           <td className="py-2 px-3">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">
-                              Pending
+                            <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 max-w-[140px] truncate">
+                              {row._sheetName || "Default"}
                             </span>
                           </td>
+                          <td className="py-2 px-3 font-semibold text-slate-900 max-w-xs truncate" title={title}>
+                            {title}
+                          </td>
+                          <td className="py-2 px-3 font-bold text-slate-900">{price}</td>
+                          <td className="py-2 px-3 text-slate-600">{city}</td>
                         </tr>
                       );
                     })}
@@ -569,47 +468,58 @@ export default function BulkListing() {
               </div>
 
               {previewData.totalRows > 15 && (
-                <p className="text-[11px] text-slate-500 text-center">
-                  Showing first 15 of {previewData.totalRows} products. All {previewData.totalRows} products will be submitted upon upload.
+                <p className="text-[11px] text-slate-400 text-center">
+                  Showing first 15 of {previewData.totalRows} items.
                 </p>
               )}
 
-              {/* Upload Submit Action */}
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100">
-                <div className="text-xs text-slate-500">
-                  <i className="fa-solid fa-shield-check text-emerald-600 mr-1"></i>
-                  Data verified. Ready to upload {previewData.totalRows} product(s) to MongoDB Atlas.
+              {/* Upload Progress Bar if submitting */}
+              {isSubmitting && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-1.5 text-xs text-blue-900">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="flex items-center gap-1.5">
+                      <i className="fa-solid fa-spinner fa-spin text-brand-blue" />
+                      {uploadStatusText || "Uploading..."}
+                    </span>
+                    <span className="font-mono text-brand-blue">{uploadProgressPercent}%</span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-brand-blue h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgressPercent}%` }}
+                    />
+                  </div>
                 </div>
+              )}
 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={handleClearFile}
-                    disabled={isSubmitting}
-                    className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting || !fileValidation?.valid}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-blue hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <i className="fa-solid fa-spinner fa-spin"></i>
-                        <span>Processing & Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <i className="fa-solid fa-upload"></i>
-                        <span>Upload & Submit for Approval</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+              {/* Actions */}
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleClearFile}
+                  disabled={isSubmitting}
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !fileValidation?.valid}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-brand-blue hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <i className="fa-solid fa-spinner fa-spin" />
+                      <span>Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-upload" />
+                      <span>Upload & Submit ({previewData.totalRows})</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           )}
