@@ -62,16 +62,22 @@ export function useAddListingForm() {
   };
 
   useEffect(() => {
-    if (categoryType && form.category !== categoryType) {
-      setForm((prev) => ({ ...prev, category: categoryType }));
-      if (categoryType !== "properties" && categoryType !== "real-estate" && step === 0 && !isEditing) {
+    if (categoryType) {
+      if (form.category !== categoryType) {
+        setForm((prev) => ({ ...prev, category: categoryType }));
+      }
+      if (step === 0 && !isEditing) {
         setStep(1);
       }
-    } else if (!categoryType && !isEditing && form.category) {
-      setForm((prev) => ({ ...prev, category: "" }));
-      setStep(0);
+    } else if (!categoryType && !isEditing) {
+      if (form.category) {
+        setForm((prev) => ({ ...prev, category: "" }));
+      }
+      if (step !== 0) {
+        setStep(0);
+      }
     }
-  }, [categoryType]);
+  }, [categoryType, isEditing]);
 
   // Pre-fill locked partner identity and in-house tags
   useEffect(() => {
@@ -355,6 +361,8 @@ export function useAddListingForm() {
       if (isEditing && originalListingId) {
         await updateListing(typeKey, originalListingId, {
           ...createUpdatedListingData(updatedForm, category, subcategory, finalImageUrls, docUrls, finalBrochureUrl, cities),
+          _type: typeKey,
+          category: category,
           video: finalVideoUrl,
           videoUrl: finalVideoUrl,
           videos: finalVideoUrl ? [finalVideoUrl] : [],
@@ -363,6 +371,8 @@ export function useAddListingForm() {
         const listingPayload = createNewListingData(updatedForm, category, subcategory, finalImageUrls, docUrls, finalBrochureUrl, cities);
         await createListing({
           ...listingPayload,
+          _type: typeKey,
+          category: category,
           origin: assignedOrigin || listingPayload.origin,
           channelPartnerName: assignedPartner || listingPayload.channelPartnerName,
           video: finalVideoUrl,
@@ -452,6 +462,7 @@ export function useAddListingForm() {
         nextForm.area = item.area || "";
         nextForm.address = item.address || item.landmark || "";
         nextForm.landmark = item.landmark || "";
+        nextForm.locationUrl = item.locationUrl || item.details?.locationUrl || item.mapUrl || item.googleMapsUrl || "";
         nextForm.city = item.city || defaultCity;
         nextForm.pincode = item.pincode || "";
         nextForm.contact = item.contact || "9876543210";
@@ -460,22 +471,12 @@ export function useAddListingForm() {
         nextForm.channelPartnerName = item.channelPartnerName || "";
         nextForm.bankLoanDetails = item.bankLoanDetails || "";
 
-        // Resolve subcategory robustly
+        // Resolve subcategory using canonical schema names
         const rawSubcategory =
           item.subcategory ||
-          item.subCategory ||
-          ((serviceType === "properties" || serviceType === "real-estate") && (item.category || item.propertyType)) ||
-          (serviceType === "vehicle" && (
-            item.wheelerType ||
-            item.categoryVehicle ||
-            (item.category === "2-wheeler" ? "Bike" : item.category === "3-wheeler" ? "Auto Rickshaw" : item.category === "commercial" ? "Commercial Vehicle" : item.category === "4-wheeler" ? "Car" : item.category)
-          )) ||
-          (serviceType === "jewellery" && (item.metalType || item.material || item.category)) ||
-          (serviceType === "finance" && (item.serviceType || item.type || item.category)) ||
-          (serviceType === "grocery" && item.category) ||
-          (serviceType === "garment" && item.category) ||
-          (serviceType === "bedding" && item.category) ||
-          (serviceType === "electronics" && item.category) ||
+          item.propertyType ||
+          (serviceType === "vehicle" && (item.bodyType || item.wheelerType || item.category)) ||
+          item.category ||
           "";
 
         const validSubcategories = SUBCATEGORIES[serviceType] || [];
@@ -513,12 +514,25 @@ export function useAddListingForm() {
         if (serviceType === "vehicle") {
           nextForm.brand = item.brand || item.make || "";
           nextForm.model = item.model || "";
+          nextForm.bodyType = item.bodyType || "";
           nextForm.year = item.year ? String(item.year) : "";
-          nextForm.condition = item.condition || "used";
+          nextForm.condition = item.condition === "new" ? "Brand New" : (item.condition === "old" ? "Pre-Owned" : (item.condition || "Brand New"));
           nextForm.fuelType = item.fuelType || "";
           nextForm.kmDriven = item.kmDriven ?? "";
           nextForm.transmission = item.transmission || "";
           nextForm.categoryVehicle = item.categoryVehicle || item.wheelerType || item.category || "";
+          nextForm.mileage = item.mileage || "";
+          nextForm.loanApproved = (item.loanApproved || item.bankLoanDetails) ? "Yes" : "No";
+          nextForm.showroomName = item.showroom?.name || "";
+          nextForm.showroomAddress = item.showroom?.address || "";
+          nextForm.showroomPhone = item.showroom?.phone || "";
+          nextForm.showroomEmail = item.showroom?.email || "";
+          nextForm.variants = Array.isArray(item.variants)
+            ? item.variants.map((v) => (typeof v === "object" ? `${v.variant || v.name || ""}${v.price ? ` - ${v.price}` : ""}` : v)).join(", ")
+            : (item.variants || "");
+          nextForm.features = Array.isArray(item.features)
+            ? item.features.join(", ")
+            : (item.features || "");
         }
         if (serviceType === "grocery") {
           nextForm.quantity = item.stock ?? item.quantity ?? nextForm.quantity;

@@ -9,7 +9,7 @@ import {
   SearchInput,
 } from '@/components/ui';
 import { ListingsPageSkeleton, ErrorState } from '@/components/skeleton';
-import { STATUS_TABS, EMPTY_STATE, SERVICE_CONFIG, SORT_OPTIONS } from './constants';
+import { STATUS_TABS, EMPTY_STATE, SERVICE_CONFIG, SORT_OPTIONS, PRIMARY_CATEGORIES } from './constants';
 import { useListedItems } from './hooks/useListedItems';
 import BulkBatchesView from './components/BulkBatchesView';
 
@@ -150,8 +150,8 @@ function ListedItems() {
                   className="w-full appearance-none rounded-lg border bg-white px-3 py-1.5 pr-7 text-xs font-medium outline-none transition-all duration-150 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 hover:border-slate-300 text-slate-700"
                 >
                   <option value="all">All Categories</option>
-                  {Object.entries(SERVICE_CONFIG).map(([key, cfg]) => (
-                    <option key={key} value={key}>{cfg.label}</option>
+                  {PRIMARY_CATEGORIES.map((cat) => (
+                    <option key={cat.key} value={cat.key}>{cat.label}</option>
                   ))}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">

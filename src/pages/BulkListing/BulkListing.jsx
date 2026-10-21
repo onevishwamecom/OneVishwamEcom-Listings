@@ -17,10 +17,8 @@ export default function BulkListing() {
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef(null);
 
-  // Supported bulk upload categories (focus on top marketplace categories)
-  const bulkCategories = CATEGORIES.filter((c) =>
-    ["properties", "vehicle", "grocery", "garment", "jewellery"].includes(c.id)
-  );
+  // Supported bulk upload categories (declaratively configured from category registry)
+  const bulkCategories = CATEGORIES;
 
   // Determine active category from route param (/bulk-listing/:categoryType) or query (?category=...)
   const rawParam = categoryType || searchParams.get("category") || "properties";

@@ -25,17 +25,23 @@ export function getCategorySlug(category) {
   if (norm === 'real-estate' || norm === 'property' || norm === 'properties') {
     return 'properties';
   }
-  if (norm === 'vehicles' || norm === 'vehicle') {
+  if (norm === 'vehicles' || norm === 'vehicle' || norm === 'automobile' || norm === 'automobiles' || norm === 'car' || norm === 'bike') {
     return 'vehicle';
   }
   if (norm === 'groceries' || norm === 'grocery') {
     return 'grocery';
   }
-  if (norm === 'garments' || norm === 'garment') {
+  if (norm === 'garments' || norm === 'garment' || norm === 'clothing') {
     return 'garment';
   }
   if (norm === 'jewellery' || norm === 'jewelry') {
     return 'jewellery';
+  }
+  if (norm === 'bedding' || norm === 'bedding-comfort') {
+    return 'bedding';
+  }
+  if (norm === 'electronics' || norm === 'consumer-electronics') {
+    return 'electronics';
   }
   return norm || 'properties';
 }
@@ -475,6 +481,50 @@ export const MULTI_SHEET_CONFIGS = {
           'Making Charges',
           'Gender',
           'Certified',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+    ],
+  },
+  bedding: {
+    categoryLabel: 'Bedding & Comfort',
+    sheets: [
+      {
+        sheetName: 'Bedding & Mattresses',
+        subcategoryId: 'Mattress',
+        headers: [
+          'Title*',
+          'Brand*',
+          'Category*',
+          'Material*',
+          'Size*',
+          'Thickness*',
+          'Firmness*',
+          'Price (₹)*',
+          'Price Suffix',
+          'Warranty',
+          'Description',
+        ],
+        sampleRows: [],
+      },
+    ],
+  },
+  electronics: {
+    categoryLabel: 'Electronics',
+    sheets: [
+      {
+        sheetName: 'Consumer Electronics',
+        subcategoryId: 'Electronics',
+        headers: [
+          'Title*',
+          'Brand*',
+          'Model*',
+          'Category*',
+          'Condition*',
+          'Price (₹)*',
+          'Price Suffix',
+          'Warranty',
           'Description',
         ],
         sampleRows: [],

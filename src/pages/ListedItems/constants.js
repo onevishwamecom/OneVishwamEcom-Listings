@@ -1,4 +1,4 @@
-export { SERVICE_CONFIG } from '../../config/listingConfig';
+export { SERVICE_CONFIG, PRIMARY_CATEGORIES, normalizeCategoryKey } from '../../config/listingConfig';
 
 export const STATUS_TABS = [
   { id: 'all', label: 'All' },

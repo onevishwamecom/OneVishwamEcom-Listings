@@ -6,20 +6,10 @@ import IconButton from './IconButton';
 import StatusPill from './StatusPill';
 import CategoryBadge from './CategoryBadge';
 
-// Standard category visual configuration
-export const DEFAULT_CATEGORY_CONFIG = {
-  properties: { label: 'Properties', icon: 'fa-house-chimney', color: 'bg-blue-50 text-brand-blue border-blue-100' },
-  property: { label: 'Properties', icon: 'fa-house-chimney', color: 'bg-blue-50 text-brand-blue border-blue-100' },
-  vehicle: { label: 'Vehicle', icon: 'fa-car-side', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  vehicles: { label: 'Vehicles', icon: 'fa-car-side', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  grocery: { label: 'Grocery', icon: 'fa-basket-shopping', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  groceries: { label: 'Groceries', icon: 'fa-basket-shopping', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  garment: { label: 'Garments', icon: 'fa-shirt', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-  garments: { label: 'Garments', icon: 'fa-shirt', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-  jewellery: { label: 'Jewellery', icon: 'fa-gem', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
-  finance: { label: 'Finance', icon: 'fa-building-columns', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  services: { label: 'Services', icon: 'fa-wrench', color: 'bg-slate-100 text-slate-700 border-slate-200' },
-};
+import { SERVICE_CONFIG } from '@/config/listingConfig';
+
+// Standard category visual configuration dynamically derived from category registry
+export const DEFAULT_CATEGORY_CONFIG = SERVICE_CONFIG;
 
 // Standard status pill configuration
 export const DEFAULT_STATUS_CONFIG = {

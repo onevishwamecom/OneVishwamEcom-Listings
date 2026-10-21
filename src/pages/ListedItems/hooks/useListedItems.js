@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useListingStats } from '@/components/ListingStats';
 import { getDisplayId } from '@/utils';
-import { parsePrice, PRICE_LIMITS, SERVICE_CONFIG } from '../constants';
+import { parsePrice, PRICE_LIMITS, SERVICE_CONFIG, normalizeCategoryKey } from '../constants';
 import useCachedData from '@/hooks/useCachedData';
 import { fetchListings, deleteListing, invalidateListings } from '@/services/listings';
 import { deleteMediaFromStorage } from '@/services/storageService';
@@ -18,7 +18,10 @@ export function useListedItems() {
 
   const [searchInput, setSearchInput] = useState('');
   const search = useDebouncedValue(searchInput, 300);
-  const [categoryFilter, setCategoryFilter] = useState('all');
+
+  const urlCategory = searchParams.get('category') || searchParams.get('type') || 'all';
+  const [categoryFilter, setCategoryFilterState] = useState(urlCategory);
+
   const [sort, setSort] = useState('newest');
   const [priceRange] = useState({ ...PRICE_LIMITS });
   const [page, setPage] = useState(1);
@@ -26,6 +29,24 @@ export function useListedItems() {
 
   const tabParam = searchParams.get('status');
   const activeTab = ['pending', 'approved', 'changes-required', 'cancelled'].includes(tabParam) ? tabParam : 'all';
+
+  // Keep categoryFilter in sync if searchParams change
+  useEffect(() => {
+    const param = searchParams.get('category') || searchParams.get('type') || 'all';
+    setCategoryFilterState(param);
+  }, [searchParams]);
+
+  const setCategoryFilter = useCallback((cat) => {
+    setCategoryFilterState(cat);
+    const next = new URLSearchParams(searchParams);
+    if (cat === 'all') {
+      next.delete('category');
+      next.delete('type');
+    } else {
+      next.set('category', cat);
+    }
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const { data: allListings, setData: setAllListings, loading, error, retry } = useCachedData(
     fetchListings,
@@ -38,13 +59,15 @@ export function useListedItems() {
     setPage(1);
   }, [search, categoryFilter, sort, activeTab, priceRange]);
 
-  const selectTab = (id) => {
+  const selectTab = useCallback((id) => {
+    const next = new URLSearchParams(searchParams);
     if (id === 'all') {
-      setSearchParams({}, { replace: true });
+      next.delete('status');
     } else {
-      setSearchParams({ status: id }, { replace: true });
+      next.set('status', id);
     }
-  };
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const items = useMemo(() => {
     const all = [];
@@ -56,30 +79,41 @@ export function useListedItems() {
     return all.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }, [allListings]);
 
+  // First filter items by selected category
+  const categoryFiltered = useMemo(() => {
+    if (categoryFilter === 'all') return items;
+    const targetNorm = normalizeCategoryKey(categoryFilter);
+    return items.filter((item) => {
+      const itemTypeNorm = normalizeCategoryKey(item._type);
+      const itemCatNorm = normalizeCategoryKey(item.category);
+      return itemTypeNorm === targetNorm || itemCatNorm === targetNorm;
+    });
+  }, [items, categoryFilter]);
+
+  // Status counts reflect the active category items
   const statusCounts = useMemo(() => {
-    const counts = { all: items.length, pending: 0, approved: 0, 'changes-required': 0, cancelled: 0 };
-    items.forEach((item) => {
+    const counts = { all: categoryFiltered.length, pending: 0, approved: 0, 'changes-required': 0, cancelled: 0 };
+    categoryFiltered.forEach((item) => {
       if (item.status === 'pending') counts.pending += 1;
       else if (item.status === 'approved') counts.approved += 1;
       else if (item.status === 'changes-required') counts['changes-required'] += 1;
       else if (item.status === 'cancelled' || item.status === 'rejected') counts.cancelled += 1;
     });
     return counts;
-  }, [items]);
+  }, [categoryFiltered]);
 
+  // Then filter by active status tab
   const tabFiltered = useMemo(() => {
-    if (activeTab === 'all') return items;
-    if (activeTab === 'cancelled') return items.filter((item) => item.status === 'cancelled' || item.status === 'rejected');
-    return items.filter((item) => item.status === activeTab);
-  }, [items, activeTab]);
+    if (activeTab === 'all') return categoryFiltered;
+    if (activeTab === 'cancelled') {
+      return categoryFiltered.filter((item) => item.status === 'cancelled' || item.status === 'rejected');
+    }
+    return categoryFiltered.filter((item) => item.status === activeTab);
+  }, [categoryFiltered, activeTab]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     let list = tabFiltered;
-
-    if (categoryFilter !== 'all') {
-      list = list.filter((item) => item._type === categoryFilter);
-    }
 
     if (term) {
       list = list.filter((item) => {
@@ -116,7 +150,7 @@ export function useListedItems() {
         sorted.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     }
     return sorted;
-  }, [tabFiltered, search, categoryFilter, sort, priceRange]);
+  }, [tabFiltered, search, sort, priceRange]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const currentPage = Math.min(page, totalPages);

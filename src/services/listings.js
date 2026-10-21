@@ -220,6 +220,9 @@ export function invalidateListings() {
   cache.invalidate('listings');
   cache.invalidate('stats');
   cache.invalidate('listing:');
+  try {
+    localStorage.setItem('admin_listings_updated', String(Date.now()));
+  } catch (e) {}
 }
 
 export { CACHE_TTL };

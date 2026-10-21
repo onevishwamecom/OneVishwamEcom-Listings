@@ -8,7 +8,7 @@ export function ListingTypeCard({ type, count, index }) {
   return (
     <Link
       key={type}
-      to="/listings"
+      to={`/listings?category=${encodeURIComponent(type)}`}
       className="group bg-white rounded-2xl border border-slate-200/70 p-3.5 shadow-sm hover:shadow-md transition-all duration-200 opacity-0 animate-fade-in-up"
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'forwards' }}
     >

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/store/authSlice';
-import { resolvePartnerIdentity } from '@/config/partnerDirectory';
 import Phase1Header from './Phase1Header';
 import ResidentialFields from './ResidentialFields';
 import ResidentialUnitFields from './ResidentialUnitFields';
@@ -9,20 +8,13 @@ import CommercialFields from './CommercialFields';
 import PlotFields from './PlotFields';
 import IndustrialFields from './IndustrialFields';
 import Phase3FinalFields from './Phase3FinalFields';
+import ListingPhaseStepper from '../shared/ListingPhaseStepper';
+import PhaseNavigationActions from '../shared/PhaseNavigationActions';
 
 const PHASES = [
-  {
-    step: 1,
-    title: 'Partner & Category',
-  },
-  {
-    step: 2,
-    title: 'Specifications',
-  },
-  {
-    step: 3,
-    title: 'Media & Approvals',
-  },
+  { step: 1, title: 'Partner & Category' },
+  { step: 2, title: 'Specifications' },
+  { step: 3, title: 'Media & Approvals' },
 ];
 
 export default function PropertyListingForm({
@@ -49,17 +41,11 @@ export default function PropertyListingForm({
   const [errors, setErrors] = useState({});
 
   const { user } = useAuth();
-  const partnerInfo = resolvePartnerIdentity(user?.email || user?.vendorEmail);
-  const userEmail = (user?.email || user?.vendorEmail || '').toLowerCase();
-  const isOneVishwam = user?.role === 'in_house' || partnerInfo?.role === 'in_house' || userEmail.endsWith('@onevishwam.com');
+  const userEmail = (user?.email || '').toLowerCase();
+  const isOneVishwam = user?.role === 'in_house' || userEmail.endsWith('@onevishwam.com');
 
-  const resolvedPartnerName = isOneVishwam
-    ? 'One Vishwam'
-    : (user?.partnerName || partnerInfo?.partnerName || user?.name || user?.displayName || userEmail || 'External Partner');
-
-  const resolvedVendorName = isOneVishwam
-    ? 'One Vishwam'
-    : (user?.name || user?.partnerName || partnerInfo?.partnerName || user?.displayName || userEmail || 'Independent Owner');
+  const resolvedPartnerName = isOneVishwam ? 'One Vishwam' : user?.name || 'Verified Lister';
+  const resolvedVendorName = isOneVishwam ? 'One Vishwam' : user?.name || 'Independent Owner';
 
   useEffect(() => {
     onPhaseChange?.(activePhase);
@@ -121,7 +107,6 @@ export default function PropertyListingForm({
     }
   };
 
-  // Phase 1 validation (Identity is auto-derived, so only property category selection is validated)
   const validatePhase1 = () => {
     const errs = {};
     if (!propertyType) errs.propertyType = 'Please select a property category';
@@ -129,7 +114,6 @@ export default function PropertyListingForm({
     return Object.keys(errs).length === 0;
   };
 
-  // Phase 2 validation for the active category
   const validatePhase2 = () => {
     const errs = {};
     const d = details || {};
@@ -148,42 +132,48 @@ export default function PropertyListingForm({
       if (!getVal('cornerPlot', 'cornerPlot')) errs.cornerPlot = 'Corner Plot selection is required';
       if (!getVal('approvedLayout', 'approval')) errs.approvedLayout = 'Approved Layout is required';
       if (!getVal('approvalAuthority', 'approval')) errs.approvalAuthority = 'Approval Authority is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
-      if (!getVal('negotiable', 'negotiable')) errs.negotiable = 'Negotiable selection is required';
+      if (!getVal('price', 'price')) errs.price = 'Asking Price is required';
+      if (!getVal('area', 'area')) errs.area = 'Locality / Area is required';
     } else if (propertyType === 'Flat/Villa' || propertyType === 'Independent House') {
-      if (!getVal('projectName', 'title')) errs.projectName = 'Project / Society / House Name is required';
+      if (!getVal('propertyName', 'title')) errs.propertyName = 'Property Name is required';
       if (!getVal('bhk', 'bhk')) errs.bhk = 'BHK configuration is required';
-      if (!getVal('superBuiltUpArea', 'area_sqft') && !getVal('superBuiltUpArea', 'area')) errs.superBuiltUpArea = 'Super Built-up Area is required';
-      if (!getVal('floors', 'floor')) errs.floors = 'Floor information is required';
-      if (!getVal('facing', 'facing')) errs.facing = 'Facing is required';
-      if (!getVal('bathrooms', 'bathrooms')) errs.bathrooms = 'Number of Bathrooms is required';
-      if (!getVal('balconies', 'balconies')) errs.balconies = 'Number of Balconies is required';
+      if (!getVal('bathrooms', 'bathrooms')) errs.bathrooms = 'Bathrooms count is required';
+      if (!getVal('facing', 'facing')) errs.facing = 'Facing direction is required';
       if (!getVal('furnishing', 'furnishing')) errs.furnishing = 'Furnishing Status is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
+      if (!getVal('price', 'price')) errs.price = 'Asking Price is required';
+      if (!getVal('area', 'area')) errs.area = 'Locality / Area is required';
     } else if (propertyType === 'Agricultural') {
-      if (!getVal('totalLandExtent', 'area') && !getVal('totalLandExtent', 'area_sqft')) errs.totalLandExtent = 'Total Land Extent is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
+      if (!getVal('propertyName', 'title')) errs.propertyName = 'Land Name / Title is required';
+      if (!getVal('landSize', 'area_sqft') && !getVal('landSize', 'area')) errs.landSize = 'Total Land Extent is required';
+      if (!getVal('soilType', 'soilType')) errs.soilType = 'Soil Type is required';
+      if (!getVal('price', 'price')) errs.price = 'Price is required';
+      if (!getVal('area', 'area')) errs.area = 'Taluk / District is required';
     } else if (propertyType === 'Commercial') {
-      if (!getVal('commercialType', 'subcategory')) errs.commercialType = 'Commercial Type is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
+      if (!getVal('propertyName', 'title')) errs.propertyName = 'Commercial Property Name is required';
+      if (!getVal('commercialType', 'subcategory')) errs.commercialType = 'Commercial Space Type is required';
+      if (!getVal('dimensions', 'area_sqft') && !getVal('dimensions', 'area')) errs.dimensions = 'Dimensions / Size is required';
+      if (!getVal('price', 'price')) errs.price = 'Price is required';
+      if (!getVal('area', 'area')) errs.area = 'Area / Location is required';
     } else if (propertyType === 'Plot/Land') {
-      if (!getVal('projectName', 'title')) errs.projectName = 'Project / Layout Name is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
+      if (!getVal('propertyName', 'title')) errs.propertyName = 'Layout / Plot Name is required';
+      if (!getVal('plotDimensions', 'area_sqft') && !getVal('plotDimensions', 'area')) errs.plotDimensions = 'Plot Dimensions are required';
+      if (!getVal('approvedLayout', 'approval')) errs.approvedLayout = 'Approval Authority is required';
+      if (!getVal('price', 'price')) errs.price = 'Price is required';
+      if (!getVal('area', 'area')) errs.area = 'Locality / Area is required';
     } else if (propertyType === 'Industrial') {
-      if (!getVal('industrialType', 'subcategory')) errs.industrialType = 'Industrial Type is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
+      if (!getVal('propertyName', 'title')) errs.propertyName = 'Industrial Facility Name is required';
+      if (!getVal('plotArea', 'area_sqft') && !getVal('plotArea', 'area')) errs.plotArea = 'Total Plot Area is required';
+      if (!getVal('price', 'price')) errs.price = 'Price is required';
+      if (!getVal('area', 'area')) errs.area = 'Industrial Zone / Area is required';
     }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  // Phase 3 validation
   const validatePhase3 = () => {
     const errs = {};
-    if (!bankLoanDetails.trim()) errs.bankLoanDetails = 'Bank Loan Approval Details are required';
-    if (!form.address?.trim()) errs.address = 'Full Address is required';
-    // Description is optional
+    if (photos.length === 0) errs.photos = 'Please upload at least 1 photo for approval';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -245,73 +235,9 @@ export default function PropertyListingForm({
 
   return (
     <div className="space-y-6">
-      {/* Minimalist Horizontal Step Progress Bar */}
-      <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 sm:px-6 shadow-xs">
-        <div className="flex items-center justify-between">
-          {PHASES.map((p, idx) => {
-            const isActive = p.step === activePhase;
-            const isCompleted = p.step < activePhase;
-            const isClickable = p.step <= activePhase;
+      {/* Shared Horizontal Step Progress Bar */}
+      <ListingPhaseStepper phases={PHASES} activePhase={activePhase} onStepJump={handleStepJump} />
 
-            return (
-              <React.Fragment key={p.step}>
-                <button
-                  type="button"
-                  onClick={() => handleStepJump(p.step)}
-                  disabled={!isClickable}
-                  className={`flex items-center gap-2.5 transition-colors group ${
-                    isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                  }`}
-                >
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-brand-blue text-white ring-4 ring-blue-100 shadow-xs'
-                        : isCompleted
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-500 border border-slate-200'
-                    }`}
-                  >
-                    {isCompleted ? <i className="fa-solid fa-check text-[10px]" /> : p.step}
-                  </div>
-                  <span
-                    className={`text-xs font-semibold hidden sm:inline transition-colors ${
-                      isActive
-                        ? 'text-brand-blue font-bold'
-                        : isCompleted
-                        ? 'text-slate-700'
-                        : 'text-slate-400'
-                    }`}
-                  >
-                    Step {p.step}: {p.title}
-                  </span>
-                  <span
-                    className={`text-xs font-semibold sm:hidden transition-colors ${
-                      isActive
-                        ? 'text-brand-blue font-bold'
-                        : isCompleted
-                        ? 'text-slate-700'
-                        : 'text-slate-400'
-                    }`}
-                  >
-                    {p.title}
-                  </span>
-                </button>
-
-                {idx < PHASES.length - 1 && (
-                  <div
-                    className={`flex-1 h-0.5 mx-3 sm:mx-6 transition-colors ${
-                      p.step < activePhase ? 'bg-emerald-500' : 'bg-slate-200'
-                    }`}
-                  />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Form Content Area */}
       <div className="space-y-6">
         {activePhase === 1 && (
           <Phase1Header
@@ -326,54 +252,24 @@ export default function PropertyListingForm({
         )}
 
         {activePhase === 2 && (
-          <div>
+          <div className="space-y-6 animate-fade-in">
             {propertyType === 'Residential' && (
-              <ResidentialFields
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+              <ResidentialFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-
             {(propertyType === 'Flat/Villa' || propertyType === 'Independent House') && (
-              <ResidentialUnitFields
-                propertyType={propertyType}
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+              <ResidentialUnitFields propertyType={propertyType} details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-
             {propertyType === 'Agricultural' && (
-              <AgriculturalFields
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+              <AgriculturalFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-
             {propertyType === 'Commercial' && (
-              <CommercialFields
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+              <CommercialFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-
             {propertyType === 'Plot/Land' && (
-              <PlotFields
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+              <PlotFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-
             {propertyType === 'Industrial' && (
-              <IndustrialFields
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+              <IndustrialFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
           </div>
         )}
@@ -399,75 +295,17 @@ export default function PropertyListingForm({
         )}
       </div>
 
-      {submitError && (
-        <div className="rounded-2xl bg-red-50 border border-red-200 p-4 text-xs font-semibold text-red-700 flex items-center gap-2">
-          <i className="fa-solid fa-triangle-exclamation text-sm" />
-          <span>{submitError}</span>
-        </div>
-      )}
-
-      {/* Pinned / Docked Bottom Navigation Bar */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => {
-            if (activePhase === 1) {
-              onCancel?.();
-            } else {
-              handlePrevPhase();
-            }
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer"
-        >
-          <i className="fa-solid fa-arrow-left text-[11px]" />
-          <span>{activePhase === 1 ? 'Cancel / Back' : 'Previous Step'}</span>
-        </button>
-
-        <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-400">
-          <span>Step {activePhase} of 3</span>
-          <span>•</span>
-          <span className="text-slate-700 font-bold">{PHASES[activePhase - 1]?.title}</span>
-        </div>
-
-        {activePhase < 3 ? (
-          <button
-            type="button"
-            onClick={handleNextPhase}
-            disabled={activePhase === 1 && !isStep1Valid}
-            className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all ${
-              activePhase === 1 && !isStep1Valid
-                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                : 'bg-brand-blue text-white hover:bg-blue-700 shadow-sm shadow-brand-blue/25 hover:shadow cursor-pointer'
-            }`}
-          >
-            <span>Continue to Step {activePhase + 1}</span>
-            <i className="fa-solid fa-arrow-right text-[11px]" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleFinalSubmit}
-            disabled={submitting}
-            className={`inline-flex items-center gap-2 px-7 py-2.5 rounded-lg bg-gradient-to-r from-brand-blue to-blue-600 text-white text-xs font-bold shadow-md shadow-brand-blue/25 transition-all ${
-              submitting
-                ? 'opacity-60 cursor-wait'
-                : 'hover:opacity-95 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer'
-            }`}
-          >
-            {submitting ? (
-              <>
-                <i className="fa-solid fa-circle-notch fa-spin text-xs" />
-                <span>Publishing Listing...</span>
-              </>
-            ) : (
-              <>
-                <i className="fa-solid fa-paper-plane text-xs" />
-                <span>Publish Property Listing</span>
-              </>
-            )}
-          </button>
-        )}
-      </div>
+      {/* Shared Navigation and Action Bar */}
+      <PhaseNavigationActions
+        activePhase={activePhase}
+        totalPhases={3}
+        onPrev={handlePrevPhase}
+        onNext={handleNextPhase}
+        onSubmit={handleFinalSubmit}
+        onCancel={onCancel}
+        submitting={submitting}
+        submitError={submitError}
+      />
     </div>
   );
 }

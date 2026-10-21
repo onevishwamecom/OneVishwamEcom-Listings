@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import {
   fetchBulkBatches,
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui';
 
 export default function BulkBatchesView() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryBatchId = searchParams.get('batchId');
   const queryOpenMedia = searchParams.get('openMedia');
@@ -105,14 +106,13 @@ export default function BulkBatchesView() {
     });
   };
 
-  // Open Edit Item Modal
+  // Navigate directly to the full 3-step Edit Page
   const handleOpenEditModal = (batch, item) => {
-    setModalState({
-      isOpen: true,
-      batchId: batch.batchId,
-      batchCategory: batch.category || 'properties',
-      item,
-    });
+    const targetId = item?.itemId || item?._id || item?.id;
+    const cat = item?._type || item?.category || batch?.category || 'properties';
+    if (targetId) {
+      navigate(`/add-listing?edit=${encodeURIComponent(targetId)}&type=${encodeURIComponent(cat)}`);
+    }
   };
 
   // Close Modal
@@ -556,6 +556,11 @@ export default function BulkBatchesView() {
                           getItemLink={(item) =>
                             `/listings/${item.itemId || item._id}?type=${encodeURIComponent(batch.category || item.category || 'properties')}`
                           }
+                          getEditLink={(item) => {
+                            const targetId = item.itemId || item._id || item.id;
+                            const cat = item._type || item.category || batch.category || 'properties';
+                            return `/add-listing?edit=${encodeURIComponent(targetId)}&type=${encodeURIComponent(cat)}`;
+                          }}
                           busyId={busyItemId}
                           responsiveMode="scroll"
                           onEdit={(item) => handleOpenEditModal(batch, item)}
