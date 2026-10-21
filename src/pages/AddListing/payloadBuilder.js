@@ -50,7 +50,7 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     googleMapsUrl: form.locationUrl || "",
     pincode: form.pincode || "",
     contact: form.contact || "",
-    images: imageUrls || [],
+    images: (imageUrls || []).slice(0, 5),
     documents: docUrls || [],
     pdfUrl: brochureUrl || null,
     vendorName: form.vendorName || "",

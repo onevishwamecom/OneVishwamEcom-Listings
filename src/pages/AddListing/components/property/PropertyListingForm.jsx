@@ -22,6 +22,7 @@ export default function PropertyListingForm({
   updateForm,
   photos = [],
   onAddPhoto,
+  onAddPhotoUrl,
   onRemovePhoto,
   video = null,
   videoPreview = null,
@@ -281,6 +282,7 @@ export default function PropertyListingForm({
             onChange={handleRootChange}
             photos={photos}
             onAddPhoto={onAddPhoto}
+            onAddPhotoUrl={onAddPhotoUrl}
             onRemovePhoto={onRemovePhoto}
             video={video}
             videoPreview={videoPreview}

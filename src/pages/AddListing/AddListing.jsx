@@ -51,6 +51,7 @@ export default function AddListing() {
     // Handlers
     updateForm,
     handleAddPhoto,
+    handleAddPhotoUrl,
     handleAddDocument,
     removePhoto,
     removeDocument,
@@ -191,6 +192,7 @@ export default function AddListing() {
               updateForm={updateForm}
               photos={photos}
               onAddPhoto={handleAddPhoto}
+              onAddPhotoUrl={handleAddPhotoUrl}
               onRemovePhoto={removePhoto}
               video={video}
               videoPreview={videoPreview}
@@ -218,6 +220,7 @@ export default function AddListing() {
               catFields={catFields}
               photos={photos}
               onAddPhoto={handleAddPhoto}
+              onAddPhotoUrl={handleAddPhotoUrl}
               onRemovePhoto={removePhoto}
               video={video}
               videoPreview={videoPreview}

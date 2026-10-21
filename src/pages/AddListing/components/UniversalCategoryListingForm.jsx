@@ -24,6 +24,7 @@ export default function UniversalCategoryListingForm({
   catFields = [],
   photos = [],
   onAddPhoto,
+  onAddPhotoUrl,
   onRemovePhoto,
   video = null,
   videoPreview = null,
@@ -376,6 +377,7 @@ export default function UniversalCategoryListingForm({
         <MediaUploadSection
           photos={photos}
           onAddPhoto={onAddPhoto}
+          onAddPhotoUrl={onAddPhotoUrl}
           onRemovePhoto={onRemovePhoto}
           video={video}
           videoPreview={videoPreview}

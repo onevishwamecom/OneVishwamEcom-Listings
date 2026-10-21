@@ -20,6 +20,7 @@ export default function Phase3FinalFields({
   onChange,
   photos = [],
   onAddPhoto,
+  onAddPhotoUrl,
   onRemovePhoto,
   video = null,
   videoPreview = null,
@@ -94,6 +95,7 @@ export default function Phase3FinalFields({
       <MediaUploadSection
         photos={photos}
         onAddPhoto={onAddPhoto}
+        onAddPhotoUrl={onAddPhotoUrl}
         onRemovePhoto={onRemovePhoto}
         video={video}
         videoPreview={videoPreview}

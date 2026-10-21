@@ -136,7 +136,15 @@ export function useAddListingForm() {
   }, []);
 
   const handleAddPhoto = async (file) => {
-    if (!file || photos.length >= 6) return;
+    if (!file) return;
+    if (photos.length >= 5) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Image Limit Reached',
+        text: 'Maximum 5 images allowed across all categories (uploaded files + direct links).',
+      });
+      return;
+    }
     const tempId = Date.now() + Math.random();
     setPhotos((prev) => [
       ...prev,
@@ -154,6 +162,39 @@ export function useAddListingForm() {
       setPhotos((prev) => prev.filter((p) => p.id !== tempId));
       Swal.fire({ icon: "error", title: "Upload Failed", text: "Failed to upload photo." });
     }
+  };
+
+  const handleAddPhotoUrl = (rawUrl) => {
+    const url = (rawUrl || '').trim();
+    if (!url) return;
+    if (photos.length >= 5) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Image Limit Reached',
+        text: 'Maximum 5 images allowed across all categories (uploaded files + direct links).',
+      });
+      return;
+    }
+    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid URL',
+        text: 'Please enter a valid image web link starting with http:// or https://',
+      });
+      return;
+    }
+    const tempId = `link_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const urlName = url.split('/').pop()?.split('?')[0] || 'Image Link';
+    setPhotos((prev) => [
+      ...prev,
+      {
+        id: tempId,
+        name: urlName.length > 25 ? `${urlName.slice(0, 22)}...` : urlName,
+        url,
+        isDirectLink: true,
+        uploading: false,
+      },
+    ]);
   };
 
   const handleAddDocument = async (file) => {
@@ -287,9 +328,11 @@ export function useAddListingForm() {
             console.warn("Firebase image upload failed:", pErr?.message);
           }
         } else if (photo.url && !photo.url.startsWith('blob:')) {
+          // Direct web link: Bypasses Firebase Storage completely! Added directly to MongoDB.
           finalImageUrls.push(photo.url);
         }
       }
+      const cappedImageUrls = finalImageUrls.slice(0, 5);
 
       // Upload supporting documents to Firebase Storage
       const finalDocUrls = [];
@@ -351,33 +394,27 @@ export function useAddListingForm() {
         ...form,
         channelPartnerName: assignedPartner || form.channelPartnerName,
         origin: assignedOrigin,
-        videoUrl: finalVideoUrl,
-        video: finalVideoUrl,
-        videos: finalVideoUrl ? [finalVideoUrl] : [],
+        videoUrl: finalVideoUrl || '',
         brochure: finalBrochureUrl,
         pdfUrl: finalBrochureUrl,
       };
 
       if (isEditing && originalListingId) {
         await updateListing(typeKey, originalListingId, {
-          ...createUpdatedListingData(updatedForm, category, subcategory, finalImageUrls, docUrls, finalBrochureUrl, cities),
+          ...createUpdatedListingData(updatedForm, category, subcategory, cappedImageUrls, docUrls, finalBrochureUrl, cities),
           _type: typeKey,
           category: category,
-          video: finalVideoUrl,
-          videoUrl: finalVideoUrl,
-          videos: finalVideoUrl ? [finalVideoUrl] : [],
+          videoUrl: finalVideoUrl || '',
         });
       } else {
-        const listingPayload = createNewListingData(updatedForm, category, subcategory, finalImageUrls, docUrls, finalBrochureUrl, cities);
+        const listingPayload = createNewListingData(updatedForm, category, subcategory, cappedImageUrls, docUrls, finalBrochureUrl, cities);
         await createListing({
           ...listingPayload,
           _type: typeKey,
           category: category,
           origin: assignedOrigin || listingPayload.origin,
           channelPartnerName: assignedPartner || listingPayload.channelPartnerName,
-          video: finalVideoUrl,
-          videoUrl: finalVideoUrl,
-          videos: finalVideoUrl ? [finalVideoUrl] : [],
+          videoUrl: finalVideoUrl || '',
           contributor: {
             name: user.name || user.fullName || 'Unknown',
             type: assignedRole || user.role || 'vendor',
@@ -654,6 +691,7 @@ return {
     // Handlers
     updateForm,
     handleAddPhoto,
+    handleAddPhotoUrl,
     handleAddDocument,
     removePhoto,
     removeDocument,

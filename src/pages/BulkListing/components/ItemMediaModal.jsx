@@ -46,6 +46,7 @@ export default function ItemMediaModal({
   const [video, setVideo] = useState(null); // { file?: File, url?: string, name: string, size: number }
   const [pdf, setPdf] = useState(null); // { file?: File, url?: string, name: string, size: number }
   const [errorMessage, setErrorMessage] = useState('');
+  const [directLinkInput, setDirectLinkInput] = useState('');
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -199,6 +200,34 @@ export default function ItemMediaModal({
     setImages((prev) => prev.filter((img) => img.id !== id));
   };
 
+  const handleAddDirectLink = (e) => {
+    e?.preventDefault();
+    const url = (directLinkInput || '').trim();
+    if (!url) return;
+    if (images.length >= 5) {
+      setErrorMessage('Maximum 5 images allowed per product across all categories.');
+      return;
+    }
+    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+      setErrorMessage('Please enter a valid image web link starting with http:// or https://');
+      return;
+    }
+    setErrorMessage('');
+    const urlName = url.split('/').pop()?.split('?')[0] || 'Image Link';
+    setImages((prev) => [
+      ...prev,
+      {
+        id: `link_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        name: urlName.length > 25 ? `${urlName.slice(0, 22)}...` : urlName,
+        url,
+        preview: url,
+        isDirectLink: true,
+        size: 0,
+      },
+    ].slice(0, 5));
+    setDirectLinkInput('');
+  };
+
   // Add Video handler
   const handleVideoSelect = (e) => {
     const file = e.target.files?.[0];
@@ -306,7 +335,8 @@ export default function ItemMediaModal({
 
         const finalImages = images
           .map((img, idx) => uploadedUrls[idx] || img.url || (typeof img === 'string' ? img : ''))
-          .filter(Boolean);
+          .filter(Boolean)
+          .slice(0, 5);
         const finalVideo = uploadedUrls['video'] || video?.url || (typeof video === 'string' ? video : '') || '';
         const finalPdf = uploadedUrls['pdf'] || pdf?.url || (typeof pdf === 'string' ? pdf : '') || '';
 
@@ -340,7 +370,8 @@ export default function ItemMediaModal({
     // Standard client media save
     const finalImages = images
       .map((img) => (img.file ? img.file : img.url || img.preview || (typeof img === 'string' ? img : '')))
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, 5);
     const finalVideo = video ? (video.file ? video.file : video.url || video) : null;
     const finalPdf = pdf ? (pdf.file ? pdf.file : pdf.url || pdf) : null;
 
@@ -549,6 +580,11 @@ export default function ItemMediaModal({
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-brand-blue">
                   {images.length}/5 Selected
                 </span>
+                {images.length >= 5 && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    Max 5 Reached
+                  </span>
+                )}
               </div>
               {images.length < 5 && (
                 <button
@@ -560,6 +596,38 @@ export default function ItemMediaModal({
                   <i className="fa-solid fa-plus text-[10px]"></i> Browse Images
                 </button>
               )}
+            </div>
+
+            {/* Direct Image Link Bar */}
+            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200 flex flex-col sm:flex-row gap-2 items-center">
+              <div className="relative flex-1 w-full">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <i className="fa-solid fa-link text-xs" />
+                </div>
+                <input
+                  type="url"
+                  value={directLinkInput}
+                  disabled={images.length >= 5 || isUploading || isSaving}
+                  onChange={(e) => setDirectLinkInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddDirectLink();
+                    }
+                  }}
+                  placeholder={images.length >= 5 ? "Maximum 5 images reached" : "Paste direct image URL (bypasses Firebase storage directly to DB)"}
+                  className="w-full text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue disabled:bg-slate-100 disabled:cursor-not-allowed"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={images.length >= 5 || !directLinkInput.trim() || isUploading || isSaving}
+                onClick={handleAddDirectLink}
+                className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <i className="fa-solid fa-plus text-[10px]" />
+                <span>Add Link</span>
+              </button>
             </div>
 
             <input
@@ -577,43 +645,51 @@ export default function ItemMediaModal({
                 className="border-2 border-dashed border-slate-200 hover:border-brand-blue hover:bg-blue-50/40 rounded-xl p-5 text-center cursor-pointer transition-all"
               >
                 <i className="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-1"></i>
-                <p className="text-xs font-bold text-slate-700">Click to choose images (Up to 5)</p>
+                <p className="text-xs font-bold text-slate-700">Click to choose images or paste link above (Up to 5)</p>
                 <p className="text-[11px] text-slate-400">JPG, PNG, or WebP · Maximum 1MB each</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                {images.map((img, i) => (
-                  <div
-                    key={img.id || i}
-                    className="relative group border border-slate-200 rounded-xl overflow-hidden bg-slate-50 aspect-square flex flex-col justify-between"
-                  >
-                    <img
-                      src={img.preview || img.url}
-                      alt={img.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                      <div className="flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => removeImage(img.id)}
-                          disabled={isUploading || isSaving}
-                          className="w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center text-xs shadow-sm disabled:opacity-50"
-                        >
-                          <i className="fa-solid fa-trash-can text-[10px]"></i>
-                        </button>
+                {images.map((img, i) => {
+                  const isLink = img.isDirectLink || (!img.file && img.url && !img.url.startsWith('blob:'));
+                  return (
+                    <div
+                      key={img.id || i}
+                      className="relative group border border-slate-200 rounded-xl overflow-hidden bg-slate-50 aspect-square flex flex-col justify-between"
+                    >
+                      <img
+                        src={img.preview || img.url}
+                        alt={img.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => removeImage(img.id)}
+                            disabled={isUploading || isSaving}
+                            className="w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center text-xs shadow-sm disabled:opacity-50"
+                          >
+                            <i className="fa-solid fa-trash-can text-[10px]"></i>
+                          </button>
+                        </div>
+                        <div className="text-[10px] text-white truncate font-medium bg-black/60 px-1.5 py-0.5 rounded">
+                          {isLink ? 'Direct Link' : formatFileSize(img.size)}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-white truncate font-medium bg-black/60 px-1.5 py-0.5 rounded">
-                        {formatFileSize(img.size)}
-                      </div>
+                      {isLink && (
+                        <span className="absolute top-1 left-1 bg-indigo-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-2xs flex items-center gap-1">
+                          <i className="fa-solid fa-link text-[7px]" /> Link
+                        </span>
+                      )}
+                      {i === 0 && (
+                        <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-[9px]">
+                          Primary
+                        </span>
+                      )}
                     </div>
-                    {i === 0 && (
-                      <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-[9px]">
-                        Primary
-                      </span>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
                 {images.length < 5 && (
                   <button
                     type="button"
