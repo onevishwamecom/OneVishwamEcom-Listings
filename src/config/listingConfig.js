@@ -354,6 +354,48 @@ export const CATEGORY_REGISTRY = {
       { key: 'warranty', label: 'Warranty' },
     ],
   },
+
+  bedding: {
+    id: 'bedding',
+    aliases: ['bedding-comfort', 'bedding_comfort', 'mattress', 'mattresses', 'comfort', 'sleep'],
+    label: 'Bedding & Comfort',
+    singularLabel: 'Bedding / Mattress',
+    icon: 'fa-bed',
+    lucideIconName: 'Bed',
+    color: 'bg-teal-50 text-teal-700 border-teal-200',
+    gradient: 'from-teal-500 to-emerald-600',
+    iconBg: 'bg-teal-50 text-teal-600',
+    hoverBorder: 'hover:border-teal-300',
+    badge: 'Sleep Comfort',
+    desc: 'Orthopedic Mattresses, Luxury Spring Beds, Pillows & Comforters',
+    popular: ['Orthopedic Mattresses', 'Pocketed Spring', 'Memory Foam', 'Latex Mattresses', 'Pillows'],
+    subcategories: [
+      'Peps Affordable Luxury',
+      'The Restonic American Comfort',
+      'Peps Elite Comfort',
+      'Italiano Luxury Collection',
+      'Peps Orthopaedic Mattress',
+      'Peps Hypoallergenic Mattress',
+      'Pillows & Rest Cushions',
+      'Blankets & Comforters',
+      'Mattress Protectors & Sheets',
+    ],
+    priceUnits: ['exact', 'lakh'],
+    defaultPriceType: 'fixed',
+    priceSuffixes: ['/ Mattress', 'Inclusive of Taxes', 'Starting Price'],
+    formFields: [
+      { name: 'brand', label: 'Brand / Make', type: 'text', placeholder: 'e.g. Peps, Restonic, SleepyCat', required: true },
+      { name: 'model', label: 'Model / Collection', type: 'text', placeholder: 'e.g. Bonnell Comfort, Spine Guard, Organica' },
+      { name: 'condition', label: 'Condition', type: 'select', options: ['new', 'Brand New Sealed', 'Direct Factory Warranty'] },
+      { name: 'warranty', label: 'Official Warranty', type: 'text', placeholder: 'e.g. 10-Year Brand Warranty' },
+    ],
+    detailFields: [
+      { key: 'brand', label: 'Brand' },
+      { key: 'model', label: 'Model' },
+      { key: 'condition', label: 'Condition' },
+      { key: 'warranty', label: 'Warranty' },
+    ],
+  },
 };
 
 /**
