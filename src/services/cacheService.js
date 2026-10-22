@@ -1,3 +1,5 @@
+import { LRUCache } from '../utils/lruCache';
+
 export const CACHE_VERSION = 1;
 
 export const CACHE_TTL = {
@@ -13,7 +15,7 @@ export const CACHE_TTL = {
  * Design:
  *  - Namespaced keys (prefix + version [+ scope] + key) so cache structures can
  *    be invalidated wholesale by bumping CACHE_VERSION.
- *  - Two storage tiers: an in-memory Map for instant reads within a session,
+ *  - Two storage tiers: an in-memory O(1) LRU Cache for instant reads within a session,
  *    and localStorage so a browser refresh still hydrates instantly.
  *  - TTL + version metadata stored with every entry.
  *  - In-flight promise deduplication: identical concurrent requests share a
@@ -27,7 +29,7 @@ class CacheService {
     this.prefix = prefix;
     this.version = version;
     this.scope = null;
-    this.memory = new Map();
+    this.memory = new LRUCache(250);
     this.inFlight = new Map();
   }
 

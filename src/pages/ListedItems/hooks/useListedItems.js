@@ -9,6 +9,7 @@ import { fetchListings, deleteListing, invalidateListings } from '@/services/lis
 import { deleteMediaFromStorage } from '@/services/storageService';
 import { CACHE_TTL } from '@/services/cacheService';
 import { useDebouncedValue } from '@/hooks/useDebounce';
+import SearchIndex from '@/utils/searchIndex';
 
 export function useListedItems() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -111,18 +112,23 @@ export function useListedItems() {
     return categoryFiltered.filter((item) => item.status === activeTab);
   }, [categoryFiltered, activeTab]);
 
+  const searchIndex = useMemo(() => {
+    const searchable = tabFiltered.map((item) => ({
+      ...item,
+      _displayId: getDisplayId(item),
+      _catLabel: SERVICE_CONFIG[item._type]?.label || item._type,
+    }));
+    return new SearchIndex(searchable, ['title', 'name', 'brand', '_displayId', 'location', 'city', 'area', '_catLabel']);
+  }, [tabFiltered]);
+
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = search.trim();
     let list = tabFiltered;
 
     if (term) {
-      list = list.filter((item) => {
-        const title = (item.title || item.name || item.brand || '').toLowerCase();
-        const id = getDisplayId(item).toLowerCase();
-        const location = (item.location || item.city || item.area || '').toLowerCase();
-        const categoryLabel = (SERVICE_CONFIG[item._type]?.label || item._type).toLowerCase();
-        return title.includes(term) || id.includes(term) || location.includes(term) || categoryLabel.includes(term);
-      });
+      const matched = searchIndex.search(term);
+      const matchedIds = new Set(matched.map((m) => String(m._id || m.id || m._displayId)));
+      list = list.filter((item) => matchedIds.has(String(item._id || item.id || getDisplayId(item))));
     }
 
     if (priceRange.min > PRICE_LIMITS.min || priceRange.max < PRICE_LIMITS.max) {
@@ -150,7 +156,7 @@ export function useListedItems() {
         sorted.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     }
     return sorted;
-  }, [tabFiltered, search, sort, priceRange]);
+  }, [tabFiltered, search, searchIndex, sort, priceRange]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const currentPage = Math.min(page, totalPages);
