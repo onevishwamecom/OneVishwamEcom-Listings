@@ -3,8 +3,14 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { cities } from '@/data/locations';
 
-const CITY_OPTIONS = (cities || ['Bengaluru', 'Mysuru', 'Mangaluru', 'Hubballi', 'Belagavi']).map((c) => {
-  const name = typeof c === 'object' ? c.name : c;
+const rawCities = Array.isArray(cities)
+  ? cities
+  : (typeof cities === 'object' && cities !== null)
+  ? Object.values(cities).map((c) => c?.label || c?.name || c)
+  : ['Bengaluru', 'Mysuru', 'Mangaluru', 'Hubballi', 'Belagavi'];
+
+const CITY_OPTIONS = (rawCities.length > 0 ? rawCities : ['Bengaluru', 'Mysuru', 'Mangaluru', 'Hubballi', 'Belagavi']).map((c) => {
+  const name = typeof c === 'object' ? (c.label || c.name || '') : String(c);
   return { value: name, label: name };
 });
 

@@ -54,6 +54,7 @@ export default function AddListing() {
     handleAddPhotoUrl,
     handleAddDocument,
     removePhoto,
+    movePhoto,
     removeDocument,
     handleVideoSelect,
     handleRemoveVideo,
@@ -194,6 +195,7 @@ export default function AddListing() {
               onAddPhoto={handleAddPhoto}
               onAddPhotoUrl={handleAddPhotoUrl}
               onRemovePhoto={removePhoto}
+              onMovePhoto={movePhoto}
               video={video}
               videoPreview={videoPreview}
               onVideoSelect={handleVideoSelect}
@@ -222,6 +224,7 @@ export default function AddListing() {
               onAddPhoto={handleAddPhoto}
               onAddPhotoUrl={handleAddPhotoUrl}
               onRemovePhoto={removePhoto}
+              onMovePhoto={movePhoto}
               video={video}
               videoPreview={videoPreview}
               onVideoSelect={handleVideoSelect}

@@ -1,4 +1,115 @@
 import React, { useRef, useState } from 'react';
+import { DragDropProvider } from '@dnd-kit/react';
+import { useSortable, isSortable } from '@dnd-kit/react/sortable';
+
+function DndSortablePhotoItem({
+  id,
+  idx,
+  item,
+  isFirst,
+  photosLength,
+  onRemovePhoto,
+  onMovePhoto,
+}) {
+  const { ref, isDragging, isDropTarget } = useSortable({ id, index: idx });
+  const url = typeof item === 'string' ? item : item instanceof File ? URL.createObjectURL(item) : item?.url;
+  const isLink = item?.isDirectLink || (!item?.file && url && !url.startsWith('blob:'));
+
+  return (
+    <div
+      ref={ref}
+      className={`relative group aspect-square rounded-2xl overflow-hidden bg-slate-50 border-2 transition-all cursor-grab active:cursor-grabbing select-none shadow-2xs ${
+        isDragging
+          ? 'opacity-40 border-dashed border-brand-blue scale-95 shadow-lg'
+          : isDropTarget
+          ? 'border-brand-blue ring-2 ring-brand-blue/30 scale-102'
+          : isFirst
+          ? 'border-amber-400 ring-2 ring-amber-400/20'
+          : 'border-slate-200 hover:border-slate-300'
+      }`}
+    >
+      <img src={url} alt={`Upload ${idx + 1}`} className="w-full h-full object-cover pointer-events-none" />
+
+      {/* Top-Right Remove Button */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemovePhoto?.(idx);
+        }}
+        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] shadow-sm cursor-pointer z-20"
+        title="Remove Photo"
+      >
+        <i className="fa-solid fa-xmark" />
+      </button>
+
+      {/* Sequence Badge */}
+      <div className="absolute top-1.5 left-1.5 z-10 pointer-events-none flex flex-col gap-1 items-start">
+        {isFirst ? (
+          <span className="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+            <i className="fa-solid fa-star text-[8px]" />
+            <span>1st · Cover</span>
+          </span>
+        ) : (
+          <span className="bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+            {idx + 1}{idx === 1 ? 'nd' : idx === 2 ? 'rd' : 'th'}
+          </span>
+        )}
+
+        {isLink && (
+          <span className="bg-indigo-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-2xs flex items-center gap-1">
+            <i className="fa-solid fa-link text-[7px]" /> Link
+          </span>
+        )}
+      </div>
+
+      {/* Hover Swap & Reorder Overlay */}
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-between pointer-events-auto">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            disabled={idx === 0}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMovePhoto?.(idx, idx - 1);
+            }}
+            title="Move Left / Forward"
+            className="w-5 h-5 rounded bg-white/90 text-slate-700 hover:bg-white hover:text-brand-blue flex items-center justify-center text-[9px] shadow-sm disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <i className="fa-solid fa-arrow-left" />
+          </button>
+          <button
+            type="button"
+            disabled={idx === photosLength - 1}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMovePhoto?.(idx, idx + 1);
+            }}
+            title="Move Right / Backward"
+            className="w-5 h-5 rounded bg-white/90 text-slate-700 hover:bg-white hover:text-brand-blue flex items-center justify-center text-[9px] shadow-sm disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <i className="fa-solid fa-arrow-right" />
+          </button>
+        </div>
+
+        {!isFirst && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMovePhoto?.(idx, 0);
+            }}
+            title="Set as 1st (Primary Cover)"
+            className="px-1.5 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-slate-900 text-[8px] font-extrabold flex items-center gap-1 shadow-sm cursor-pointer"
+          >
+            <i className="fa-solid fa-star text-[7px]" />
+            <span>Cover</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /**
  * Reusable Phase 3 Media & Approvals section.
@@ -9,6 +120,7 @@ export function MediaUploadSection({
   onAddPhoto,
   onAddPhotoUrl,
   onRemovePhoto,
+  onMovePhoto,
   video = null,
   videoPreview = null,
   onVideoSelect,
@@ -177,45 +289,57 @@ export function MediaUploadSection({
               <p className="text-xs text-slate-400 mt-1">Supports JPG, PNG, WEBP (or paste direct image link above) · Max 5 images</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {photos.map((item, idx) => {
-                const url = typeof item === 'string' ? item : item instanceof File ? URL.createObjectURL(item) : item?.url;
-                const isLink = item?.isDirectLink || (!item?.file && url && !url.startsWith('blob:'));
-                return (
-                  <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shadow-2xs">
-                    <img src={url} alt={`Upload ${idx + 1}`} className="w-full h-full object-cover" />
+            <div className="space-y-2">
+              <DragDropProvider
+                onDragEnd={(event) => {
+                  if (event.canceled) return;
+                  const { source } = event.operation;
+                  if (isSortable(source)) {
+                    const { initialIndex, index } = source;
+                    if (initialIndex !== index) {
+                      onMovePhoto?.(initialIndex, index);
+                    }
+                  }
+                }}
+              >
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  {photos.map((item, idx) => {
+                    const keyId = typeof item === 'string'
+                      ? item
+                      : item instanceof File
+                      ? `${item.name}-${item.size}-${idx}`
+                      : item?.url || `photo-${idx}`;
+
+                    return (
+                      <DndSortablePhotoItem
+                        key={keyId}
+                        id={keyId}
+                        idx={idx}
+                        item={item}
+                        isFirst={idx === 0}
+                        photosLength={photos.length}
+                        onRemovePhoto={onRemovePhoto}
+                        onMovePhoto={onMovePhoto}
+                      />
+                    );
+                  })}
+                  {!isMaxPhotos && (
                     <button
                       type="button"
-                      onClick={() => onRemovePhoto?.(idx)}
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] shadow-sm cursor-pointer z-10"
-                      title="Remove Photo"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 hover:border-brand-blue flex flex-col items-center justify-center text-slate-400 hover:text-brand-blue transition-colors cursor-pointer bg-slate-50/50"
                     >
-                      <i className="fa-solid fa-xmark" />
+                      <i className="fa-solid fa-plus text-base mb-1" />
+                      <span className="text-[11px] font-bold">Add Photo</span>
+                      <span className="text-[9px] text-slate-400">File or Link</span>
                     </button>
-                    {isLink && (
-                      <span className="absolute top-1 left-1 bg-indigo-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-2xs flex items-center gap-1">
-                        <i className="fa-solid fa-link text-[7px]" /> Link
-                      </span>
-                    )}
-                    {idx === 0 && (
-                      <span className="absolute bottom-1 left-1 bg-black/75 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                        Cover
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-              {!isMaxPhotos && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-brand-blue flex flex-col items-center justify-center text-slate-400 hover:text-brand-blue transition-colors cursor-pointer bg-slate-50/50"
-                >
-                  <i className="fa-solid fa-plus text-base mb-1" />
-                  <span className="text-[11px] font-bold">Add Photo</span>
-                  <span className="text-[9px] text-slate-400">File or Link</span>
-                </button>
-              )}
+                  )}
+                </div>
+              </DragDropProvider>
+              <p className="text-[11px] text-slate-400">
+                <i className="fa-solid fa-circle-info mr-1" />
+                Drag to reorder or use arrows. <strong>Position #1</strong> automatically serves as the primary cover photo.
+              </p>
             </div>
           )}
         </div>

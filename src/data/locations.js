@@ -9,6 +9,22 @@ export const cities = {
       'Basavanagudi', 'Hebbal',
     ],
   },
+  mysuru: {
+    label: 'Mysuru',
+    areas: ['Gokulam', 'Vijayanagar', 'Jayalakshmipuram', 'Kuvempunagar', 'Saraswathipuram'],
+  },
+  mangaluru: {
+    label: 'Mangaluru',
+    areas: ['Kadri', 'Bejai', 'Kodialbail', 'Urwa', 'Lalbagh'],
+  },
+  hubballi: {
+    label: 'Hubballi',
+    areas: ['Vidyanagar', 'Keshwapur', 'Gokul Road', 'Navanagar'],
+  },
+  belagavi: {
+    label: 'Belagavi',
+    areas: ['Tilakwadi', 'Camp', 'Udyambag', 'Khasbag'],
+  },
 };
 
 export const defaultCity = 'bengaluru';

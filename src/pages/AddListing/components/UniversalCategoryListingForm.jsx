@@ -26,6 +26,7 @@ export default function UniversalCategoryListingForm({
   onAddPhoto,
   onAddPhotoUrl,
   onRemovePhoto,
+  onMovePhoto,
   video = null,
   videoPreview = null,
   onVideoSelect,
@@ -379,6 +380,7 @@ export default function UniversalCategoryListingForm({
           onAddPhoto={onAddPhoto}
           onAddPhotoUrl={onAddPhotoUrl}
           onRemovePhoto={onRemovePhoto}
+          onMovePhoto={onMovePhoto}
           video={video}
           videoPreview={videoPreview}
           onVideoSelect={onVideoSelect}

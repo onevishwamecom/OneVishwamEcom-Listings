@@ -113,6 +113,17 @@ export function useAddListingForm() {
       return prev.filter((_, idx) => idx !== index);
     });
 
+  const movePhoto = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    setPhotos((prev) => {
+      if (toIndex < 0 || toIndex >= prev.length || fromIndex < 0 || fromIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  };
+
   const removeDocument = (index) =>
     setDocuments((prev) => {
       const removed = prev[index];
@@ -694,6 +705,7 @@ return {
     handleAddPhotoUrl,
     handleAddDocument,
     removePhoto,
+    movePhoto,
     removeDocument,
     handleVideoSelect,
     handleRemoveVideo,

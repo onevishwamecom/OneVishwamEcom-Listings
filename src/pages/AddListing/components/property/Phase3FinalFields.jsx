@@ -22,6 +22,7 @@ export default function Phase3FinalFields({
   onAddPhoto,
   onAddPhotoUrl,
   onRemovePhoto,
+  onMovePhoto,
   video = null,
   videoPreview = null,
   onVideoSelect,
@@ -97,6 +98,7 @@ export default function Phase3FinalFields({
         onAddPhoto={onAddPhoto}
         onAddPhotoUrl={onAddPhotoUrl}
         onRemovePhoto={onRemovePhoto}
+        onMovePhoto={onMovePhoto}
         video={video}
         videoPreview={videoPreview}
         onVideoSelect={onVideoSelect}
