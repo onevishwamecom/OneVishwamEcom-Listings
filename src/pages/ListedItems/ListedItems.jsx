@@ -9,6 +9,7 @@ import {
   SearchInput,
 } from '@/components/ui';
 import { ListingsPageSkeleton, ErrorState } from '@/components/skeleton';
+import LottieFeedbackAnimation from '@/components/ui/LottieFeedbackAnimation';
 import { STATUS_TABS, EMPTY_STATE, SERVICE_CONFIG, SORT_OPTIONS, PRIMARY_CATEGORIES } from './constants';
 import { useListedItems } from './hooks/useListedItems';
 import BulkBatchesView from './components/BulkBatchesView';
@@ -197,12 +198,12 @@ function ListedItems() {
                 />
               </div>
             ) : showNoResults ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center px-4">
-                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-2.5">
-                  <i className="fa-solid fa-magnifying-glass-minus text-lg text-slate-400" aria-hidden="true" />
+              <div className="flex flex-col items-center justify-center py-10 text-center px-4 animate-fade-in">
+                <div className="mb-2">
+                  <LottieFeedbackAnimation type="searchEmpty" size="md" fallbackIcon="fa-solid fa-magnifying-glass-minus" />
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 mb-0.5">No items match your search</h3>
-                <p className="text-xs text-slate-500 mb-3">Try a different keyword, category or sort option.</p>
+                <p className="text-xs text-slate-500 mb-4">Try a different keyword, category or sort option.</p>
                 <Button
                   variant="secondary"
                   size="sm"

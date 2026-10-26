@@ -5,6 +5,7 @@ import Button from './Button';
 import IconButton from './IconButton';
 import StatusPill from './StatusPill';
 import CategoryBadge from './CategoryBadge';
+import EmptyState from './EmptyState';
 
 import { SERVICE_CONFIG } from '@/config/listingConfig';
 
@@ -67,9 +68,10 @@ function ListingTable({
 }) {
   if (!items || items.length === 0) {
     return emptyState || (
-      <div className="p-8 text-center bg-slate-50/40 rounded-xl">
-        <p className="text-xs text-slate-500">No items available.</p>
-      </div>
+      <EmptyState
+        title="No items available"
+        subtitle="There are no listings matching this section."
+      />
     );
   }
 

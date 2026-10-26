@@ -23,6 +23,7 @@ const ListingDetails = lazy(() => import('./pages/ListingDetails'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Profile = lazy(() => import('./pages/Profile'));
 const BulkListing = lazy(() => import('./pages/BulkListing'));
+const ListingNotFound = lazy(() => import('./pages/ListingNotFound'));
 
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAuth();
@@ -175,8 +176,9 @@ function App() {
               <Route path="/bulk-order/:categoryType" element={<Navigate to="/bulk-listing" replace />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<ListingNotFound />} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/Skeleton';
+import LottieFeedbackAnimation from '@/components/ui/LottieFeedbackAnimation';
 import { TYPE_CONFIG } from '../constants';
 
 export function ListingTypeCard({ type, count, index }) {
@@ -42,9 +43,9 @@ export function ListingTypeSkeleton() {
 
 export function EmptyStateCard() {
   return (
-    <div className="text-center py-10 bg-white rounded-2xl border border-slate-200/70 shadow-xs">
-      <div className="w-12 h-12 rounded-2xl bg-brand-blue/10 flex items-center justify-center mx-auto mb-3">
-        <i className="fa-solid fa-inbox text-xl text-brand-blue" aria-hidden="true" />
+    <div className="text-center py-10 bg-white rounded-2xl border border-slate-200/70 shadow-xs animate-fade-in">
+      <div className="mb-2">
+        <LottieFeedbackAnimation type="emptyCatalog" size="md" fallbackIcon="fa-solid fa-box-open" />
       </div>
       <p className="text-base font-bold text-slate-800 mb-1">No listings yet</p>
       <p className="text-xs text-slate-400 mb-4">Start by posting your first product listing</p>
