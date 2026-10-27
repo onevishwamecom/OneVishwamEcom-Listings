@@ -84,7 +84,9 @@ export function useAddListingForm() {
     if (!isEditing) {
       const cachedUser = getCachedUser() || {};
       const partnerInfo = resolvePartnerIdentity(cachedUser.email || cachedUser.vendorEmail);
-      const assignedPartner = cachedUser.partnerName || partnerInfo.partnerName || '';
+      const listerName = cachedUser.name || cachedUser.fullName || cachedUser.vendorName || partnerInfo.partnerName || '';
+      const assignedPartner = cachedUser.partnerName || partnerInfo.partnerName || listerName;
+      const assignedVendor = cachedUser.vendorName || listerName;
       const assignedRole = cachedUser.role || partnerInfo.role || '';
       const assignedOrigin = cachedUser.origin || partnerInfo.origin || (assignedRole === 'in_house' ? 'in_house_project' : undefined);
 
@@ -92,6 +94,9 @@ export function useAddListingForm() {
         const updates = {};
         if (assignedPartner && !prev.channelPartnerName) {
           updates.channelPartnerName = assignedPartner;
+        }
+        if (assignedVendor && !prev.vendorName) {
+          updates.vendorName = assignedVendor;
         }
         if (assignedOrigin && !prev.origin) {
           updates.origin = assignedOrigin;
@@ -397,13 +402,16 @@ export function useAddListingForm() {
 
       const user = getCachedUser() || {};
       const partnerInfo = resolvePartnerIdentity(user.email || user.vendorEmail);
-      const assignedPartner = user.partnerName || partnerInfo.partnerName || form.channelPartnerName || '';
+      const listerName = user.name || user.fullName || user.vendorName || user.businessName || partnerInfo.partnerName || '';
+      const assignedPartner = form.channelPartnerName || user.partnerName || partnerInfo.partnerName || listerName;
+      const assignedVendor = form.vendorName || user.vendorName || listerName;
       const assignedRole = user.role || partnerInfo.role || 'lister';
       const assignedOrigin = user.origin || partnerInfo.origin || (assignedRole === 'in_house' ? 'in_house_project' : form.origin);
 
       const updatedForm = {
         ...form,
-        channelPartnerName: assignedPartner || form.channelPartnerName,
+        vendorName: assignedVendor || form.vendorName || listerName,
+        channelPartnerName: assignedPartner || form.channelPartnerName || listerName,
         origin: assignedOrigin,
         videoUrl: finalVideoUrl || '',
         brochure: finalBrochureUrl,
@@ -415,6 +423,8 @@ export function useAddListingForm() {
           ...createUpdatedListingData(updatedForm, category, subcategory, cappedImageUrls, docUrls, finalBrochureUrl, cities),
           _type: typeKey,
           category: category,
+          vendorName: assignedVendor || updatedForm.vendorName || listerName,
+          channelPartnerName: assignedPartner || updatedForm.channelPartnerName || listerName,
           videoUrl: finalVideoUrl || '',
         });
       } else {
@@ -423,14 +433,15 @@ export function useAddListingForm() {
           ...listingPayload,
           _type: typeKey,
           category: category,
+          vendorName: assignedVendor || listingPayload.vendorName || listerName,
+          channelPartnerName: assignedPartner || listingPayload.channelPartnerName || listerName,
           origin: assignedOrigin || listingPayload.origin,
-          channelPartnerName: assignedPartner || listingPayload.channelPartnerName,
           videoUrl: finalVideoUrl || '',
           contributor: {
-            name: user.name || user.fullName || 'Unknown',
+            name: listerName || 'Unknown',
             type: assignedRole || user.role || 'vendor',
             email: user.email || '',
-            contact: user.mobile || listingPayload.contact || '',
+            contact: user.mobile || user.phone || listingPayload.contact || '',
             city: user.city || listingPayload.city || '',
           },
         });
@@ -510,7 +521,7 @@ export function useAddListingForm() {
         nextForm.area = item.area || "";
         nextForm.address = item.address || item.landmark || "";
         nextForm.landmark = item.landmark || "";
-        nextForm.locationUrl = item.locationUrl || item.details?.locationUrl || item.mapUrl || item.googleMapsUrl || "";
+        nextForm.mapUrl = item.mapUrl || item.details?.mapUrl || "";
         nextForm.city = item.city || defaultCity;
         nextForm.pincode = item.pincode || "";
         nextForm.contact = item.contact || "9876543210";

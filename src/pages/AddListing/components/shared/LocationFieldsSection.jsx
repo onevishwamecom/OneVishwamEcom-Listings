@@ -79,8 +79,8 @@ export function LocationFieldsSection({
           <Input
             label="Google Maps Location Link"
             placeholder="https://maps.app.goo.gl/... or https://goo.gl/maps/..."
-            value={form.locationUrl || ''}
-            onChange={(e) => updateForm('locationUrl', e.target.value)}
+            value={form.mapUrl ?? ''}
+            onChange={(e) => updateForm('mapUrl', e.target.value)}
           />
           <p className="text-[11px] text-slate-400 mt-1">
             Enables instant Google Maps navigation directions for verified buyers on OneVishwam.

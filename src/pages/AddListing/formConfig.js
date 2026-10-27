@@ -23,7 +23,7 @@ export const INITIAL_FORM = {
   pincode: "",
   landmark: "",
   address: "",
-  locationUrl: "",
+  mapUrl: "",
   contact: "",
   bhk: "",
   bathrooms: "",

@@ -51,9 +51,10 @@ export default function UniversalCategoryListingForm({
   const userEmail = (user?.email || '').toLowerCase();
   const isOneVishwam = user?.role === 'in_house' || userEmail.endsWith('@onevishwam.com');
 
-  const resolvedPartnerName = isOneVishwam ? 'One Vishwam' : user?.name || 'Verified Lister';
-  const resolvedVendorName = isOneVishwam ? 'One Vishwam' : user?.name || 'Independent Lister';
-  const displayName = isOneVishwam ? 'One Vishwam' : (form.channelPartnerName || form.vendorName || resolvedPartnerName);
+  const listerName = user?.name || user?.fullName || 'Verified Lister';
+  const resolvedPartnerName = isOneVishwam ? 'One Vishwam' : (user?.partnerName || listerName);
+  const resolvedVendorName = isOneVishwam ? 'One Vishwam' : (user?.vendorName || listerName);
+  const displayName = isOneVishwam ? 'One Vishwam' : (form.channelPartnerName || form.vendorName || listerName);
 
   useEffect(() => {
     onPhaseChange?.(activePhase);

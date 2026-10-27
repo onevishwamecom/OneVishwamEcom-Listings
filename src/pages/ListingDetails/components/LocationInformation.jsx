@@ -9,11 +9,11 @@ export function LocationInformation({ location }) {
         <InfoRow label="City" value={location.city.charAt(0).toUpperCase() + location.city.slice(1)} />
         <InfoRow label="Area / Locality" value={location.area} />
         <InfoRow label="PIN Code" value={location.pincode} />
-        {location.locationUrl && (
+        {location.mapUrl && (
           <div className="sm:col-span-2 pt-2 border-t border-slate-100 flex items-center justify-between">
             <span className="text-xs text-slate-500 font-medium">Google Maps Location</span>
             <a
-              href={location.locationUrl}
+              href={location.mapUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-blue hover:underline"

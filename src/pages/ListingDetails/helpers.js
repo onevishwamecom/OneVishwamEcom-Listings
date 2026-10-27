@@ -20,8 +20,7 @@ export function getLocationDetails(listing) {
     district: listing.district || 'Bengaluru Urban',
     city: listing.city || 'bengaluru',
     area: listing.area || '—',
-    pincode: listing.pincode || '—',
-    locationUrl: listing.locationUrl || listing.details?.locationUrl || listing.mapUrl || listing.googleMapsUrl || '',
+    mapUrl: listing.mapUrl || listing.details?.mapUrl || '',
   };
 }
 

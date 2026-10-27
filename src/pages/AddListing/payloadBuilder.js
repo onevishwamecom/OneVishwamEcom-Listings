@@ -45,16 +45,13 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     address: form.address || "",
     landmark: form.landmark || "",
     location: formattedLocation || form.area || "",
-    locationUrl: form.locationUrl || "",
-    mapUrl: form.locationUrl || "",
-    googleMapsUrl: form.locationUrl || "",
+    mapUrl: form.mapUrl || "",
     pincode: form.pincode || "",
     contact: form.contact || "",
     images: (imageUrls || []).slice(0, 5),
     documents: docUrls || [],
-    pdfUrl: brochureUrl || null,
-    vendorName: form.vendorName || "",
-    channelPartnerName: form.channelPartnerName || "",
+    vendorName: form.vendorName || form.channelPartnerName || "",
+    channelPartnerName: form.channelPartnerName || form.vendorName || "",
     origin: form.origin || undefined,
     propertyType: form.propertyType || finalSubcategory || "",
     bankLoanDetails: form.bankLoanDetails || "",
@@ -69,10 +66,13 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
       delete d.possessionStatus;
       delete d.listerId;
       delete d.negotiable;
-      if (form.locationUrl) {
-        d.locationUrl = form.locationUrl;
-        d.mapUrl = form.locationUrl;
-        d.googleMapsUrl = form.locationUrl;
+      delete d.locationUrl;
+      delete d.googleMapsUrl;
+      delete d.googleMapUrl;
+      delete d.mapEmbedUrl;
+      const mUrl = form.mapUrl || "";
+      if (mUrl) {
+        d.mapUrl = mUrl;
       }
       return d;
     })(),
@@ -170,7 +170,7 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
         phone: form.showroomPhone || form.contact || "8546996622",
         email: form.showroomEmail || "ceo@onevishwam.com",
         type: "Authorized Dealership",
-        mapsLink: form.locationUrl || "",
+        mapUrl: form.mapUrl || "",
       } : null,
       variants: Array.isArray(form.variants)
         ? form.variants
