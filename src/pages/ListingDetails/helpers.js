@@ -6,8 +6,8 @@ export function getCategoryInfo(listing) {
 }
 
 export function getSubcategory(listing) {
-  if (listing.subcategory) return listing.subcategory;
   if (listing.propertyType) return listing.propertyType;
+  if (listing.subcategory) return listing.subcategory;
   if (listing.bodyType) return listing.bodyType;
   if (listing.wheelerType) return listing.wheelerType;
   if (listing.category) return listing.category;

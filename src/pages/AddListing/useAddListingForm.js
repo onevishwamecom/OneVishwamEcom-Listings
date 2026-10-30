@@ -545,6 +545,13 @@ export function useAddListingForm() {
         nextForm.subcategory = matchedSub || rawSubcategory || "";
 
         if (serviceType === "properties" || serviceType === "real-estate") {
+          const rawPT = item.propertyType || matchedSub || rawSubcategory || "Plot";
+          const low = String(rawPT).toLowerCase();
+          if (low.includes('flat') || low.includes('villa') || low.includes('apartment')) nextForm.propertyType = 'Flat';
+          else if (low.includes('plot') || low.includes('layout') || low.includes('plat') || low.includes('site')) nextForm.propertyType = 'Plot';
+          else if (low.includes('land') && !low.includes('agri')) nextForm.propertyType = 'Land';
+          else nextForm.propertyType = rawPT || 'Plot';
+          delete nextForm.subcategory;
           const d = item.details || {};
           nextForm.bhk = item.bhk || d.bhk || "";
           nextForm.bathrooms = item.bathrooms || d.bathrooms || "";

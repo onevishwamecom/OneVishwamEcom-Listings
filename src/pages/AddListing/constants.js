@@ -133,11 +133,12 @@ export const CATEGORIES = [
 export const SUBCATEGORY_CARDS = {
   properties: [
     { id: "Residential", label: "Residential", icon: "fa-house" },
-    { id: "Flat/Villa", label: "Flat / Villa", icon: "fa-building" },
+    { id: "Flat", label: "Flat", icon: "fa-building" },
     { id: "Independent House", label: "Independent House", icon: "fa-house-chimney-window" },
+    { id: "Plot", label: "Plot", icon: "fa-map-location-dot" },
+    { id: "Land", label: "Land", icon: "fa-mountain-sun" },
     { id: "Agricultural", label: "Agricultural", icon: "fa-wheat-awn" },
     { id: "Commercial", label: "Commercial", icon: "fa-shop" },
-    { id: "Plot/Land", label: "Plot / Land", icon: "fa-map-location-dot" },
     { id: "Industrial", label: "Industrial", icon: "fa-industry" },
   ],
   vehicle: [

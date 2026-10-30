@@ -1,11 +1,22 @@
 import axios from 'axios';
 import { auth } from '@/firebase/config';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://asia-south1-onevishwam.cloudfunctions.net/api';
+const DEFAULT_API_URL = import.meta.env.DEV
+  ? 'http://localhost:5001/api'
+  : 'https://asia-south1-onevishwam.cloudfunctions.net/api';
+
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  DEFAULT_API_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: false,
+  headers: {
+    'X-Client-Role': 'lister',
+    'X-Account-Type': 'lister',
+  },
 });
 
 // ============================================================================

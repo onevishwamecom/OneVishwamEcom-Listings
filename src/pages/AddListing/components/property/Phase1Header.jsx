@@ -4,11 +4,12 @@ import ListerIdentityCard from '../shared/ListerIdentityCard';
 
 export const PROPERTY_TYPES = [
   { id: 'Residential', label: 'Residential', icon: 'fa-house' },
-  { id: 'Flat/Villa', label: 'Flat / Villa', icon: 'fa-building' },
+  { id: 'Flat', label: 'Flat', icon: 'fa-building' },
   { id: 'Independent House', label: 'Independent House', icon: 'fa-house-chimney-window' },
+  { id: 'Plot', label: 'Plot', icon: 'fa-map-location-dot' },
+  { id: 'Land', label: 'Land', icon: 'fa-mountain-sun' },
   { id: 'Agricultural', label: 'Agricultural', icon: 'fa-wheat-awn' },
   { id: 'Commercial', label: 'Commercial', icon: 'fa-shop' },
-  { id: 'Plot/Land', label: 'Plot / Land', icon: 'fa-map-location-dot' },
   { id: 'Industrial', label: 'Industrial', icon: 'fa-industry' },
 ];
 
@@ -52,9 +53,12 @@ export default function Phase1Header({
           <p className="text-xs font-semibold text-red-500">{errors.propertyType}</p>
         )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           {PROPERTY_TYPES.map((pt) => {
-            const isSelected = propertyType === pt.id;
+            const isSelected =
+              propertyType === pt.id ||
+              (pt.id === 'Flat' && (propertyType === 'Flat / Villa' || propertyType === 'Flat/Villa')) ||
+              (pt.id === 'Plot' && (propertyType === 'Plot / Land' || propertyType === 'Plot/Land'));
             return (
               <button
                 key={pt.id}

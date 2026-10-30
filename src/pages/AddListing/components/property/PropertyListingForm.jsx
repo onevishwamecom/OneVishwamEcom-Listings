@@ -56,7 +56,7 @@ export default function PropertyListingForm({
 
   const vendorName = form.vendorName || resolvedVendorName;
   const channelPartnerName = form.channelPartnerName || resolvedPartnerName;
-  const propertyType = form.propertyType || 'Residential';
+  const propertyType = form.propertyType || 'Plot';
   const bankLoanDetails = form.bankLoanDetails || '';
   const details = form.details || {};
 
@@ -137,7 +137,7 @@ export default function PropertyListingForm({
       if (!getVal('approvalAuthority', 'approval')) errs.approvalAuthority = 'Approval Authority is required';
       if (!getVal('price', 'price')) errs.price = 'Asking Price is required';
       if (!getVal('area', 'area')) errs.area = 'Locality / Area is required';
-    } else if (propertyType === 'Flat/Villa' || propertyType === 'Independent House') {
+    } else if (propertyType === 'Flat' || propertyType === 'Flat / Villa' || propertyType === 'Flat/Villa' || propertyType === 'Independent House') {
       if (!getVal('propertyName', 'title')) errs.propertyName = 'Property Name is required';
       if (!getVal('bhk', 'bhk')) errs.bhk = 'BHK configuration is required';
       if (!getVal('bathrooms', 'bathrooms')) errs.bathrooms = 'Bathrooms count is required';
@@ -157,7 +157,7 @@ export default function PropertyListingForm({
       if (!getVal('dimensions', 'area_sqft') && !getVal('dimensions', 'area')) errs.dimensions = 'Dimensions / Size is required';
       if (!getVal('price', 'price')) errs.price = 'Price is required';
       if (!getVal('area', 'area')) errs.area = 'Area / Location is required';
-    } else if (propertyType === 'Plot/Land') {
+    } else if (propertyType === 'Plot' || propertyType === 'Land' || propertyType === 'Plot / Land' || propertyType === 'Plot/Land') {
       if (!getVal('propertyName', 'title')) errs.propertyName = 'Layout / Plot Name is required';
       if (!getVal('plotDimensions', 'area_sqft') && !getVal('plotDimensions', 'area')) errs.plotDimensions = 'Plot Dimensions are required';
       if (!getVal('approvedLayout', 'approval')) errs.approvedLayout = 'Approval Authority is required';
@@ -259,7 +259,7 @@ export default function PropertyListingForm({
             {propertyType === 'Residential' && (
               <ResidentialFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-            {(propertyType === 'Flat/Villa' || propertyType === 'Independent House') && (
+            {(propertyType === 'Flat' || propertyType === 'Flat / Villa' || propertyType === 'Flat/Villa' || propertyType === 'Independent House') && (
               <ResidentialUnitFields propertyType={propertyType} details={details} onChange={handleDetailsChange} errors={errors} />
             )}
             {propertyType === 'Agricultural' && (
@@ -268,7 +268,7 @@ export default function PropertyListingForm({
             {propertyType === 'Commercial' && (
               <CommercialFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-            {propertyType === 'Plot/Land' && (
+            {(propertyType === 'Plot' || propertyType === 'Land' || propertyType === 'Plot / Land' || propertyType === 'Plot/Land') && (
               <PlotFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
             {propertyType === 'Industrial' && (

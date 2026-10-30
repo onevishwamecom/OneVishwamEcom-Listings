@@ -20,7 +20,7 @@ export default function ResidentialUnitFields({
   details = {},
   onChange,
   errors = {},
-  propertyType = 'Flat/Villa',
+  propertyType = 'Flat',
 }) {
   const update = (keyOrObj, val) => typeof keyOrObj === "object" && keyOrObj !== null ? onChange(keyOrObj) : onChange(keyOrObj, val);
 

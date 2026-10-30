@@ -101,8 +101,7 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     price: propPrice,
     rawPrice: numericPrice || safeParseFloat(String(propPrice).replace(/[^\d.]/g, '')),
     numericPrice: numericPrice || safeParseFloat(String(propPrice).replace(/[^\d.]/g, '')),
-    propertyType: form.propertyType || finalSubcategory || "Residential",
-    subcategory: form.propertyType || finalSubcategory || "Residential",
+    propertyType: form.propertyType || finalSubcategory || "Plot",
     vendorName: form.vendorName || base.vendorName || "",
     channelPartnerName: form.channelPartnerName || base.channelPartnerName || "",
     origin: form.origin || base.origin || undefined,
@@ -138,6 +137,7 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     availableUnits: safeParseInt(form.availableUnits) || safeParseInt(propDetails.availableUnits) || 0,
     location: `${form.area || ""}${cityLabel ? `, ${cityLabel}` : ""}`,
   };
+  delete propertiesPayload.subcategory;
 
   const payloads = {
     properties: propertiesPayload,
