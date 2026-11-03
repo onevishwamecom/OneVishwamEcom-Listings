@@ -279,6 +279,7 @@ function verifyLiveWebsite(url) {
 }
 
 function resolveFirebaseBinary() {
+  if (process.platform === 'win32') return 'firebase.cmd';
   const possiblePaths = [
     '/opt/homebrew/bin/firebase',
     '/usr/local/bin/firebase',
