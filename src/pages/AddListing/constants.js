@@ -2,8 +2,9 @@ import { cities } from "../../data/locations";
 
 export const CATEGORIES = [
   {
-    id: "real-estate",
+    id: "properties",
     label: "Properties",
+    singularLabel: "Property",
     icon: "fa-house-chimney",
     desc: "Plots, Layouts, Villas, Agricultural Land & Commercial Spaces",
     badge: "Channel Partner Intake",
@@ -17,11 +18,12 @@ export const CATEGORIES = [
   },
   {
     id: "vehicle",
-    label: "Vehicle",
+    label: "Automobiles & Vehicles",
+    singularLabel: "Vehicle",
     icon: "fa-car-side",
     desc: "Cars, Two-Wheelers, Commercial Trucks & Electric Vehicles",
     badge: "Automotive",
-    popular: ["Cars", "Bikes", "Commercial", "Electric Vehicles"],
+    popular: ["Cars", "Bikes", "Hatchback", "SUV", "Sedan", "Commercial", "Electric Vehicles"],
     gradient: "from-amber-500 to-amber-600",
     bgSoft: "bg-amber-50/70",
     borderActive: "border-amber-500",
@@ -31,6 +33,7 @@ export const CATEGORIES = [
   {
     id: "grocery",
     label: "Grocery",
+    singularLabel: "Grocery",
     icon: "fa-basket-shopping",
     desc: "Fresh Farm Produce, Dairy, Packaged Food & Daily Essentials",
     badge: "Daily Essentials",
@@ -44,6 +47,7 @@ export const CATEGORIES = [
   {
     id: "garment",
     label: "Garments",
+    singularLabel: "Garment",
     icon: "fa-shirt",
     desc: "Men, Women & Kids Apparel, Ethnic Wear & Footwear",
     badge: "Fashion & Retail",
@@ -57,6 +61,7 @@ export const CATEGORIES = [
   {
     id: "jewellery",
     label: "Jewellery",
+    singularLabel: "Jewellery",
     icon: "fa-gem",
     desc: "Certified Gold, Silver, Diamonds, Platinum & Solitaires",
     badge: "Precious Metals",
@@ -70,6 +75,7 @@ export const CATEGORIES = [
   {
     id: "finance",
     label: "Financial",
+    singularLabel: "Financial Service",
     icon: "fa-building-columns",
     desc: "Home Loans, Project APF Approvals, Business Credit & Insurance",
     badge: "Loans & Banking",
@@ -83,6 +89,7 @@ export const CATEGORIES = [
   {
     id: "service",
     label: "Services",
+    singularLabel: "Service",
     icon: "fa-screwdriver-wrench",
     desc: "Plumbing, Electrical, Interior Design, Contracting & Maintenance",
     badge: "On-Demand",
@@ -96,6 +103,7 @@ export const CATEGORIES = [
   {
     id: "bedding",
     label: "Bedding & Comfort",
+    singularLabel: "Bedding",
     icon: "fa-bed",
     desc: "Orthopedic Mattresses, Pillows, Bedsheets, Comforters & Sleep Comfort",
     badge: "Sleep & Comfort",
@@ -109,6 +117,7 @@ export const CATEGORIES = [
   {
     id: "electronics",
     label: "Electronics",
+    singularLabel: "Electronic Item",
     icon: "fa-laptop",
     desc: "Mobiles, Laptops, TV & Audio, Wearables & Smart Home Appliances",
     badge: "Tech & Gadgets",
@@ -120,6 +129,79 @@ export const CATEGORIES = [
     accent: "indigo",
   },
 ];
+
+export const SUBCATEGORY_CARDS = {
+  properties: [
+    { id: "Residential", label: "Residential", icon: "fa-house" },
+    { id: "Flat", label: "Flat", icon: "fa-building" },
+    { id: "Independent House", label: "Independent House", icon: "fa-house-chimney-window" },
+    { id: "Plot", label: "Plot", icon: "fa-map-location-dot" },
+    { id: "Land", label: "Land", icon: "fa-mountain-sun" },
+    { id: "Agricultural", label: "Agricultural", icon: "fa-wheat-awn" },
+    { id: "Commercial", label: "Commercial", icon: "fa-shop" },
+    { id: "Industrial", label: "Industrial", icon: "fa-industry" },
+  ],
+  vehicle: [
+    { id: "Car", label: "Car / 4-Wheeler", icon: "fa-car" },
+    { id: "Bike", label: "Bike / 2-Wheeler", icon: "fa-motorcycle" },
+    { id: "Commercial Vehicle", label: "Commercial Vehicle", icon: "fa-truck" },
+    { id: "Electric Vehicle", label: "Electric Vehicle (EV)", icon: "fa-bolt" },
+    { id: "Auto Rickshaw", label: "Auto Rickshaw / 3-Wheeler", icon: "fa-van-shuttle" },
+    { id: "Luxury & Sports", label: "Luxury & Sports", icon: "fa-car-side" },
+  ],
+  grocery: [
+    { id: "Vegetables", label: "Vegetables", icon: "fa-carrot" },
+    { id: "Fruits", label: "Fresh Fruits", icon: "fa-apple-whole" },
+    { id: "Dairy & Eggs", label: "Dairy & Eggs", icon: "fa-egg" },
+    { id: "Packaged Food", label: "Packaged Food", icon: "fa-box-open" },
+    { id: "Beverages", label: "Beverages", icon: "fa-wine-bottle" },
+    { id: "Spices & Condiments", label: "Spices & Condiments", icon: "fa-pepper-hot" },
+  ],
+  garment: [
+    { id: "Men's Wear", label: "Men's Wear", icon: "fa-person" },
+    { id: "Women's Wear", label: "Women's Wear", icon: "fa-person-dress" },
+    { id: "Kids' Wear", label: "Kids' Wear", icon: "fa-child" },
+    { id: "Ethnic Wear", label: "Ethnic Wear", icon: "fa-shirt" },
+    { id: "Footwear", label: "Footwear", icon: "fa-shoe-prints" },
+    { id: "Accessories", label: "Accessories", icon: "fa-glasses" },
+  ],
+  jewellery: [
+    { id: "Gold", label: "Gold Jewellery", icon: "fa-ring" },
+    { id: "Diamond", label: "Diamond Jewellery", icon: "fa-gem" },
+    { id: "Silver", label: "Silver Articles", icon: "fa-coins" },
+    { id: "Platinum", label: "Platinum Collections", icon: "fa-certificate" },
+    { id: "Gemstones", label: "Precious Gemstones", icon: "fa-shapes" },
+    { id: "Fashion", label: "Fashion Jewellery", icon: "fa-crown" },
+  ],
+  bedding: [
+    { id: "Mattress", label: "Mattresses", icon: "fa-bed" },
+    { id: "Pillow", label: "Pillows & Cushions", icon: "fa-cloud" },
+    { id: "Bedsheet & Linen", label: "Bedsheet & Linen", icon: "fa-rug" },
+    { id: "Comforter & Blanket", label: "Comforters & Quilts", icon: "fa-layer-group" },
+  ],
+  electronics: [
+    { id: "Mobile & Tablet", label: "Mobile & Tablets", icon: "fa-mobile-screen" },
+    { id: "Laptop & Computer", label: "Laptops & Computers", icon: "fa-laptop" },
+    { id: "TV & Audio", label: "TV & Home Audio", icon: "fa-tv" },
+    { id: "Home Appliances", label: "Home Appliances", icon: "fa-plug" },
+    { id: "Smart Wearables", label: "Smart Wearables", icon: "fa-clock" },
+  ],
+  finance: [
+    { id: "Home Loan", label: "Home Loan", icon: "fa-house-circle-check" },
+    { id: "Vehicle Loan", label: "Vehicle Loan", icon: "fa-car" },
+    { id: "Personal Loan", label: "Personal Loan", icon: "fa-wallet" },
+    { id: "Business Loan", label: "Business Loan", icon: "fa-briefcase" },
+    { id: "Insurance", label: "Insurance & Coverage", icon: "fa-shield-halved" },
+  ],
+  service: [
+    { id: "Interior Design", label: "Interior Design", icon: "fa-couch" },
+    { id: "Plumbing", label: "Plumbing", icon: "fa-faucet-drip" },
+    { id: "Electrical", label: "Electrical Work", icon: "fa-bolt" },
+    { id: "Carpentry", label: "Carpentry", icon: "fa-hammer" },
+    { id: "Painting", label: "Painting & Polishing", icon: "fa-paint-roller" },
+    { id: "Cleaning", label: "Cleaning & Maintenance", icon: "fa-broom" },
+  ],
+};
 
 export const SUBCATEGORIES = {
   properties: [
@@ -249,7 +331,8 @@ export const CATEGORY_TO_MOCK = {
 };
 
 export const SERVICE_TYPE_TO_CATEGORY = {
-  properties: "real-estate",
+  properties: "properties",
+  "real-estate": "properties",
   vehicles: "vehicle",
   groceries: "grocery",
   garments: "garment",

@@ -1,17 +1,13 @@
 import { Link } from 'react-router-dom';
 import { ErrorState } from '@/components/skeleton';
 import { ListingTypeCard, ListingTypeSkeleton, EmptyStateCard } from './ListingTypeCard';
-import { TYPE_CONFIG } from '../constants';
-
-const ALL_CATEGORY_KEYS = ['properties', 'vehicles', 'groceries', 'garments', 'jewellery', 'finance'];
+import { PRIMARY_CATEGORIES } from '@/config/listingConfig';
 
 export function ListingsByType({ stats, loading, error, onRetry }) {
-  const categoryTiles = ALL_CATEGORY_KEYS.map((type) => {
-    return {
-      type,
-      count: stats.byType?.[type] || 0,
-    };
-  });
+  const categoryTiles = PRIMARY_CATEGORIES.map((cat) => ({
+    type: cat.id,
+    count: stats.byType?.[cat.id] || 0,
+  }));
 
   return (
     <div>
@@ -56,3 +52,5 @@ export function ListingsByType({ stats, loading, error, onRetry }) {
     </div>
   );
 }
+
+export default ListingsByType;

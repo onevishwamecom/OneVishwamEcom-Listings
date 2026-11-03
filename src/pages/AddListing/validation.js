@@ -18,8 +18,12 @@ export const getValidationErrors = (form, stepIndex, catFields, imageUrls, STEPS
     });
   }
 
-  if (stepId === "media" && imageUrls.length === 0) {
-    errors.photos = "At least one photo is required";
+  if (stepId === "media") {
+    if (imageUrls.length === 0) {
+      errors.photos = "At least one photo is required";
+    } else if (imageUrls.length > 5) {
+      errors.photos = "Maximum 5 images allowed in total across all categories";
+    }
   }
 
   return errors;

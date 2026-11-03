@@ -8,24 +8,32 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext js,jsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy": "npm run build && node scripts/deploy-firebase.js",
+    "deploy:only": "node scripts/deploy-firebase.js"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@dnd-kit/react": "^0.5.1",
     "@reduxjs/toolkit": "^2.12.0",
     "axios": "^1.18.1",
+    "exceljs": "^4.4.0",
     "firebase": "^12.19.0",
     "lottie-react": "^3.1.2",
+    "lru-cache": "^11.5.3",
     "lucide-react": "^1.47.0",
+    "minisearch": "^7.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.0",
-    "sweetalert2": "^11.26.25"
+    "sweetalert2": "^11.26.25",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
+    "basic-ftp": "^6.2.3",
+    "dotenv": "^18.0.9",
     "eslint": "^9.15.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",

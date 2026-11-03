@@ -221,7 +221,7 @@ export default function PlotFields({
           {/* Possession Status */}
           <div className="pt-1">
             <PossessionStatusSelector
-              propertyType="Plot/Land"
+              propertyType="Plot"
               value={details.possessionStatus || details.possession || ""}
               onChange={(val) => update({ possessionStatus: val, possession: val })}
               error={errors.possessionStatus || errors.possession}

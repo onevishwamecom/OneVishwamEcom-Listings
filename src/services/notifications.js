@@ -1,5 +1,6 @@
 import { getCachedUser } from './userCache';
 import { fetchFlatListings } from './listings';
+import { getAccessToken } from './api';
 
 /**
  * Notifications service — derived from real listing data.
@@ -104,10 +105,12 @@ function buildNotification(item) {
 }
 
 export async function fetchNotifications() {
-  const [user, items] = await Promise.all([getCachedUser(), fetchFlatListings()]);
+  if (!getAccessToken()) return [];
+  const user = await getCachedUser();
   if (!user) return [];
   const myMobile = toTenDigits(user.mobile || user.phone || user.contact);
   if (myMobile.length !== 10) return [];
+  const items = await fetchFlatListings();
   return items
     .filter((item) => toTenDigits(item.contact) === myMobile)
     .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))

@@ -39,6 +39,21 @@ export function ImageGallery({ images, video, displayTitle, onImageClick }) {
               <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <i className="fa-solid fa-expand text-white text-2xl" />
               </div>
+
+              {/* Position Sequence Badge */}
+              <div className="absolute top-2 left-2 z-10 pointer-events-none">
+                {index === 0 ? (
+                  <span className="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                    <i className="fa-solid fa-star text-[8px]" />
+                    <span>1st · Cover</span>
+                  </span>
+                ) : (
+                  <span className="bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                    {index + 1}{index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'}
+                  </span>
+                )}
+              </div>
+
               {images.length > 1 && (
                 <div className="absolute top-2 right-2">
                   <span className="bg-slate-900/80 text-white text-xs font-bold px-2 py-1 rounded-full">

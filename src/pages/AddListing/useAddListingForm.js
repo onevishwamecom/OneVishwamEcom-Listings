@@ -23,7 +23,7 @@ export function useAddListingForm() {
   const { refresh: refreshStats } = useListingStats();
 
   const initialCategory = categoryType || "";
-  const [step, setStep] = useState(isEditing ? 1 : initialCategory && initialCategory !== "real-estate" ? 1 : 0);
+  const [step, setStep] = useState(isEditing ? 1 : initialCategory && initialCategory !== "properties" && initialCategory !== "real-estate" ? 1 : 0);
   const [form, setForm] = useState(initialCategory ? { ...INITIAL_FORM, category: initialCategory } : INITIAL_FORM);
   const [photos, setPhotos] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -62,23 +62,31 @@ export function useAddListingForm() {
   };
 
   useEffect(() => {
-    if (categoryType && form.category !== categoryType) {
-      setForm((prev) => ({ ...prev, category: categoryType }));
-      if (categoryType !== "real-estate" && step === 0 && !isEditing) {
+    if (categoryType) {
+      if (form.category !== categoryType) {
+        setForm((prev) => ({ ...prev, category: categoryType }));
+      }
+      if (step === 0 && !isEditing) {
         setStep(1);
       }
-    } else if (!categoryType && !isEditing && form.category) {
-      setForm((prev) => ({ ...prev, category: "" }));
-      setStep(0);
+    } else if (!categoryType && !isEditing) {
+      if (form.category) {
+        setForm((prev) => ({ ...prev, category: "" }));
+      }
+      if (step !== 0) {
+        setStep(0);
+      }
     }
-  }, [categoryType]);
+  }, [categoryType, isEditing]);
 
   // Pre-fill locked partner identity and in-house tags
   useEffect(() => {
     if (!isEditing) {
       const cachedUser = getCachedUser() || {};
       const partnerInfo = resolvePartnerIdentity(cachedUser.email || cachedUser.vendorEmail);
-      const assignedPartner = cachedUser.partnerName || partnerInfo.partnerName || '';
+      const listerName = cachedUser.name || cachedUser.fullName || cachedUser.vendorName || partnerInfo.partnerName || '';
+      const assignedPartner = cachedUser.partnerName || partnerInfo.partnerName || listerName;
+      const assignedVendor = cachedUser.vendorName || listerName;
       const assignedRole = cachedUser.role || partnerInfo.role || '';
       const assignedOrigin = cachedUser.origin || partnerInfo.origin || (assignedRole === 'in_house' ? 'in_house_project' : undefined);
 
@@ -86,6 +94,9 @@ export function useAddListingForm() {
         const updates = {};
         if (assignedPartner && !prev.channelPartnerName) {
           updates.channelPartnerName = assignedPartner;
+        }
+        if (assignedVendor && !prev.vendorName) {
+          updates.vendorName = assignedVendor;
         }
         if (assignedOrigin && !prev.origin) {
           updates.origin = assignedOrigin;
@@ -106,6 +117,17 @@ export function useAddListingForm() {
       }
       return prev.filter((_, idx) => idx !== index);
     });
+
+  const movePhoto = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    setPhotos((prev) => {
+      if (toIndex < 0 || toIndex >= prev.length || fromIndex < 0 || fromIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  };
 
   const removeDocument = (index) =>
     setDocuments((prev) => {
@@ -130,7 +152,15 @@ export function useAddListingForm() {
   }, []);
 
   const handleAddPhoto = async (file) => {
-    if (!file || photos.length >= 6) return;
+    if (!file) return;
+    if (photos.length >= 5) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Image Limit Reached',
+        text: 'Maximum 5 images allowed across all categories (uploaded files + direct links).',
+      });
+      return;
+    }
     const tempId = Date.now() + Math.random();
     setPhotos((prev) => [
       ...prev,
@@ -148,6 +178,39 @@ export function useAddListingForm() {
       setPhotos((prev) => prev.filter((p) => p.id !== tempId));
       Swal.fire({ icon: "error", title: "Upload Failed", text: "Failed to upload photo." });
     }
+  };
+
+  const handleAddPhotoUrl = (rawUrl) => {
+    const url = (rawUrl || '').trim();
+    if (!url) return;
+    if (photos.length >= 5) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Image Limit Reached',
+        text: 'Maximum 5 images allowed across all categories (uploaded files + direct links).',
+      });
+      return;
+    }
+    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid URL',
+        text: 'Please enter a valid image web link starting with http:// or https://',
+      });
+      return;
+    }
+    const tempId = `link_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const urlName = url.split('/').pop()?.split('?')[0] || 'Image Link';
+    setPhotos((prev) => [
+      ...prev,
+      {
+        id: tempId,
+        name: urlName.length > 25 ? `${urlName.slice(0, 22)}...` : urlName,
+        url,
+        isDirectLink: true,
+        uploading: false,
+      },
+    ]);
   };
 
   const handleAddDocument = async (file) => {
@@ -200,7 +263,7 @@ export function useAddListingForm() {
   };
 
   const handlePublish = () => {
-    if (category !== "real-estate") {
+    if (category !== "properties" && category !== "real-estate") {
       const isStepValid = validateStep(
         form,
         step,
@@ -281,9 +344,11 @@ export function useAddListingForm() {
             console.warn("Firebase image upload failed:", pErr?.message);
           }
         } else if (photo.url && !photo.url.startsWith('blob:')) {
+          // Direct web link: Bypasses Firebase Storage completely! Added directly to MongoDB.
           finalImageUrls.push(photo.url);
         }
       }
+      const cappedImageUrls = finalImageUrls.slice(0, 5);
 
       // Upload supporting documents to Firebase Storage
       const finalDocUrls = [];
@@ -337,42 +402,46 @@ export function useAddListingForm() {
 
       const user = getCachedUser() || {};
       const partnerInfo = resolvePartnerIdentity(user.email || user.vendorEmail);
-      const assignedPartner = user.partnerName || partnerInfo.partnerName || form.channelPartnerName || '';
+      const listerName = user.name || user.fullName || user.vendorName || user.businessName || partnerInfo.partnerName || '';
+      const assignedPartner = form.channelPartnerName || user.partnerName || partnerInfo.partnerName || listerName;
+      const assignedVendor = form.vendorName || user.vendorName || listerName;
       const assignedRole = user.role || partnerInfo.role || 'lister';
       const assignedOrigin = user.origin || partnerInfo.origin || (assignedRole === 'in_house' ? 'in_house_project' : form.origin);
 
       const updatedForm = {
         ...form,
-        channelPartnerName: assignedPartner || form.channelPartnerName,
+        vendorName: assignedVendor || form.vendorName || listerName,
+        channelPartnerName: assignedPartner || form.channelPartnerName || listerName,
         origin: assignedOrigin,
-        videoUrl: finalVideoUrl,
-        video: finalVideoUrl,
-        videos: finalVideoUrl ? [finalVideoUrl] : [],
+        videoUrl: finalVideoUrl || '',
         brochure: finalBrochureUrl,
         pdfUrl: finalBrochureUrl,
       };
 
       if (isEditing && originalListingId) {
         await updateListing(typeKey, originalListingId, {
-          ...createUpdatedListingData(updatedForm, category, subcategory, finalImageUrls, docUrls, finalBrochureUrl, cities),
-          video: finalVideoUrl,
-          videoUrl: finalVideoUrl,
-          videos: finalVideoUrl ? [finalVideoUrl] : [],
+          ...createUpdatedListingData(updatedForm, category, subcategory, cappedImageUrls, docUrls, finalBrochureUrl, cities),
+          _type: typeKey,
+          category: category,
+          vendorName: assignedVendor || updatedForm.vendorName || listerName,
+          channelPartnerName: assignedPartner || updatedForm.channelPartnerName || listerName,
+          videoUrl: finalVideoUrl || '',
         });
       } else {
-        const listingPayload = createNewListingData(updatedForm, category, subcategory, finalImageUrls, docUrls, finalBrochureUrl, cities);
+        const listingPayload = createNewListingData(updatedForm, category, subcategory, cappedImageUrls, docUrls, finalBrochureUrl, cities);
         await createListing({
           ...listingPayload,
+          _type: typeKey,
+          category: category,
+          vendorName: assignedVendor || listingPayload.vendorName || listerName,
+          channelPartnerName: assignedPartner || listingPayload.channelPartnerName || listerName,
           origin: assignedOrigin || listingPayload.origin,
-          channelPartnerName: assignedPartner || listingPayload.channelPartnerName,
-          video: finalVideoUrl,
-          videoUrl: finalVideoUrl,
-          videos: finalVideoUrl ? [finalVideoUrl] : [],
+          videoUrl: finalVideoUrl || '',
           contributor: {
-            name: user.fullName || 'Unknown',
+            name: listerName || 'Unknown',
             type: assignedRole || user.role || 'vendor',
             email: user.email || '',
-            contact: user.mobile || listingPayload.contact || '',
+            contact: user.mobile || user.phone || listingPayload.contact || '',
             city: user.city || listingPayload.city || '',
           },
         });
@@ -452,6 +521,7 @@ export function useAddListingForm() {
         nextForm.area = item.area || "";
         nextForm.address = item.address || item.landmark || "";
         nextForm.landmark = item.landmark || "";
+        nextForm.mapUrl = item.mapUrl || item.details?.mapUrl || "";
         nextForm.city = item.city || defaultCity;
         nextForm.pincode = item.pincode || "";
         nextForm.contact = item.contact || "9876543210";
@@ -460,22 +530,12 @@ export function useAddListingForm() {
         nextForm.channelPartnerName = item.channelPartnerName || "";
         nextForm.bankLoanDetails = item.bankLoanDetails || "";
 
-        // Resolve subcategory robustly
+        // Resolve subcategory using canonical schema names
         const rawSubcategory =
           item.subcategory ||
-          item.subCategory ||
-          (serviceType === "real-estate" && (item.category || item.propertyType)) ||
-          (serviceType === "vehicle" && (
-            item.wheelerType ||
-            item.categoryVehicle ||
-            (item.category === "2-wheeler" ? "Bike" : item.category === "3-wheeler" ? "Auto Rickshaw" : item.category === "commercial" ? "Commercial Vehicle" : item.category === "4-wheeler" ? "Car" : item.category)
-          )) ||
-          (serviceType === "jewellery" && (item.metalType || item.material || item.category)) ||
-          (serviceType === "finance" && (item.serviceType || item.type || item.category)) ||
-          (serviceType === "grocery" && item.category) ||
-          (serviceType === "garment" && item.category) ||
-          (serviceType === "bedding" && item.category) ||
-          (serviceType === "electronics" && item.category) ||
+          item.propertyType ||
+          (serviceType === "vehicle" && (item.bodyType || item.wheelerType || item.category)) ||
+          item.category ||
           "";
 
         const validSubcategories = SUBCATEGORIES[serviceType] || [];
@@ -484,7 +544,14 @@ export function useAddListingForm() {
         );
         nextForm.subcategory = matchedSub || rawSubcategory || "";
 
-        if (serviceType === "real-estate") {
+        if (serviceType === "properties" || serviceType === "real-estate") {
+          const rawPT = item.propertyType || matchedSub || rawSubcategory || "Plot";
+          const low = String(rawPT).toLowerCase();
+          if (low.includes('flat') || low.includes('villa') || low.includes('apartment')) nextForm.propertyType = 'Flat';
+          else if (low.includes('plot') || low.includes('layout') || low.includes('plat') || low.includes('site')) nextForm.propertyType = 'Plot';
+          else if (low.includes('land') && !low.includes('agri')) nextForm.propertyType = 'Land';
+          else nextForm.propertyType = rawPT || 'Plot';
+          delete nextForm.subcategory;
           const d = item.details || {};
           nextForm.bhk = item.bhk || d.bhk || "";
           nextForm.bathrooms = item.bathrooms || d.bathrooms || "";
@@ -513,12 +580,25 @@ export function useAddListingForm() {
         if (serviceType === "vehicle") {
           nextForm.brand = item.brand || item.make || "";
           nextForm.model = item.model || "";
+          nextForm.bodyType = item.bodyType || "";
           nextForm.year = item.year ? String(item.year) : "";
-          nextForm.condition = item.condition || "used";
+          nextForm.condition = item.condition === "new" ? "Brand New" : (item.condition === "old" ? "Pre-Owned" : (item.condition || "Brand New"));
           nextForm.fuelType = item.fuelType || "";
           nextForm.kmDriven = item.kmDriven ?? "";
           nextForm.transmission = item.transmission || "";
           nextForm.categoryVehicle = item.categoryVehicle || item.wheelerType || item.category || "";
+          nextForm.mileage = item.mileage || "";
+          nextForm.loanApproved = (item.loanApproved || item.bankLoanDetails) ? "Yes" : "No";
+          nextForm.showroomName = item.showroom?.name || "";
+          nextForm.showroomAddress = item.showroom?.address || "";
+          nextForm.showroomPhone = item.showroom?.phone || "";
+          nextForm.showroomEmail = item.showroom?.email || "";
+          nextForm.variants = Array.isArray(item.variants)
+            ? item.variants.map((v) => (typeof v === "object" ? `${v.variant || v.name || ""}${v.price ? ` - ${v.price}` : ""}` : v)).join(", ")
+            : (item.variants || "");
+          nextForm.features = Array.isArray(item.features)
+            ? item.features.join(", ")
+            : (item.features || "");
         }
         if (serviceType === "grocery") {
           nextForm.quantity = item.stock ?? item.quantity ?? nextForm.quantity;
@@ -640,8 +720,10 @@ return {
     // Handlers
     updateForm,
     handleAddPhoto,
+    handleAddPhotoUrl,
     handleAddDocument,
     removePhoto,
+    movePhoto,
     removeDocument,
     handleVideoSelect,
     handleRemoveVideo,

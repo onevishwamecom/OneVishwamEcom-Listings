@@ -20,6 +20,9 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: ["firebase/app", "firebase/auth", "firebase/storage"],
+  },
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {

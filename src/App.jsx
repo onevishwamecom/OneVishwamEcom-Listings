@@ -12,16 +12,19 @@ import BrandLoader from './components/ui/BrandLoader';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import NotificationGate from './components/NotificationGate';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const AddListing = lazy(() => import('./pages/AddListing'));
-const ListedItems = lazy(() => import('./pages/ListedItems'));
-const ListingDetails = lazy(() => import('./pages/ListingDetails'));
-const Notifications = lazy(() => import('./pages/Notifications'));
-const Profile = lazy(() => import('./pages/Profile'));
+const Login = lazyWithRetry(() => import('./pages/Login'));
+const Register = lazyWithRetry(() => import('./pages/Register'));
+const ForgotPassword = lazyWithRetry(() => import('./pages/ForgotPassword'));
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'));
+const AddListing = lazyWithRetry(() => import('./pages/AddListing'));
+const ListedItems = lazyWithRetry(() => import('./pages/ListedItems'));
+const ListingDetails = lazyWithRetry(() => import('./pages/ListingDetails'));
+const Notifications = lazyWithRetry(() => import('./pages/Notifications'));
+const Profile = lazyWithRetry(() => import('./pages/Profile'));
+const BulkListing = lazyWithRetry(() => import('./pages/BulkListing'));
+const ListingNotFound = lazyWithRetry(() => import('./pages/ListingNotFound'));
 
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAuth();
@@ -63,7 +66,7 @@ function App() {
               {
                 firebaseUid: firebaseUser.uid,
                 email: firebaseUser.email,
-                fullName: firebaseUser.displayName || undefined,
+                name: firebaseUser.displayName || undefined,
                 role: 'lister',
               },
               {
@@ -123,6 +126,11 @@ function App() {
           } catch {
             store.dispatch(clearAuth());
           }
+        } else {
+          cache.clear();
+          cache.setScope(null);
+          clearCachedUser();
+          store.dispatch(clearAuth());
         }
       }
     });
@@ -163,10 +171,15 @@ function App() {
               <Route path="/listings/:listingId" element={<ListingDetails />} />
               <Route path="/add-listing" element={<AddListing />} />
               <Route path="/add-listing/:categoryType" element={<AddListing />} />
+              <Route path="/bulk-listing" element={<BulkListing />} />
+              <Route path="/bulk-listing/:categoryType" element={<BulkListing />} />
+              <Route path="/bulk-order" element={<Navigate to="/bulk-listing" replace />} />
+              <Route path="/bulk-order/:categoryType" element={<Navigate to="/bulk-listing" replace />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<ListingNotFound />} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>

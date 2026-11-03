@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import PageHeader from '@/components/ui/PageHeader';
 import PageContainer from '@/components/ui/PageContainer';
 import { DetailPageSkeleton } from '@/components/skeleton';
@@ -22,6 +22,8 @@ import { ImageLightbox } from './components/ImageLightbox';
 
 function ListingDetails() {
   const { listingId } = useParams();
+  const [searchParams] = useSearchParams();
+  const typeHint = searchParams.get('type') || searchParams.get('category') || '';
   const [selectedImage, setSelectedImage] = useState(null);
 
   const {
@@ -30,9 +32,9 @@ function ListingDetails() {
     error,
     retry,
   } = useCachedData(
-    () => fetchListingById(listingId),
-    `listing:${listingId}`,
-    [listingId],
+    () => fetchListingById(listingId, typeHint),
+    `listing:${listingId}:${typeHint}`,
+    [listingId, typeHint],
     { ttl: CACHE_TTL.listingDetail, fallback: null },
   );
 

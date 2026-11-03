@@ -45,18 +45,37 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     address: form.address || "",
     landmark: form.landmark || "",
     location: formattedLocation || form.area || "",
+    mapUrl: form.mapUrl || "",
     pincode: form.pincode || "",
     contact: form.contact || "",
-    images: imageUrls || [],
+    images: (imageUrls || []).slice(0, 5),
     documents: docUrls || [],
-    brochure: brochureUrl || null,
-    vendorName: form.vendorName || "",
-    channelPartnerName: form.channelPartnerName || "",
+    vendorName: form.vendorName || form.channelPartnerName || "",
+    channelPartnerName: form.channelPartnerName || form.vendorName || "",
     origin: form.origin || undefined,
     propertyType: form.propertyType || finalSubcategory || "",
     bankLoanDetails: form.bankLoanDetails || "",
     loanApproved: Boolean(form.bankLoanDetails && !form.bankLoanDetails.toLowerCase().includes('no')),
-    details: form.details || {},
+    details: (() => {
+      const d = { ...(form.details || {}) };
+      delete d.channelPartnerName;
+      delete d.vendorName;
+      delete d.propertyName;
+      delete d.expectedPrice;
+      delete d.description;
+      delete d.possessionStatus;
+      delete d.listerId;
+      delete d.negotiable;
+      delete d.locationUrl;
+      delete d.googleMapsUrl;
+      delete d.googleMapUrl;
+      delete d.mapEmbedUrl;
+      const mUrl = form.mapUrl || "";
+      if (mUrl) {
+        d.mapUrl = mUrl;
+      }
+      return d;
+    })(),
   };
 
   const propDetails = form.details || {};
@@ -76,64 +95,108 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
     form.area_sqft ||
     '';
 
+  const propertiesPayload = {
+    ...base,
+    title: propTitle,
+    price: propPrice,
+    rawPrice: numericPrice || safeParseFloat(String(propPrice).replace(/[^\d.]/g, '')),
+    numericPrice: numericPrice || safeParseFloat(String(propPrice).replace(/[^\d.]/g, '')),
+    propertyType: form.propertyType || finalSubcategory || "Plot",
+    vendorName: form.vendorName || base.vendorName || "",
+    channelPartnerName: form.channelPartnerName || base.channelPartnerName || "",
+    origin: form.origin || base.origin || undefined,
+    bankLoanDetails: form.bankLoanDetails || base.bankLoanDetails || (form.loanApproved === 'Yes' ? 'Bank Loan Approved' : ''),
+    loanApproved: form.loanApproved === 'Yes' || form.loanApproved === true || Boolean(form.bankLoanDetails && !form.bankLoanDetails.toLowerCase().includes('no')),
+    details: propDetails,
+    bhk: propDetails.bhk || form.bhk || "",
+    bathrooms: propDetails.bathrooms || form.bathrooms || "",
+    balconies: safeParseInt(propDetails.balconies) || safeParseInt(form.balconies) || 0,
+    area_sqft: propArea || form.area_sqft || "",
+    area: form.area || (propArea ? `${propArea}` : ""),
+    landmark: form.landmark || "",
+    furnishing: propDetails.furnishing || form.furnishing || "",
+    floor: propDetails.floor || form.floor || "",
+    floors: propDetails.floors || propDetails.totalFloors || form.floors || "",
+    towers: propDetails.towers || form.towers || "",
+    facing: propDetails.facing || propDetails.plotFacing || form.facing || "",
+    possessionStatus: propDetails.possessionStatus || propDetails.possession || form.possessionStatus || form.possession || "",
+    parking: propDetails.parking || propDetails.parkingCapacity || form.parking || "",
+    extraRoom: propDetails.extraRoom || form.extraRoom || "",
+    approval: propDetails.approvalAuthority || propDetails.approvalZone || form.approval || "",
+    gatedCommunity: propDetails.gatedCommunity === 'Yes',
+    negotiable: propDetails.negotiable === 'Yes' || form.negotiable === true,
+    amenities: Array.isArray(propDetails.amenities)
+      ? propDetails.amenities
+      : Array.isArray(propDetails.utilities)
+      ? propDetails.utilities
+      : Array.isArray(propDetails.waterAvailability)
+      ? propDetails.waterAvailability
+      : form.amenities || [],
+    projectCount: safeParseInt(form.projectCount) || safeParseInt(propDetails.projectCount) || 0,
+    documents: (docUrls || []).map((d) => (typeof d === 'string' ? { url: d, filename: '', fileType: '' } : d)),
+    totalUnits: form.totalUnits || propDetails.totalUnits || "",
+    availableUnits: safeParseInt(form.availableUnits) || safeParseInt(propDetails.availableUnits) || 0,
+    location: `${form.area || ""}${cityLabel ? `, ${cityLabel}` : ""}`,
+  };
+  delete propertiesPayload.subcategory;
+
   const payloads = {
-    "real-estate": {
-      ...base,
-      title: propTitle,
-      price: propPrice,
-      rawPrice: numericPrice || safeParseFloat(String(propPrice).replace(/[^\d.]/g, '')),
-      numericPrice: numericPrice || safeParseFloat(String(propPrice).replace(/[^\d.]/g, '')),
-      propertyType: form.propertyType || finalSubcategory || "Residential",
-      subcategory: form.propertyType || finalSubcategory || "Residential",
-      vendorName: form.vendorName || base.vendorName || "",
-      channelPartnerName: form.channelPartnerName || base.channelPartnerName || "",
-      origin: form.origin || base.origin || undefined,
-      bankLoanDetails: form.bankLoanDetails || base.bankLoanDetails || (form.loanApproved === 'Yes' ? 'Bank Loan Approved' : ''),
-      loanApproved: form.loanApproved === 'Yes' || form.loanApproved === true || Boolean(form.bankLoanDetails && !form.bankLoanDetails.toLowerCase().includes('no')),
-      details: propDetails,
-      bhk: propDetails.bhk || form.bhk || "",
-      bathrooms: propDetails.bathrooms || form.bathrooms || "",
-      balconies: safeParseInt(propDetails.balconies) || safeParseInt(form.balconies) || 0,
-      area_sqft: propArea || form.area_sqft || "",
-      area: form.area || (propArea ? `${propArea}` : ""),
-      landmark: form.landmark || "",
-      furnishing: propDetails.furnishing || form.furnishing || "",
-      floor: propDetails.floor || form.floor || "",
-      floors: propDetails.floors || propDetails.totalFloors || form.floors || "",
-      towers: propDetails.towers || form.towers || "",
-      facing: propDetails.facing || propDetails.plotFacing || form.facing || "",
-      possessionStatus: propDetails.possessionStatus || propDetails.possession || form.possessionStatus || form.possession || "",
-      parking: propDetails.parking || propDetails.parkingCapacity || form.parking || "",
-      extraRoom: propDetails.extraRoom || form.extraRoom || "",
-      approval: propDetails.approvalAuthority || propDetails.approvalZone || form.approval || "",
-      gatedCommunity: propDetails.gatedCommunity === 'Yes',
-      negotiable: propDetails.negotiable === 'Yes' || form.negotiable === true,
-      amenities: Array.isArray(propDetails.amenities)
-        ? propDetails.amenities
-        : Array.isArray(propDetails.utilities)
-        ? propDetails.utilities
-        : Array.isArray(propDetails.waterAvailability)
-        ? propDetails.waterAvailability
-        : form.amenities || [],
-      projectCount: safeParseInt(form.projectCount) || safeParseInt(propDetails.projectCount) || 0,
-      totalUnits: form.totalUnits || propDetails.totalUnits || "",
-      availableUnits: safeParseInt(form.availableUnits) || safeParseInt(propDetails.availableUnits) || 0,
-      location: `${form.area || ""}${cityLabel ? `, ${cityLabel}` : ""}`,
-    },
+    properties: propertiesPayload,
+    "real-estate": propertiesPayload,
     vehicle: {
       ...base,
+      _type: "vehicles",
+      category: "vehicle",
+      title: form.title || `${form.brand || ""} ${form.model || ""} ${form.year || ""}`.trim() || "Automobile Listing",
       brand: form.brand || "",
       make: form.brand || "",
       model: form.model || "",
+      bodyType: form.bodyType || (form.categoryVehicle === "2-Wheeler" ? "Cruiser / Bike" : "Hatchback"),
       year: Math.max(1900, safeParseInt(form.year)),
       condition: (form.condition || "used").toLowerCase().includes("new") ? "new" : "old",
-      category: form.categoryVehicle?.toLowerCase() || (finalSubcategory === "Bike" ? "2-wheeler" : finalSubcategory === "Auto Rickshaw" ? "3-wheeler" : finalSubcategory === "Commercial Vehicle" ? "commercial" : "4-wheeler"),
+      subcategory: finalSubcategory || form.categoryVehicle || "Car",
+      categoryVehicle: form.categoryVehicle?.toLowerCase() || (finalSubcategory === "Bike" ? "2-wheeler" : finalSubcategory === "Auto Rickshaw" ? "3-wheeler" : finalSubcategory === "Commercial Vehicle" ? "commercial" : "4-wheeler"),
       wheelerType: form.categoryVehicle?.toLowerCase() || (finalSubcategory === "Bike" ? "2-wheeler" : finalSubcategory === "Auto Rickshaw" ? "3-wheeler" : finalSubcategory === "Commercial Vehicle" ? "commercial" : "4-wheeler"),
       fuelType: form.fuelType || "Petrol",
-      transmission: form.transmission || undefined,
+      transmission: form.transmission || "Manual",
+      mileage: form.mileage || "",
       kmDriven: Math.max(0, safeParseInt(form.kmDriven)),
+      loanApproved: form.loanApproved === "Yes" || form.loanApproved === true,
       priceValue: numericPrice || Math.max(0, safeParseFloat(String(form.price).replace(/[₹,\s]/g, ""))),
-      location: form.area || "",
+      priceSuffix: form.priceSuffix || ((form.condition || "").toLowerCase().includes("new") ? "Ex-Showroom" : "Pre-Owned"),
+      location: formattedLocation || form.area || (cityLabel ? `${cityLabel}, Karnataka` : "Bengaluru"),
+      showroom: (form.showroomName || form.showroomAddress || form.showroomPhone || form.showroomEmail) ? {
+        name: form.showroomName || `${form.brand || "Authorized"} Dealership`,
+        address: form.showroomAddress || formattedLocation,
+        phone: form.showroomPhone || form.contact || "8546996622",
+        email: form.showroomEmail || "ceo@onevishwam.com",
+        type: "Authorized Dealership",
+        mapUrl: form.mapUrl || "",
+      } : null,
+      variants: Array.isArray(form.variants)
+        ? form.variants
+        : typeof form.variants === "string" && form.variants.trim()
+        ? form.variants.split(",").map((v) => {
+            const parts = v.split("-").map((p) => p.trim());
+            return {
+              variant: parts[0] || v.trim(),
+              price: parts[1] || displayPrice || form.price || "",
+            };
+          })
+        : [],
+      features: Array.isArray(form.features)
+        ? form.features
+        : typeof form.features === "string" && form.features.trim()
+        ? form.features.split(",").map((f) => f.trim()).filter(Boolean)
+        : [],
+      statusBadges: [
+        (form.loanApproved === "Yes" || form.loanApproved === true) ? { label: "Loan Pre-Approved", className: "bg-blue-600 text-white" } : null,
+        {
+          label: (form.condition || "new").toLowerCase().includes("new") ? "Brand New" : "Certified Pre-Owned",
+          className: (form.condition || "new").toLowerCase().includes("new") ? "bg-emerald-600 text-white" : "bg-slate-700 text-white",
+        },
+      ].filter(Boolean),
+      cardPills: [form.fuelType || "Petrol", form.transmission || "Manual", form.year ? `${form.year}` : null].filter(Boolean),
     },
     grocery: {
       ...base,

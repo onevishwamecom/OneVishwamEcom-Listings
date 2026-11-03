@@ -31,15 +31,15 @@ function validateName(name) {
 }
 
 function validatePhone(phone) {
-  if (!phone || !phone.trim()) return "Mobile number is required";
+  if (!phone || !phone.trim()) return "Mobile number is mandatory and required";
   const digits = phone.replace(/[\s-]/g, "");
   if (digits.length === 12 && digits.startsWith('91')) {
     const tenDigit = digits.slice(2);
-    if (!/^[6-9]\d{9}$/.test(tenDigit)) return "Invalid mobile number";
+    if (!/^[6-9]\d{9}$/.test(tenDigit)) return "Please enter a valid 10-digit mobile number";
     return "";
   }
-  if (!/^\d{10}$/.test(digits)) return "Invalid mobile number";
-  if (!/^[6-9]\d{9}$/.test(digits)) return "Invalid mobile number";
+  if (!/^\d{10}$/.test(digits)) return "Please enter a valid 10-digit mobile number";
+  if (!/^[6-9]\d{9}$/.test(digits)) return "Please enter a valid 10-digit mobile number starting with 6-9";
   return "";
 }
 
@@ -243,6 +243,23 @@ function RegisterPage() {
 
   const handleRegister = useCallback(async (e) => {
     e.preventDefault();
+    const nameErr = validateName(form.name);
+    const emailErr = validateEmail(form.email);
+    const phoneErr = validatePhone(form.phone);
+    const passErr = validatePassword(form.password);
+    const confirmErr = validateConfirm(form.password, form.confirm);
+    
+    if (nameErr || emailErr || phoneErr || passErr || confirmErr) {
+      setErrors({
+        ...(nameErr && { name: nameErr }),
+        ...(emailErr && { email: emailErr }),
+        ...(phoneErr && { phone: phoneErr }),
+        ...(passErr && { password: passErr }),
+        ...(confirmErr && { confirm: confirmErr }),
+      });
+      return;
+    }
+
     if (!canRegister || loading) return;
 
     try {
@@ -394,7 +411,7 @@ function RegisterPage() {
                 htmlFor="reg-phone"
                 className="block text-sm font-semibold text-slate-700 mb-1.5"
               >
-                Phone Number
+                Phone Number <span className="text-brand-orange font-bold">*</span>
               </label>
               <div className="relative">
                 <Input

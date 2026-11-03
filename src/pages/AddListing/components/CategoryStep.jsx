@@ -10,83 +10,23 @@ import {
   Wrench,
   Bed,
   Laptop,
+  Box,
   Check,
 } from "lucide-react";
+import { PRIMARY_CATEGORIES } from "@/config/listingConfig";
 
-export const CATEGORIES_CONFIG = [
-  {
-    id: "real-estate",
-    title: "Properties",
-    description: "Plots, villas, apartments, commercial & agricultural land",
-    icon: Home,
-    iconBg: "bg-blue-50 text-blue-600",
-    hoverBorder: "hover:border-blue-300",
-  },
-  {
-    id: "vehicle",
-    title: "Vehicle",
-    description: "Cars, motorcycles, commercial vehicles & EVs",
-    icon: Car,
-    iconBg: "bg-amber-50 text-amber-600",
-    hoverBorder: "hover:border-amber-300",
-  },
-  {
-    id: "grocery",
-    title: "Grocery",
-    description: "Fresh produce, daily essentials, packaged food & beverages",
-    icon: ShoppingBag,
-    iconBg: "bg-emerald-50 text-emerald-600",
-    hoverBorder: "hover:border-emerald-300",
-  },
-  {
-    id: "garment",
-    title: "Garments",
-    description: "Men, women & kids apparel, footwear & fashion",
-    icon: Shirt,
-    iconBg: "bg-purple-50 text-purple-600",
-    hoverBorder: "hover:border-purple-300",
-  },
-  {
-    id: "jewellery",
-    title: "Jewellery",
-    description: "Certified gold, diamonds, silver, platinum & gemstones",
-    icon: Gem,
-    iconBg: "bg-rose-50 text-rose-600",
-    hoverBorder: "hover:border-rose-300",
-  },
-  {
-    id: "finance",
-    title: "Financial",
-    description: "Home loans, business credit, APF approvals & investments",
-    icon: Landmark,
-    iconBg: "bg-teal-50 text-teal-600",
-    hoverBorder: "hover:border-teal-300",
-  },
-  {
-    id: "service",
-    title: "Services",
-    description: "Plumbing, electrical, interior design & repairs",
-    icon: Wrench,
-    iconBg: "bg-slate-100 text-slate-700",
-    hoverBorder: "hover:border-slate-400",
-  },
-  {
-    id: "bedding",
-    title: "Bedding & Comfort",
-    description: "Mattresses, pillows, bedsheets & sleep comfort essentials",
-    icon: Bed,
-    iconBg: "bg-sky-50 text-sky-600",
-    hoverBorder: "hover:border-sky-300",
-  },
-  {
-    id: "electronics",
-    title: "Electronics",
-    description: "Mobiles, laptops, TV & audio, smart home devices",
-    icon: Laptop,
-    iconBg: "bg-indigo-50 text-indigo-600",
-    hoverBorder: "hover:border-indigo-300",
-  },
-];
+const LUCIDE_ICONS = {
+  Home,
+  Car,
+  ShoppingBag,
+  Shirt,
+  Gem,
+  Landmark,
+  Wrench,
+  Bed,
+  Laptop,
+  Box,
+};
 
 export function CategoryStep({ category, setCategory, isEditing }) {
   const navigate = useNavigate();
@@ -101,8 +41,8 @@ export function CategoryStep({ category, setCategory, isEditing }) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
-      {CATEGORIES_CONFIG.map((cat) => {
-        const Icon = cat.icon;
+      {PRIMARY_CATEGORIES.map((cat) => {
+        const Icon = LUCIDE_ICONS[cat.lucideIconName] || Box;
         const isSelected = category === cat.id;
         const isDisabled = isEditing && cat.id !== category;
 
@@ -117,12 +57,14 @@ export function CategoryStep({ category, setCategory, isEditing }) {
                 ? "opacity-40 cursor-not-allowed border-slate-100 bg-slate-50"
                 : isSelected
                 ? "border-brand-blue bg-blue-50/40 ring-2 ring-brand-blue/20 shadow-xs"
-                : `border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-xs ${cat.hoverBorder}`
+                : `border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-xs ${cat.hoverBorder || "hover:border-blue-300"}`
             }`}
           >
             {/* Soft-Colored Icon Badge */}
             <div
-              className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-105 ${cat.iconBg}`}
+              className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-105 ${
+                cat.iconBg || "bg-blue-50 text-blue-600"
+              }`}
             >
               <Icon className="w-5 h-5" />
             </div>
@@ -134,10 +76,10 @@ export function CategoryStep({ category, setCategory, isEditing }) {
                   isSelected ? "text-brand-blue" : "text-slate-800 group-hover:text-brand-blue"
                 }`}
               >
-                {cat.title}
+                {cat.label}
               </h3>
               <p className="text-[11px] text-slate-400 truncate mt-0.5 leading-snug">
-                {cat.description}
+                {cat.desc}
               </p>
             </div>
 
@@ -153,3 +95,5 @@ export function CategoryStep({ category, setCategory, isEditing }) {
     </div>
   );
 }
+
+export default CategoryStep;

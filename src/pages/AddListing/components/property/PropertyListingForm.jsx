@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/store/authSlice';
-import { resolvePartnerIdentity } from '@/config/partnerDirectory';
 import Phase1Header from './Phase1Header';
 import ResidentialFields from './ResidentialFields';
 import ResidentialUnitFields from './ResidentialUnitFields';
@@ -9,20 +8,13 @@ import CommercialFields from './CommercialFields';
 import PlotFields from './PlotFields';
 import IndustrialFields from './IndustrialFields';
 import Phase3FinalFields from './Phase3FinalFields';
+import ListingPhaseStepper from '../shared/ListingPhaseStepper';
+import PhaseNavigationActions from '../shared/PhaseNavigationActions';
 
 const PHASES = [
-  {
-    step: 1,
-    title: 'Partner & Category',
-  },
-  {
-    step: 2,
-    title: 'Specifications',
-  },
-  {
-    step: 3,
-    title: 'Media & Approvals',
-  },
+  { step: 1, title: 'Partner & Category' },
+  { step: 2, title: 'Specifications' },
+  { step: 3, title: 'Media & Approvals' },
 ];
 
 export default function PropertyListingForm({
@@ -30,7 +22,9 @@ export default function PropertyListingForm({
   updateForm,
   photos = [],
   onAddPhoto,
+  onAddPhotoUrl,
   onRemovePhoto,
+  onMovePhoto,
   video = null,
   videoPreview = null,
   onVideoSelect,
@@ -49,17 +43,12 @@ export default function PropertyListingForm({
   const [errors, setErrors] = useState({});
 
   const { user } = useAuth();
-  const partnerInfo = resolvePartnerIdentity(user?.email || user?.vendorEmail);
-  const userEmail = (user?.email || user?.vendorEmail || '').toLowerCase();
-  const isOneVishwam = user?.role === 'in_house' || partnerInfo?.role === 'in_house' || userEmail.endsWith('@onevishwam.com');
+  const userEmail = (user?.email || '').toLowerCase();
+  const isOneVishwam = user?.role === 'in_house' || userEmail.endsWith('@onevishwam.com');
 
-  const resolvedPartnerName = isOneVishwam
-    ? 'One Vishwam'
-    : (user?.partnerName || partnerInfo?.partnerName || user?.fullName || user?.name || user?.displayName || userEmail || 'External Partner');
-
-  const resolvedVendorName = isOneVishwam
-    ? 'One Vishwam'
-    : (user?.fullName || user?.name || user?.partnerName || partnerInfo?.partnerName || user?.displayName || userEmail || 'Independent Owner');
+  const listerName = user?.name || user?.fullName || 'Verified Lister';
+  const resolvedPartnerName = isOneVishwam ? 'One Vishwam' : (user?.partnerName || listerName);
+  const resolvedVendorName = isOneVishwam ? 'One Vishwam' : (user?.vendorName || listerName);
 
   useEffect(() => {
     onPhaseChange?.(activePhase);
@@ -67,7 +56,7 @@ export default function PropertyListingForm({
 
   const vendorName = form.vendorName || resolvedVendorName;
   const channelPartnerName = form.channelPartnerName || resolvedPartnerName;
-  const propertyType = form.propertyType || 'Residential';
+  const propertyType = form.propertyType || 'Plot';
   const bankLoanDetails = form.bankLoanDetails || '';
   const details = form.details || {};
 
@@ -121,7 +110,6 @@ export default function PropertyListingForm({
     }
   };
 
-  // Phase 1 validation (Identity is auto-derived, so only property category selection is validated)
   const validatePhase1 = () => {
     const errs = {};
     if (!propertyType) errs.propertyType = 'Please select a property category';
@@ -129,61 +117,91 @@ export default function PropertyListingForm({
     return Object.keys(errs).length === 0;
   };
 
-  // Phase 2 validation for the active category
   const validatePhase2 = () => {
     const errs = {};
     const d = details || {};
 
-    const getVal = (dKey, rootKey) => {
-      const v = d[dKey] !== undefined && d[dKey] !== null && String(d[dKey]).trim() !== '' 
-        ? d[dKey] 
-        : (form[rootKey] !== undefined && form[rootKey] !== null ? form[rootKey] : '');
-      return typeof v === 'string' ? v.trim() : (v !== undefined && v !== null ? String(v) : '');
-    };
+    const priceVal = d.expectedPrice || d.price || form.expectedPrice || form.price;
 
     if (propertyType === 'Residential') {
-      if (!getVal('propertyName', 'title')) errs.propertyName = 'Property / Project Name is required';
-      if (!getVal('dimensions', 'area_sqft') && !getVal('dimensions', 'area')) errs.dimensions = 'Dimensions are required';
-      if (!getVal('facing', 'facing')) errs.facing = 'Property Facing is required';
-      if (!getVal('cornerPlot', 'cornerPlot')) errs.cornerPlot = 'Corner Plot selection is required';
-      if (!getVal('approvedLayout', 'approval')) errs.approvedLayout = 'Approved Layout is required';
-      if (!getVal('approvalAuthority', 'approval')) errs.approvalAuthority = 'Approval Authority is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
-      if (!getVal('negotiable', 'negotiable')) errs.negotiable = 'Negotiable selection is required';
-    } else if (propertyType === 'Flat/Villa' || propertyType === 'Independent House') {
-      if (!getVal('projectName', 'title')) errs.projectName = 'Project / Society / House Name is required';
-      if (!getVal('bhk', 'bhk')) errs.bhk = 'BHK configuration is required';
-      if (!getVal('superBuiltUpArea', 'area_sqft') && !getVal('superBuiltUpArea', 'area')) errs.superBuiltUpArea = 'Super Built-up Area is required';
-      if (!getVal('floors', 'floor')) errs.floors = 'Floor information is required';
-      if (!getVal('facing', 'facing')) errs.facing = 'Facing is required';
-      if (!getVal('bathrooms', 'bathrooms')) errs.bathrooms = 'Number of Bathrooms is required';
-      if (!getVal('balconies', 'balconies')) errs.balconies = 'Number of Balconies is required';
-      if (!getVal('furnishing', 'furnishing')) errs.furnishing = 'Furnishing Status is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
-    } else if (propertyType === 'Agricultural') {
-      if (!getVal('totalLandExtent', 'area') && !getVal('totalLandExtent', 'area_sqft')) errs.totalLandExtent = 'Total Land Extent is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
+      const nameVal = d.propertyName || d.projectName || form.title;
+      if (!nameVal) errs.propertyName = 'Property / Project Name is required';
+      const dimVal = d.dimensions || form.area_sqft || form.area;
+      if (!dimVal) errs.dimensions = 'Dimensions (Length x Width) are required';
+      const facingVal = d.facing || form.facing;
+      if (!facingVal) errs.facing = 'Property Facing is required';
+      if (!d.cornerPlot) errs.cornerPlot = 'Corner Plot selection is required';
+      if (!d.approvedLayout) errs.approvedLayout = 'Approved Layout selection is required';
+      if (!d.approvalAuthority) errs.approvalAuthority = 'Approval Authority is required';
+      if (!priceVal) errs.expectedPrice = 'Asking Price or Rate is required';
+    } else if (propertyType === 'Flat' || propertyType === 'Flat / Villa' || propertyType === 'Flat/Villa' || propertyType === 'Independent House') {
+      const projName = d.projectName || d.propertyName || d.apartmentName || form.title;
+      if (!projName) errs.projectName = 'Project / Society / House Name is required';
+      const bhkVal = d.bhk || form.bhk;
+      if (!bhkVal) errs.bhk = 'BHK configuration is required';
+      const areaVal = d.superBuiltUpArea || d.carpetArea || d.builtUpArea || form.area_sqft || form.area;
+      if (!areaVal) errs.superBuiltUpArea = 'Super Built-up Area is required';
+      const facingVal = d.facing || form.facing;
+      if (!facingVal) errs.facing = 'Facing direction is required';
+      const bathVal = d.bathrooms || form.bathrooms;
+      if (!bathVal) errs.bathrooms = 'Bathrooms count is required';
+      const furnVal = d.furnishingStatus || d.furnishing || form.furnishing;
+      if (!furnVal) errs.furnishingStatus = 'Furnishing Status is required';
+      if (!priceVal) errs.expectedPrice = 'Asking Price is required';
+    } else if (propertyType === 'Plot' || propertyType === 'Land' || propertyType === 'Plot / Land' || propertyType === 'Plot/Land') {
+      const layoutName = d.projectName || d.propertyName || form.title;
+      if (!layoutName) errs.projectName = 'Project / Layout Name is required';
+      if (!d.plotType) errs.plotType = 'Type of Plot / Land is required';
+      const landArea = d.totalLandArea || d.plotDimensions || form.area_sqft || form.area;
+      if (!landArea) errs.totalLandArea = 'Total Land Area is required';
+      const plotDim = d.plotDimensions || d.dimensions || form.area_sqft || form.area;
+      if (!plotDim) errs.plotDimensions = 'Plot Dimensions are required';
+      const authVal = d.approvalAuthority || d.approvedLayout || form.approval;
+      if (!authVal) errs.approvalAuthority = 'Approval Authority is required';
+      if (!priceVal) errs.expectedPrice = 'Expected Price per Sq. Ft. / Acre is required';
     } else if (propertyType === 'Commercial') {
-      if (!getVal('commercialType', 'subcategory')) errs.commercialType = 'Commercial Type is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
-    } else if (propertyType === 'Plot/Land') {
-      if (!getVal('projectName', 'title')) errs.projectName = 'Project / Layout Name is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
+      const commName = d.propertyName || d.projectName || form.title;
+      if (!commName) errs.propertyName = 'Commercial Property Name is required';
+      const commType = d.commercialType || form.subcategory;
+      if (!commType) errs.commercialType = 'Commercial Space Type is required';
+      const commArea = d.carpetArea || d.builtUpArea || d.dimensions || form.area_sqft || form.area;
+      if (!commArea) errs.carpetArea = 'Carpet Area or Built-up Area is required';
+      if (!priceVal) errs.expectedPrice = 'Expected Price is required';
+    } else if (propertyType === 'Agricultural') {
+      const agriName = d.propertyName || d.projectName || form.title;
+      if (!agriName) errs.propertyName = 'Land Name / Title is required';
+      const landExtent = d.totalLandExtent || d.landSize || form.area_sqft || form.area;
+      if (!landExtent) errs.totalLandExtent = 'Total Land Extent is required';
+      if (!d.surveyNumber) errs.surveyNumber = 'Survey Number is required';
+      if (!d.landType) errs.landType = 'Type of Land is required';
+      if (!priceVal) errs.expectedPrice = 'Expected Price is required';
     } else if (propertyType === 'Industrial') {
-      if (!getVal('industrialType', 'subcategory')) errs.industrialType = 'Industrial Type is required';
-      if (!getVal('expectedPrice', 'price')) errs.expectedPrice = 'Expected Price is required';
+      if (!d.industrialType) errs.industrialType = 'Type of Industrial Property is required';
+      if (!d.propertyStatus) errs.propertyStatus = 'Property Status is required';
+      const indArea = d.totalLandArea || d.plotArea || form.area_sqft || form.area;
+      if (!indArea) errs.totalLandArea = 'Total Land Area is required';
+      if (!priceVal) errs.expectedPrice = 'Expected Price is required';
     }
 
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+    if (Object.keys(errs).length > 0) {
+      setTimeout(() => {
+        const firstErrorEl = document.querySelector('.border-red-300, .border-red-500, [aria-invalid="true"]');
+        if (firstErrorEl) {
+          firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (typeof firstErrorEl.focus === 'function') firstErrorEl.focus();
+        } else {
+          window.scrollTo({ top: 120, behavior: 'smooth' });
+        }
+      }, 50);
+      return false;
+    }
+    return true;
   };
 
-  // Phase 3 validation
   const validatePhase3 = () => {
     const errs = {};
-    if (!bankLoanDetails.trim()) errs.bankLoanDetails = 'Bank Loan Approval Details are required';
-    if (!form.address?.trim()) errs.address = 'Full Address is required';
-    // Description is optional
+    if (photos.length === 0) errs.photos = 'Please upload at least 1 photo for approval';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -245,73 +263,9 @@ export default function PropertyListingForm({
 
   return (
     <div className="space-y-6">
-      {/* Minimalist Horizontal Step Progress Bar */}
-      <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 sm:px-6 shadow-xs">
-        <div className="flex items-center justify-between">
-          {PHASES.map((p, idx) => {
-            const isActive = p.step === activePhase;
-            const isCompleted = p.step < activePhase;
-            const isClickable = p.step <= activePhase;
+      {/* Shared Horizontal Step Progress Bar */}
+      <ListingPhaseStepper phases={PHASES} activePhase={activePhase} onStepJump={handleStepJump} />
 
-            return (
-              <React.Fragment key={p.step}>
-                <button
-                  type="button"
-                  onClick={() => handleStepJump(p.step)}
-                  disabled={!isClickable}
-                  className={`flex items-center gap-2.5 transition-colors group ${
-                    isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                  }`}
-                >
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-brand-blue text-white ring-4 ring-blue-100 shadow-xs'
-                        : isCompleted
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-500 border border-slate-200'
-                    }`}
-                  >
-                    {isCompleted ? <i className="fa-solid fa-check text-[10px]" /> : p.step}
-                  </div>
-                  <span
-                    className={`text-xs font-semibold hidden sm:inline transition-colors ${
-                      isActive
-                        ? 'text-brand-blue font-bold'
-                        : isCompleted
-                        ? 'text-slate-700'
-                        : 'text-slate-400'
-                    }`}
-                  >
-                    Step {p.step}: {p.title}
-                  </span>
-                  <span
-                    className={`text-xs font-semibold sm:hidden transition-colors ${
-                      isActive
-                        ? 'text-brand-blue font-bold'
-                        : isCompleted
-                        ? 'text-slate-700'
-                        : 'text-slate-400'
-                    }`}
-                  >
-                    {p.title}
-                  </span>
-                </button>
-
-                {idx < PHASES.length - 1 && (
-                  <div
-                    className={`flex-1 h-0.5 mx-3 sm:mx-6 transition-colors ${
-                      p.step < activePhase ? 'bg-emerald-500' : 'bg-slate-200'
-                    }`}
-                  />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Form Content Area */}
       <div className="space-y-6">
         {activePhase === 1 && (
           <Phase1Header
@@ -326,54 +280,24 @@ export default function PropertyListingForm({
         )}
 
         {activePhase === 2 && (
-          <div>
+          <div className="space-y-6 animate-fade-in">
             {propertyType === 'Residential' && (
-              <ResidentialFields
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+              <ResidentialFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-
-            {(propertyType === 'Flat/Villa' || propertyType === 'Independent House') && (
-              <ResidentialUnitFields
-                propertyType={propertyType}
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+            {(propertyType === 'Flat' || propertyType === 'Flat / Villa' || propertyType === 'Flat/Villa' || propertyType === 'Independent House') && (
+              <ResidentialUnitFields propertyType={propertyType} details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-
             {propertyType === 'Agricultural' && (
-              <AgriculturalFields
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+              <AgriculturalFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-
             {propertyType === 'Commercial' && (
-              <CommercialFields
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+              <CommercialFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-
-            {propertyType === 'Plot/Land' && (
-              <PlotFields
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+            {(propertyType === 'Plot' || propertyType === 'Land' || propertyType === 'Plot / Land' || propertyType === 'Plot/Land') && (
+              <PlotFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
-
             {propertyType === 'Industrial' && (
-              <IndustrialFields
-                details={details}
-                onChange={handleDetailsChange}
-                errors={errors}
-              />
+              <IndustrialFields details={details} onChange={handleDetailsChange} errors={errors} />
             )}
           </div>
         )}
@@ -385,7 +309,9 @@ export default function PropertyListingForm({
             onChange={handleRootChange}
             photos={photos}
             onAddPhoto={onAddPhoto}
+            onAddPhotoUrl={onAddPhotoUrl}
             onRemovePhoto={onRemovePhoto}
+            onMovePhoto={onMovePhoto}
             video={video}
             videoPreview={videoPreview}
             onVideoSelect={onVideoSelect}
@@ -399,75 +325,25 @@ export default function PropertyListingForm({
         )}
       </div>
 
-      {submitError && (
-        <div className="rounded-2xl bg-red-50 border border-red-200 p-4 text-xs font-semibold text-red-700 flex items-center gap-2">
-          <i className="fa-solid fa-triangle-exclamation text-sm" />
-          <span>{submitError}</span>
+      {/* Validation Error Banner */}
+      {Object.keys(errors).length > 0 && (
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-600 flex items-center gap-2 animate-fade-in shadow-xs">
+          <i className="fa-solid fa-circle-exclamation text-red-500 text-sm shrink-0" />
+          <span>Please complete the required field{Object.keys(errors).length > 1 ? 's' : ''}: {Object.values(errors).filter(Boolean).join(', ')}</span>
         </div>
       )}
 
-      {/* Pinned / Docked Bottom Navigation Bar */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => {
-            if (activePhase === 1) {
-              onCancel?.();
-            } else {
-              handlePrevPhase();
-            }
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer"
-        >
-          <i className="fa-solid fa-arrow-left text-[11px]" />
-          <span>{activePhase === 1 ? 'Cancel / Back' : 'Previous Step'}</span>
-        </button>
-
-        <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-400">
-          <span>Step {activePhase} of 3</span>
-          <span>•</span>
-          <span className="text-slate-700 font-bold">{PHASES[activePhase - 1]?.title}</span>
-        </div>
-
-        {activePhase < 3 ? (
-          <button
-            type="button"
-            onClick={handleNextPhase}
-            disabled={activePhase === 1 && !isStep1Valid}
-            className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all ${
-              activePhase === 1 && !isStep1Valid
-                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                : 'bg-brand-blue text-white hover:bg-blue-700 shadow-sm shadow-brand-blue/25 hover:shadow cursor-pointer'
-            }`}
-          >
-            <span>Continue to Step {activePhase + 1}</span>
-            <i className="fa-solid fa-arrow-right text-[11px]" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleFinalSubmit}
-            disabled={submitting}
-            className={`inline-flex items-center gap-2 px-7 py-2.5 rounded-lg bg-gradient-to-r from-brand-blue to-blue-600 text-white text-xs font-bold shadow-md shadow-brand-blue/25 transition-all ${
-              submitting
-                ? 'opacity-60 cursor-wait'
-                : 'hover:opacity-95 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer'
-            }`}
-          >
-            {submitting ? (
-              <>
-                <i className="fa-solid fa-circle-notch fa-spin text-xs" />
-                <span>Publishing Listing...</span>
-              </>
-            ) : (
-              <>
-                <i className="fa-solid fa-paper-plane text-xs" />
-                <span>Publish Property Listing</span>
-              </>
-            )}
-          </button>
-        )}
-      </div>
+      {/* Shared Navigation and Action Bar */}
+      <PhaseNavigationActions
+        activePhase={activePhase}
+        totalPhases={3}
+        onPrev={handlePrevPhase}
+        onNext={handleNextPhase}
+        onSubmit={handleFinalSubmit}
+        onCancel={onCancel}
+        submitting={submitting}
+        submitError={submitError}
+      />
     </div>
   );
 }
