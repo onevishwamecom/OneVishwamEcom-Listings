@@ -12,18 +12,19 @@ import BrandLoader from './components/ui/BrandLoader';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import NotificationGate from './components/NotificationGate';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const AddListing = lazy(() => import('./pages/AddListing'));
-const ListedItems = lazy(() => import('./pages/ListedItems'));
-const ListingDetails = lazy(() => import('./pages/ListingDetails'));
-const Notifications = lazy(() => import('./pages/Notifications'));
-const Profile = lazy(() => import('./pages/Profile'));
-const BulkListing = lazy(() => import('./pages/BulkListing'));
-const ListingNotFound = lazy(() => import('./pages/ListingNotFound'));
+const Login = lazyWithRetry(() => import('./pages/Login'));
+const Register = lazyWithRetry(() => import('./pages/Register'));
+const ForgotPassword = lazyWithRetry(() => import('./pages/ForgotPassword'));
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'));
+const AddListing = lazyWithRetry(() => import('./pages/AddListing'));
+const ListedItems = lazyWithRetry(() => import('./pages/ListedItems'));
+const ListingDetails = lazyWithRetry(() => import('./pages/ListingDetails'));
+const Notifications = lazyWithRetry(() => import('./pages/Notifications'));
+const Profile = lazyWithRetry(() => import('./pages/Profile'));
+const BulkListing = lazyWithRetry(() => import('./pages/BulkListing'));
+const ListingNotFound = lazyWithRetry(() => import('./pages/ListingNotFound'));
 
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAuth();

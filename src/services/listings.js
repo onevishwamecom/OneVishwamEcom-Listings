@@ -44,12 +44,17 @@ export function fetchFlatListings() {
 
   return dedupe('listings', async () => {
     if (!getAccessToken()) return [];
-    const items = unwrap(await api.get('/listings', { params: { flatten: '1' } }));
-    const validItems = Array.isArray(items) ? items : [];
-    return validItems.filter((item) => {
-      const id = String(item._id || item.id || '');
-      return !id.startsWith('local_');
-    });
+    try {
+      const items = unwrap(await api.get('/listings', { params: { flatten: '1' } }));
+      const validItems = Array.isArray(items) ? items : [];
+      return validItems.filter((item) => {
+        const id = String(item._id || item.id || '');
+        return !id.startsWith('local_');
+      });
+    } catch (err) {
+      console.warn('[fetchFlatListings] Could not load listings:', err?.response?.status || err?.message);
+      return [];
+    }
   });
 }
 

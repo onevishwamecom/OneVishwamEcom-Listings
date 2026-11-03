@@ -121,57 +121,82 @@ export default function PropertyListingForm({
     const errs = {};
     const d = details || {};
 
-    const getVal = (dKey, rootKey) => {
-      const v = d[dKey] !== undefined && d[dKey] !== null && String(d[dKey]).trim() !== '' 
-        ? d[dKey] 
-        : (form[rootKey] !== undefined && form[rootKey] !== null ? form[rootKey] : '');
-      return typeof v === 'string' ? v.trim() : (v !== undefined && v !== null ? String(v) : '');
-    };
+    const priceVal = d.expectedPrice || d.price || form.expectedPrice || form.price;
 
     if (propertyType === 'Residential') {
-      if (!getVal('propertyName', 'title')) errs.propertyName = 'Property / Project Name is required';
-      if (!getVal('dimensions', 'area_sqft') && !getVal('dimensions', 'area')) errs.dimensions = 'Dimensions are required';
-      if (!getVal('facing', 'facing')) errs.facing = 'Property Facing is required';
-      if (!getVal('cornerPlot', 'cornerPlot')) errs.cornerPlot = 'Corner Plot selection is required';
-      if (!getVal('approvedLayout', 'approval')) errs.approvedLayout = 'Approved Layout is required';
-      if (!getVal('approvalAuthority', 'approval')) errs.approvalAuthority = 'Approval Authority is required';
-      if (!getVal('price', 'price')) errs.price = 'Asking Price is required';
-      if (!getVal('area', 'area')) errs.area = 'Locality / Area is required';
+      const nameVal = d.propertyName || d.projectName || form.title;
+      if (!nameVal) errs.propertyName = 'Property / Project Name is required';
+      const dimVal = d.dimensions || form.area_sqft || form.area;
+      if (!dimVal) errs.dimensions = 'Dimensions (Length x Width) are required';
+      const facingVal = d.facing || form.facing;
+      if (!facingVal) errs.facing = 'Property Facing is required';
+      if (!d.cornerPlot) errs.cornerPlot = 'Corner Plot selection is required';
+      if (!d.approvedLayout) errs.approvedLayout = 'Approved Layout selection is required';
+      if (!d.approvalAuthority) errs.approvalAuthority = 'Approval Authority is required';
+      if (!priceVal) errs.expectedPrice = 'Asking Price or Rate is required';
     } else if (propertyType === 'Flat' || propertyType === 'Flat / Villa' || propertyType === 'Flat/Villa' || propertyType === 'Independent House') {
-      if (!getVal('propertyName', 'title')) errs.propertyName = 'Property Name is required';
-      if (!getVal('bhk', 'bhk')) errs.bhk = 'BHK configuration is required';
-      if (!getVal('bathrooms', 'bathrooms')) errs.bathrooms = 'Bathrooms count is required';
-      if (!getVal('facing', 'facing')) errs.facing = 'Facing direction is required';
-      if (!getVal('furnishing', 'furnishing')) errs.furnishing = 'Furnishing Status is required';
-      if (!getVal('price', 'price')) errs.price = 'Asking Price is required';
-      if (!getVal('area', 'area')) errs.area = 'Locality / Area is required';
-    } else if (propertyType === 'Agricultural') {
-      if (!getVal('propertyName', 'title')) errs.propertyName = 'Land Name / Title is required';
-      if (!getVal('landSize', 'area_sqft') && !getVal('landSize', 'area')) errs.landSize = 'Total Land Extent is required';
-      if (!getVal('soilType', 'soilType')) errs.soilType = 'Soil Type is required';
-      if (!getVal('price', 'price')) errs.price = 'Price is required';
-      if (!getVal('area', 'area')) errs.area = 'Taluk / District is required';
-    } else if (propertyType === 'Commercial') {
-      if (!getVal('propertyName', 'title')) errs.propertyName = 'Commercial Property Name is required';
-      if (!getVal('commercialType', 'subcategory')) errs.commercialType = 'Commercial Space Type is required';
-      if (!getVal('dimensions', 'area_sqft') && !getVal('dimensions', 'area')) errs.dimensions = 'Dimensions / Size is required';
-      if (!getVal('price', 'price')) errs.price = 'Price is required';
-      if (!getVal('area', 'area')) errs.area = 'Area / Location is required';
+      const projName = d.projectName || d.propertyName || d.apartmentName || form.title;
+      if (!projName) errs.projectName = 'Project / Society / House Name is required';
+      const bhkVal = d.bhk || form.bhk;
+      if (!bhkVal) errs.bhk = 'BHK configuration is required';
+      const areaVal = d.superBuiltUpArea || d.carpetArea || d.builtUpArea || form.area_sqft || form.area;
+      if (!areaVal) errs.superBuiltUpArea = 'Super Built-up Area is required';
+      const facingVal = d.facing || form.facing;
+      if (!facingVal) errs.facing = 'Facing direction is required';
+      const bathVal = d.bathrooms || form.bathrooms;
+      if (!bathVal) errs.bathrooms = 'Bathrooms count is required';
+      const furnVal = d.furnishingStatus || d.furnishing || form.furnishing;
+      if (!furnVal) errs.furnishingStatus = 'Furnishing Status is required';
+      if (!priceVal) errs.expectedPrice = 'Asking Price is required';
     } else if (propertyType === 'Plot' || propertyType === 'Land' || propertyType === 'Plot / Land' || propertyType === 'Plot/Land') {
-      if (!getVal('propertyName', 'title')) errs.propertyName = 'Layout / Plot Name is required';
-      if (!getVal('plotDimensions', 'area_sqft') && !getVal('plotDimensions', 'area')) errs.plotDimensions = 'Plot Dimensions are required';
-      if (!getVal('approvedLayout', 'approval')) errs.approvedLayout = 'Approval Authority is required';
-      if (!getVal('price', 'price')) errs.price = 'Price is required';
-      if (!getVal('area', 'area')) errs.area = 'Locality / Area is required';
+      const layoutName = d.projectName || d.propertyName || form.title;
+      if (!layoutName) errs.projectName = 'Project / Layout Name is required';
+      if (!d.plotType) errs.plotType = 'Type of Plot / Land is required';
+      const landArea = d.totalLandArea || d.plotDimensions || form.area_sqft || form.area;
+      if (!landArea) errs.totalLandArea = 'Total Land Area is required';
+      const plotDim = d.plotDimensions || d.dimensions || form.area_sqft || form.area;
+      if (!plotDim) errs.plotDimensions = 'Plot Dimensions are required';
+      const authVal = d.approvalAuthority || d.approvedLayout || form.approval;
+      if (!authVal) errs.approvalAuthority = 'Approval Authority is required';
+      if (!priceVal) errs.expectedPrice = 'Expected Price per Sq. Ft. / Acre is required';
+    } else if (propertyType === 'Commercial') {
+      const commName = d.propertyName || d.projectName || form.title;
+      if (!commName) errs.propertyName = 'Commercial Property Name is required';
+      const commType = d.commercialType || form.subcategory;
+      if (!commType) errs.commercialType = 'Commercial Space Type is required';
+      const commArea = d.carpetArea || d.builtUpArea || d.dimensions || form.area_sqft || form.area;
+      if (!commArea) errs.carpetArea = 'Carpet Area or Built-up Area is required';
+      if (!priceVal) errs.expectedPrice = 'Expected Price is required';
+    } else if (propertyType === 'Agricultural') {
+      const agriName = d.propertyName || d.projectName || form.title;
+      if (!agriName) errs.propertyName = 'Land Name / Title is required';
+      const landExtent = d.totalLandExtent || d.landSize || form.area_sqft || form.area;
+      if (!landExtent) errs.totalLandExtent = 'Total Land Extent is required';
+      if (!d.surveyNumber) errs.surveyNumber = 'Survey Number is required';
+      if (!d.landType) errs.landType = 'Type of Land is required';
+      if (!priceVal) errs.expectedPrice = 'Expected Price is required';
     } else if (propertyType === 'Industrial') {
-      if (!getVal('propertyName', 'title')) errs.propertyName = 'Industrial Facility Name is required';
-      if (!getVal('plotArea', 'area_sqft') && !getVal('plotArea', 'area')) errs.plotArea = 'Total Plot Area is required';
-      if (!getVal('price', 'price')) errs.price = 'Price is required';
-      if (!getVal('area', 'area')) errs.area = 'Industrial Zone / Area is required';
+      if (!d.industrialType) errs.industrialType = 'Type of Industrial Property is required';
+      if (!d.propertyStatus) errs.propertyStatus = 'Property Status is required';
+      const indArea = d.totalLandArea || d.plotArea || form.area_sqft || form.area;
+      if (!indArea) errs.totalLandArea = 'Total Land Area is required';
+      if (!priceVal) errs.expectedPrice = 'Expected Price is required';
     }
 
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+    if (Object.keys(errs).length > 0) {
+      setTimeout(() => {
+        const firstErrorEl = document.querySelector('.border-red-300, .border-red-500, [aria-invalid="true"]');
+        if (firstErrorEl) {
+          firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (typeof firstErrorEl.focus === 'function') firstErrorEl.focus();
+        } else {
+          window.scrollTo({ top: 120, behavior: 'smooth' });
+        }
+      }, 50);
+      return false;
+    }
+    return true;
   };
 
   const validatePhase3 = () => {
@@ -299,6 +324,14 @@ export default function PropertyListingForm({
           />
         )}
       </div>
+
+      {/* Validation Error Banner */}
+      {Object.keys(errors).length > 0 && (
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-600 flex items-center gap-2 animate-fade-in shadow-xs">
+          <i className="fa-solid fa-circle-exclamation text-red-500 text-sm shrink-0" />
+          <span>Please complete the required field{Object.keys(errors).length > 1 ? 's' : ''}: {Object.values(errors).filter(Boolean).join(', ')}</span>
+        </div>
+      )}
 
       {/* Shared Navigation and Action Bar */}
       <PhaseNavigationActions

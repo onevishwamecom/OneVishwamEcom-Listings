@@ -1,9 +1,7 @@
 import axios from 'axios';
 import { auth } from '@/firebase/config';
 
-const DEFAULT_API_URL = import.meta.env.DEV
-  ? 'http://localhost:5001/api'
-  : 'https://asia-south1-onevishwam.cloudfunctions.net/api';
+const DEFAULT_API_URL = 'https://asia-south1-onevishwam.cloudfunctions.net/api';
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
@@ -86,32 +84,29 @@ export function getTokenExpiry(token) {
 export function refreshAccessToken() {
   if (refreshPromise) return refreshPromise;
 
-  if (auth?.currentUser) {
-    refreshPromise = (async () => {
-      try {
-        const freshToken = await auth.currentUser.getIdToken(true);
-        if (freshToken) {
-          localStorage.setItem('accessToken', freshToken);
-          scheduleTokenRefresh();
-          return { accessToken: freshToken };
-        }
-      } catch (err) {
-        console.warn('Firebase token refresh warning:', err?.message);
-      } finally {
-        refreshPromise = null;
-      }
-      return null;
-    })();
-    return refreshPromise;
-  }
-
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) {
-    return Promise.reject(new Error('No refresh token available'));
-  }
-
   refreshPromise = (async () => {
     try {
+      if (typeof auth?.authStateReady === 'function') {
+        await auth.authStateReady();
+      }
+      if (auth?.currentUser) {
+        try {
+          const freshToken = await auth.currentUser.getIdToken(true);
+          if (freshToken) {
+            localStorage.setItem('accessToken', freshToken);
+            scheduleTokenRefresh();
+            return { accessToken: freshToken };
+          }
+        } catch (err) {
+          console.warn('Firebase token refresh warning:', err?.message);
+        }
+      }
+
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        return null;
+      }
+
       if (!acquireRefreshLock()) {
         await new Promise((resolve) => setTimeout(resolve, REFRESH_LOCK_TTL_MS));
         const adopted = localStorage.getItem('accessToken');
@@ -219,6 +214,14 @@ scheduleTokenRefresh();
 // ============================================================================
 
 api.interceptors.request.use(async (config) => {
+  if (typeof auth?.authStateReady === 'function' && !auth.currentUser) {
+    try {
+      await auth.authStateReady();
+    } catch {
+      // ignore
+    }
+  }
+
   let token = localStorage.getItem('accessToken');
 
   if (auth?.currentUser) {
@@ -234,7 +237,13 @@ api.interceptors.request.use(async (config) => {
   }
 
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    if (config.headers && typeof config.headers.set === 'function') {
+      config.headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
   }
 
   // FormData must NOT force a Content-Type — the browser sets the multipart
@@ -266,18 +275,38 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         let freshToken = null;
-        if (auth?.currentUser) {
-          freshToken = await auth.currentUser.getIdToken(true);
-          if (freshToken) {
-            localStorage.setItem('accessToken', freshToken);
+        if (typeof auth?.authStateReady === 'function' && !auth.currentUser) {
+          try {
+            await auth.authStateReady();
+          } catch {
+            // ignore
           }
-        } else {
-          const result = await refreshAccessToken();
+        }
+
+        if (auth?.currentUser) {
+          try {
+            freshToken = await auth.currentUser.getIdToken(true);
+            if (freshToken) {
+              localStorage.setItem('accessToken', freshToken);
+            }
+          } catch (tErr) {
+            console.warn('Firebase token retry error:', tErr?.message);
+          }
+        }
+
+        if (!freshToken) {
+          const result = await refreshAccessToken().catch(() => null);
           freshToken = result?.accessToken;
         }
 
         if (freshToken) {
-          originalRequest.headers.Authorization = `Bearer ${freshToken}`;
+          if (originalRequest.headers && typeof originalRequest.headers.set === 'function') {
+            originalRequest.headers.set('Authorization', `Bearer ${freshToken}`);
+          } else {
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers.Authorization = `Bearer ${freshToken}`;
+            originalRequest.headers['Authorization'] = `Bearer ${freshToken}`;
+          }
           return api(originalRequest);
         }
       } catch (err) {

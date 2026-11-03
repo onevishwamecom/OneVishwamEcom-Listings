@@ -133,6 +133,7 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
       ? propDetails.waterAvailability
       : form.amenities || [],
     projectCount: safeParseInt(form.projectCount) || safeParseInt(propDetails.projectCount) || 0,
+    documents: (docUrls || []).map((d) => (typeof d === 'string' ? { url: d, filename: '', fileType: '' } : d)),
     totalUnits: form.totalUnits || propDetails.totalUnits || "",
     availableUnits: safeParseInt(form.availableUnits) || safeParseInt(propDetails.availableUnits) || 0,
     location: `${form.area || ""}${cityLabel ? `, ${cityLabel}` : ""}`,
