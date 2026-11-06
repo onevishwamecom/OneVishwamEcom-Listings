@@ -385,7 +385,7 @@ export default function BulkBatchesView() {
         >
           <option value="all">All Categories</option>
           <option value="properties">Properties</option>
-          <option value="vehicle">Vehicles</option>
+          <option value="vehicle">Automobiles</option>
           <option value="grocery">Groceries</option>
           <option value="garment">Garments</option>
           <option value="jewellery">Jewellery</option>

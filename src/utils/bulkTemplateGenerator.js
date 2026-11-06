@@ -290,7 +290,7 @@ export const MULTI_SHEET_CONFIGS = {
   },
 
   vehicle: {
-    categoryLabel: 'Vehicle',
+    categoryLabel: 'Automobiles',
     sheets: [
       {
         sheetName: '4-Wheelers & Cars',

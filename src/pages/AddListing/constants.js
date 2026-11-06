@@ -18,7 +18,7 @@ export const CATEGORIES = [
   },
   {
     id: "vehicle",
-    label: "Automobiles & Vehicles",
+    label: "Automobiles",
     singularLabel: "Vehicle",
     icon: "fa-car-side",
     desc: "Cars, Two-Wheelers, Commercial Trucks & Electric Vehicles",

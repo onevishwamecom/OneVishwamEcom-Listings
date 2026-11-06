@@ -75,8 +75,8 @@ export const CATEGORY_REGISTRY = {
   vehicles: {
     id: 'vehicles',
     aliases: ['vehicle', 'automobile', 'automobiles', 'car', 'cars', 'bike', 'bikes', '4-wheeler', '2-wheeler', '3-wheeler', 'commercial', 'commercial vehicle', 'electric vehicle'],
-    label: 'Vehicles',
-    singularLabel: 'Vehicle',
+    label: 'Automobiles',
+    singularLabel: 'Automobile',
     icon: 'fa-car-side',
     lucideIconName: 'Car',
     color: 'bg-amber-50 text-amber-700 border-amber-300',
