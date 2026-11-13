@@ -7,9 +7,9 @@ const rawCities = Array.isArray(cities)
   ? cities
   : (typeof cities === 'object' && cities !== null)
   ? Object.values(cities).map((c) => c?.label || c?.name || c)
-  : ['Bengaluru', 'Mysuru', 'Mangaluru', 'Hubballi', 'Belagavi'];
+  : ['Bengaluru'];
 
-const CITY_OPTIONS = (rawCities.length > 0 ? rawCities : ['Bengaluru', 'Mysuru', 'Mangaluru', 'Hubballi', 'Belagavi']).map((c) => {
+const CITY_OPTIONS = (rawCities.length > 0 ? rawCities : ['Bengaluru']).map((c) => {
   const name = typeof c === 'object' ? (c.label || c.name || '') : String(c);
   return { value: name, label: name };
 });
