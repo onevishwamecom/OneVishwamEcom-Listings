@@ -121,6 +121,7 @@ export function MediaUploadSection({
   onAddPhotoUrl,
   onRemovePhoto,
   onMovePhoto,
+  onClearPhotos,
   video = null,
   videoPreview = null,
   onVideoSelect,
@@ -217,15 +218,27 @@ export function MediaUploadSection({
                 </span>
               )}
             </div>
-            {!isMaxPhotos && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-xs font-bold text-brand-blue hover:underline cursor-pointer"
-              >
-                + Browse Files
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {photos.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onClearPhotos}
+                  className="text-xs font-bold text-red-600 hover:text-red-700 hover:underline cursor-pointer flex items-center gap-1"
+                  title="Remove all uploaded photos"
+                >
+                  <i className="fa-solid fa-trash-can text-[10px]" /> Clear All Photos
+                </button>
+              )}
+              {!isMaxPhotos && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs font-bold text-brand-blue hover:underline cursor-pointer"
+                >
+                  + Browse Files
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Direct Image Link Input Bar */}

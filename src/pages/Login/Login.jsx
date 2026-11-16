@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import logo from "@/assets/logo.png";
 import Input from "@/components/ui/Input";
 import { AuthBrandPanel } from "@/components/AuthBrandPanel";
+import { AuthLegalModal } from "@/components/AuthLegalModal";
 import { normalizePhone } from "@/utils/phone";
 import { isAllowedEmail } from "@/config/allowedCredentials";
 
@@ -22,6 +23,7 @@ function LoginPage() {
   });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState(null);
+  const [legalModalType, setLegalModalType] = useState(null);
 
   const from = location.state?.from?.pathname || "/";
 
@@ -112,30 +114,33 @@ function LoginPage() {
 
       navigate(from, { replace: true });
     } catch (err) {
-      const msg =
+      const rawMsg =
         (typeof err === "string" ? err : null) ||
         err?.response?.data?.message ||
         err?.message ||
-        "Invalid login credentials. Please try again.";
+        "";
 
-      if (msg === "USER_NOT_FOUND" || msg.includes("USER_NOT_FOUND") || msg.includes("user-not-found")) {
-        setServerError("User not found. Redirecting to registration page...");
-        Swal.fire({
-          icon: "warning",
-          title: "User Not Found",
-          text: "No account found with these credentials. Redirecting to registration...",
-          timer: 2000,
-          showConfirmButton: false,
-          toast: true,
-          position: "top-end",
-        });
-        setTimeout(() => {
-          navigate("/register", { state: { email: form.email } });
-        }, 1200);
-        return;
+      let msg = "Invalid credentials. Please check your email and password.";
+      if (rawMsg.includes("Too many failed") || rawMsg.includes("too-many-requests")) {
+        msg = "Too many failed login attempts. Access temporarily disabled for security.";
+      } else if (rawMsg.includes("valid email")) {
+        msg = "Please enter a valid email address.";
+      } else if (rawMsg.includes("Connection to authentication")) {
+        msg = rawMsg;
+      } else if (rawMsg && !rawMsg.includes("USER_NOT_FOUND") && !rawMsg.includes("user-not-found") && !rawMsg.includes("invalid-credential")) {
+        msg = rawMsg;
       }
 
       setServerError(msg);
+      Swal.fire({
+        icon: "error",
+        title: "Invalid Credentials",
+        text: msg,
+        timer: 3500,
+        showConfirmButton: true,
+        confirmButtonColor: "#1d4ed8",
+        confirmButtonText: "Try Again",
+      });
       console.warn("Login failed:", msg);
     }
   };
@@ -150,6 +155,7 @@ function LoginPage() {
       <AuthBrandPanel
         heading={<>Welcome back to your <span className="text-brand-gold">dashboard</span></>}
         subheading="Manage all your listings from one place. Post properties, vehicles, and more with ease."
+        onOpenModal={setLegalModalType}
       />
 
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative">
@@ -296,9 +302,41 @@ function LoginPage() {
             >
               Forgot Password?
             </Link>
+
+            {/* Mobile Footer Links */}
+            <div className="flex items-center justify-center gap-4 pt-4 mt-4 border-t border-slate-100 text-xs text-slate-400 font-medium lg:hidden">
+              <button
+                type="button"
+                onClick={() => setLegalModalType("terms")}
+                className="hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                Terms
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => setLegalModalType("privacy")}
+                className="hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                Privacy
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => setLegalModalType("help")}
+                className="hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                Help
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <AuthLegalModal
+        type={legalModalType}
+        onClose={() => setLegalModalType(null)}
+      />
     </div>
   );
 }

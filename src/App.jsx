@@ -25,6 +25,7 @@ const Notifications = lazyWithRetry(() => import('./pages/Notifications'));
 const Profile = lazyWithRetry(() => import('./pages/Profile'));
 const BulkListing = lazyWithRetry(() => import('./pages/BulkListing'));
 const ListingNotFound = lazyWithRetry(() => import('./pages/ListingNotFound'));
+const LegalPage = lazyWithRetry(() => import('./pages/StaticLegal/LegalPage'));
 
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAuth();
@@ -159,6 +160,9 @@ function App() {
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+            <Route path="/terms" element={<LegalPage initialTab="terms" />} />
+            <Route path="/privacy" element={<LegalPage initialTab="privacy" />} />
+            <Route path="/help" element={<LegalPage initialTab="help" />} />
             <Route element={<RequireAuth><Layout /></RequireAuth>}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />

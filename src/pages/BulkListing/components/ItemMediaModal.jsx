@@ -501,7 +501,8 @@ export default function ItemMediaModal({
                     type="text"
                     value={formData.area}
                     onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                    placeholder="e.g. Whitefield or Indiranagar"
+                    placeholder="Enter area or locality"
+                    autoComplete="off"
                     className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
                   />
                 </div>

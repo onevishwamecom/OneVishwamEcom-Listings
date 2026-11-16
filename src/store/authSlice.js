@@ -89,11 +89,9 @@ export const firebaseEmailLogin = createAsyncThunk(
 
       return profileData;
     } catch (err) {
-      let message = 'Login failed';
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-        message = 'USER_NOT_FOUND';
-      } else if (err.code === 'auth/wrong-password') {
-        message = 'Incorrect password. Please try again.';
+      let message = 'Invalid credentials. Please check your email and password.';
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        message = 'Invalid credentials. Please check your email and password.';
       } else if (err.code === 'auth/too-many-requests') {
         message = 'Too many failed login attempts. Access temporarily disabled for security.';
       } else if (err.code === 'auth/invalid-email') {

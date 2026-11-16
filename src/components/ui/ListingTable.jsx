@@ -80,6 +80,9 @@ function ListingTable({
     if (typeof getItemLink === 'function') return getItemLink(item);
     const targetId = item.itemId || item._id || item.id;
     const cat = item._type || item.category || 'properties';
+    if (item.status === 'draft' || String(targetId).startsWith('draft_')) {
+      return `/add-listing/${encodeURIComponent(cat)}?draft=${encodeURIComponent(targetId)}`;
+    }
     if (portal === 'admin') {
       return targetId ? `/admin/listings/${encodeURIComponent(cat)}/${encodeURIComponent(targetId)}` : '#';
     }
@@ -91,6 +94,9 @@ function ListingTable({
     if (typeof getEditLink === 'function') return getEditLink(item);
     const targetId = item._id || item.id || item.itemId;
     const cat = item._type || item.category || 'properties';
+    if (item.status === 'draft' || String(targetId).startsWith('draft_')) {
+      return `/add-listing/${encodeURIComponent(cat)}?draft=${encodeURIComponent(targetId)}`;
+    }
     if (portal === 'admin') {
       return targetId ? `/admin/listings/${encodeURIComponent(cat)}/${encodeURIComponent(targetId)}` : '#';
     }
@@ -240,21 +246,21 @@ function ListingTable({
             <Button
               variant="secondary"
               size="sm"
-              icon="fa-pen"
+              icon={item.status === 'draft' ? "fa-floppy-disk" : "fa-pen"}
               onClick={() => onEdit(item)}
-              title="Edit"
+              title={item.status === 'draft' ? "Resume Draft" : "Edit"}
             >
-              Edit
+              {item.status === 'draft' ? "Resume" : "Edit"}
             </Button>
           ) : getEditLink || portal === 'lister' ? (
             <Button
-              variant="secondary"
+              variant={item.status === 'draft' ? "gold-soft" : "secondary"}
               size="sm"
-              icon="fa-pen"
+              icon={item.status === 'draft' ? "fa-floppy-disk" : "fa-pen"}
               to={editUrl}
-              title="Edit"
+              title={item.status === 'draft' ? "Resume Draft" : "Edit"}
             >
-              Edit
+              {item.status === 'draft' ? "Resume" : "Edit"}
             </Button>
           ) : null}
 

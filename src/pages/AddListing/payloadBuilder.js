@@ -143,61 +143,117 @@ export const buildPayload = (form, category, subcategory, imageUrls, docUrls, br
   const payloads = {
     properties: propertiesPayload,
     "real-estate": propertiesPayload,
-    vehicle: {
-      ...base,
-      _type: "vehicles",
-      category: "vehicle",
-      title: form.title || `${form.brand || ""} ${form.model || ""} ${form.year || ""}`.trim() || "Automobile Listing",
-      brand: form.brand || "",
-      make: form.brand || "",
-      model: form.model || "",
-      bodyType: form.bodyType || (form.categoryVehicle === "2-Wheeler" ? "Cruiser / Bike" : "Hatchback"),
-      year: Math.max(1900, safeParseInt(form.year)),
-      condition: (form.condition || "used").toLowerCase().includes("new") ? "new" : "old",
-      subcategory: finalSubcategory || form.categoryVehicle || "Car",
-      categoryVehicle: form.categoryVehicle?.toLowerCase() || (finalSubcategory === "Bike" ? "2-wheeler" : finalSubcategory === "Auto Rickshaw" ? "3-wheeler" : finalSubcategory === "Commercial Vehicle" ? "commercial" : "4-wheeler"),
-      wheelerType: form.categoryVehicle?.toLowerCase() || (finalSubcategory === "Bike" ? "2-wheeler" : finalSubcategory === "Auto Rickshaw" ? "3-wheeler" : finalSubcategory === "Commercial Vehicle" ? "commercial" : "4-wheeler"),
-      fuelType: form.fuelType || "Petrol",
-      transmission: form.transmission || "Manual",
-      mileage: form.mileage || "",
-      kmDriven: Math.max(0, safeParseInt(form.kmDriven)),
-      loanApproved: form.loanApproved === "Yes" || form.loanApproved === true,
-      priceValue: numericPrice || Math.max(0, safeParseFloat(String(form.price).replace(/[₹,\s]/g, ""))),
-      priceSuffix: form.priceSuffix || ((form.condition || "").toLowerCase().includes("new") ? "Ex-Showroom" : "Pre-Owned"),
-      location: formattedLocation || form.area || (cityLabel ? `${cityLabel}, Karnataka` : "Bengaluru"),
-      showroom: (form.showroomName || form.showroomAddress || form.showroomPhone || form.showroomEmail) ? {
-        name: form.showroomName || `${form.brand || "Authorized"} Dealership`,
-        address: form.showroomAddress || formattedLocation,
-        phone: form.showroomPhone || form.contact || "8546996622",
-        email: form.showroomEmail || "ceo@onevishwam.com",
-        type: "Authorized Dealership",
-        mapUrl: form.mapUrl || "",
-      } : null,
-      variants: Array.isArray(form.variants)
-        ? form.variants
-        : typeof form.variants === "string" && form.variants.trim()
-        ? form.variants.split(",").map((v) => {
-            const parts = v.split("-").map((p) => p.trim());
-            return {
-              variant: parts[0] || v.trim(),
-              price: parts[1] || displayPrice || form.price || "",
-            };
-          })
-        : [],
-      features: Array.isArray(form.features)
-        ? form.features
-        : typeof form.features === "string" && form.features.trim()
-        ? form.features.split(",").map((f) => f.trim()).filter(Boolean)
-        : [],
-      statusBadges: [
-        (form.loanApproved === "Yes" || form.loanApproved === true) ? { label: "Loan Pre-Approved", className: "bg-blue-600 text-white" } : null,
-        {
-          label: (form.condition || "new").toLowerCase().includes("new") ? "Brand New" : "Certified Pre-Owned",
-          className: (form.condition || "new").toLowerCase().includes("new") ? "bg-emerald-600 text-white" : "bg-slate-700 text-white",
-        },
-      ].filter(Boolean),
-      cardPills: [form.fuelType || "Petrol", form.transmission || "Manual", form.year ? `${form.year}` : null].filter(Boolean),
-    },
+    vehicle: (() => {
+      const isEV =
+        finalSubcategory === "Electric Vehicle" ||
+        String(finalSubcategory || "").startsWith("Electric") ||
+        form.fuelType === "Electric" ||
+        Boolean(form.evType);
+
+      let resolvedWheelerType = "4-wheeler";
+      let resolvedCategoryVehicle = "4-Wheeler";
+
+      if (isEV) {
+        const evKey = String(form.evType || finalSubcategory || "").toLowerCase();
+        if (evKey.includes("2-wheeler") || evKey.includes("two-wheeler") || evKey.includes("scooter") || evKey.includes("bike")) {
+          resolvedWheelerType = "2-wheeler";
+          resolvedCategoryVehicle = "2-Wheeler";
+        } else if (evKey.includes("3-wheeler") || evKey.includes("auto") || evKey.includes("rickshaw")) {
+          resolvedWheelerType = "3-wheeler";
+          resolvedCategoryVehicle = "3-Wheeler";
+        } else if (evKey.includes("commercial") || evKey.includes("cargo") || evKey.includes("truck")) {
+          resolvedWheelerType = "commercial";
+          resolvedCategoryVehicle = "Commercial";
+        } else {
+          resolvedWheelerType = "4-wheeler";
+          resolvedCategoryVehicle = "4-Wheeler";
+        }
+      } else {
+        const sub = String(finalSubcategory || form.categoryVehicle || "");
+        if (sub === "Bike" || sub === "2-Wheeler" || form.categoryVehicle === "2-Wheeler") {
+          resolvedWheelerType = "2-wheeler";
+          resolvedCategoryVehicle = "2-Wheeler";
+        } else if (sub === "Auto Rickshaw" || sub === "3-Wheeler" || form.categoryVehicle === "3-Wheeler") {
+          resolvedWheelerType = "3-wheeler";
+          resolvedCategoryVehicle = "3-Wheeler";
+        } else if (sub === "Commercial Vehicle" || sub === "Commercial" || form.categoryVehicle === "Commercial") {
+          resolvedWheelerType = "commercial";
+          resolvedCategoryVehicle = "Commercial";
+        } else {
+          resolvedWheelerType = "4-wheeler";
+          resolvedCategoryVehicle = "4-Wheeler";
+        }
+      }
+
+      const resolvedFuelType = isEV
+        ? (form.fuelType && form.fuelType !== "Petrol" && form.fuelType !== "Diesel" && form.fuelType !== "CNG" ? form.fuelType : "Electric")
+        : (form.fuelType || "Petrol");
+      const resolvedTransmission = isEV
+        ? (form.transmission || "Automatic (Single-Speed EV)")
+        : (form.transmission || "Manual");
+
+      const resolvedSubcategory = isEV
+        ? (form.evType || finalSubcategory || "Electric Vehicle")
+        : (finalSubcategory || form.categoryVehicle || "Car");
+
+      return {
+        ...base,
+        _type: "vehicles",
+        category: "vehicle",
+        title: form.title || `${form.brand || ""} ${form.model || ""} ${form.year || ""}`.trim() || "Automobile Listing",
+        brand: form.brand || "",
+        make: form.brand || "",
+        model: form.model || "",
+        bodyType: form.bodyType || (resolvedWheelerType === "2-wheeler" ? (isEV ? "Electric Scooter" : "Cruiser / Bike") : "Hatchback"),
+        year: Math.max(1900, safeParseInt(form.year)),
+        condition: (form.condition || "used").toLowerCase().includes("new") ? "new" : "old",
+        subcategory: resolvedSubcategory,
+        categoryVehicle: resolvedCategoryVehicle.toLowerCase(),
+        wheelerType: resolvedWheelerType,
+        fuelType: resolvedFuelType,
+        transmission: resolvedTransmission,
+        mileage: form.mileage || "",
+        batteryCapacity: form.batteryCapacity || "",
+        chargingTime: form.chargingTime || "",
+        kmDriven: Math.max(0, safeParseInt(form.kmDriven)),
+        loanApproved: form.loanApproved === "Yes" || form.loanApproved === true,
+        priceValue: numericPrice || Math.max(0, safeParseFloat(String(form.price).replace(/[₹,\s]/g, ""))),
+        priceSuffix: form.priceSuffix || ((form.condition || "").toLowerCase().includes("new") ? "Ex-Showroom" : "Pre-Owned"),
+        location: formattedLocation || form.area || (cityLabel ? `${cityLabel}, Karnataka` : "Bengaluru"),
+        showroom: (form.showroomName || form.showroomAddress || form.showroomPhone || form.showroomEmail) ? {
+          name: form.showroomName || `${form.brand || "Authorized"} Dealership`,
+          address: form.showroomAddress || formattedLocation,
+          phone: form.showroomPhone || form.contact || "8546996622",
+          email: form.showroomEmail || "ceo@onevishwam.com",
+          type: "Authorized Dealership",
+          mapUrl: form.mapUrl || "",
+        } : null,
+        variants: Array.isArray(form.variants)
+          ? form.variants
+          : typeof form.variants === "string" && form.variants.trim()
+          ? form.variants.split(",").map((v) => {
+              const parts = v.split("-").map((p) => p.trim());
+              return {
+                variant: parts[0] || v.trim(),
+                price: parts[1] || displayPrice || form.price || "",
+              };
+            })
+          : [],
+        features: Array.isArray(form.features)
+          ? form.features
+          : typeof form.features === "string" && form.features.trim()
+          ? form.features.split(",").map((f) => f.trim()).filter(Boolean)
+          : [],
+        statusBadges: [
+          (form.loanApproved === "Yes" || form.loanApproved === true) ? { label: "Loan Pre-Approved", className: "bg-blue-600 text-white" } : null,
+          {
+            label: (form.condition || "new").toLowerCase().includes("new") ? "Brand New" : "Certified Pre-Owned",
+            className: (form.condition || "new").toLowerCase().includes("new") ? "bg-emerald-600 text-white" : "bg-slate-700 text-white",
+          },
+        ].filter(Boolean),
+        cardPills: [resolvedFuelType, resolvedTransmission, form.year ? `${form.year}` : null].filter(Boolean),
+      };
+    })(),
     grocery: {
       ...base,
       name: form.title,

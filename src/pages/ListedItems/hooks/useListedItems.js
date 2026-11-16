@@ -7,6 +7,7 @@ import { parsePrice, PRICE_LIMITS, SERVICE_CONFIG, normalizeCategoryKey } from '
 import useCachedData from '@/hooks/useCachedData';
 import { fetchListings, deleteListing, invalidateListings } from '@/services/listings';
 import { deleteMediaFromStorage } from '@/services/storageService';
+import { getSavedDrafts, deleteDraft } from '@/services/draftsService';
 import { CACHE_TTL } from '@/services/cacheService';
 import { useDebouncedValue } from '@/hooks/useDebounce';
 import SearchIndex from '@/utils/searchIndex';
@@ -29,7 +30,14 @@ export function useListedItems() {
   const perPage = 8;
 
   const tabParam = searchParams.get('status');
-  const activeTab = ['pending', 'approved', 'changes-required', 'cancelled'].includes(tabParam) ? tabParam : 'all';
+  const activeTab = ['draft', 'pending', 'approved', 'changes-required', 'cancelled'].includes(tabParam) ? tabParam : 'all';
+  const [draftsVersion, setDraftsVersion] = useState(0);
+
+  useEffect(() => {
+    const handleDraftsUpdated = () => setDraftsVersion((v) => v + 1);
+    window.addEventListener('onevishwam_drafts_updated', handleDraftsUpdated);
+    return () => window.removeEventListener('onevishwam_drafts_updated', handleDraftsUpdated);
+  }, []);
 
   // Keep categoryFilter in sync if searchParams change
   useEffect(() => {
@@ -77,8 +85,16 @@ export function useListedItems() {
         arr.forEach((item) => all.push({ ...item, _type: type }));
       }
     }
-    return all.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-  }, [allListings]);
+    const drafts = getSavedDrafts();
+    drafts.forEach((draft) => {
+      all.push({
+        ...draft,
+        _type: draft.category || 'properties',
+        status: 'draft',
+      });
+    });
+    return all.sort((a, b) => new Date(b.createdAt || b.updatedAt || b.savedAt || 0) - new Date(a.createdAt || a.updatedAt || a.savedAt || 0));
+  }, [allListings, draftsVersion]);
 
   // First filter items by selected category
   const categoryFiltered = useMemo(() => {
@@ -93,9 +109,10 @@ export function useListedItems() {
 
   // Status counts reflect the active category items
   const statusCounts = useMemo(() => {
-    const counts = { all: categoryFiltered.length, pending: 0, approved: 0, 'changes-required': 0, cancelled: 0 };
+    const counts = { all: categoryFiltered.length, draft: 0, pending: 0, approved: 0, 'changes-required': 0, cancelled: 0 };
     categoryFiltered.forEach((item) => {
-      if (item.status === 'pending') counts.pending += 1;
+      if (item.status === 'draft') counts.draft += 1;
+      else if (item.status === 'pending') counts.pending += 1;
       else if (item.status === 'approved') counts.approved += 1;
       else if (item.status === 'changes-required') counts['changes-required'] += 1;
       else if (item.status === 'cancelled' || item.status === 'rejected') counts.cancelled += 1;
@@ -183,6 +200,21 @@ export function useListedItems() {
       },
     });
     if (!isConfirmed) return;
+
+    if (item?.status === 'draft' || String(id).startsWith('draft_')) {
+      deleteDraft(id);
+      setDraftsVersion((v) => v + 1);
+      Swal.fire({
+        icon: 'success',
+        title: 'Draft Deleted',
+        text: 'Draft removed successfully',
+        timer: 1600,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end',
+      });
+      return;
+    }
 
     setBusyId(id);
     try {

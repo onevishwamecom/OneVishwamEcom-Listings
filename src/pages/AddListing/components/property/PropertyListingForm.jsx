@@ -25,6 +25,7 @@ export default function PropertyListingForm({
   onAddPhotoUrl,
   onRemovePhoto,
   onMovePhoto,
+  onClearPhotos,
   video = null,
   videoPreview = null,
   onVideoSelect,
@@ -312,6 +313,7 @@ export default function PropertyListingForm({
             onAddPhotoUrl={onAddPhotoUrl}
             onRemovePhoto={onRemovePhoto}
             onMovePhoto={onMovePhoto}
+            onClearPhotos={onClearPhotos}
             video={video}
             videoPreview={videoPreview}
             onVideoSelect={onVideoSelect}
