@@ -89,23 +89,23 @@ function Sidebar({ collapsed = false, onToggleCollapse }) {
                 collapsed ? "justify-center px-2 py-3" : "px-4 py-3"
               } ${
                 linkActive
-                  ? "bg-brand-blue/20 text-white font-semibold sidebar-active-glow"
-                  : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
+                  ? "bg-brand-blue/30 text-white font-semibold sidebar-active-glow shadow-sm"
+                  : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
               }`}
               title={collapsed ? item.label : undefined}
               aria-current={linkActive ? "page" : undefined}
             >
               <i
-                className={`fa-solid ${item.icon} text-base ${
-                  linkActive ? "text-brand-blue" : "text-slate-400"
+                className={`fa-solid ${item.icon} text-base transition-colors ${
+                  linkActive ? "text-action-primary" : "text-slate-400 group-hover:text-slate-200"
                 }`}
                 aria-hidden="true"
               />
               {!collapsed && (
-                <span className="text-sm font-medium">{item.label}</span>
+                <span className="text-sm font-semibold">{item.label}</span>
               )}
               {linkActive && !collapsed && (
-                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_6px_rgba(37,99,235,0.6)]" />
+                <div className="ml-auto h-2 w-2 rounded-full bg-action-primary shadow-[0_0_8px_#90dafc]" />
               )}
             </Link>
           );
@@ -114,29 +114,29 @@ function Sidebar({ collapsed = false, onToggleCollapse }) {
 
       {/* ── User Section ── */}
       <div
-        className={`border-t border-white/[0.06] ${collapsed ? "p-2" : "p-3"}`}
+        className={`border-t border-white/[0.08] ${collapsed ? "p-2" : "p-3"}`}
       >
         {!collapsed && (
-          <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-3">
+          <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/[0.06] border border-white/[0.08] px-3 py-3 backdrop-blur-sm">
             <div className="relative">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-blue to-brand-blue/80 flex items-center justify-center text-white font-bold shadow-sm shrink-0">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-blue to-brand-blue-hover flex items-center justify-center text-white font-black shadow-md shrink-0 border border-white/20">
                 {user?.name?.charAt(0)?.toUpperCase() || "U"}
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-brand-gold border-2 border-brand-navy" />
+              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-action-primary border-2 border-brand-navy shadow-[0_0_6px_#90dafc]" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white truncate">
+              <p className="text-sm font-bold text-white truncate">
                 {displayName}
               </p>
               {user?.email && (
-                <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                <p className="text-xs text-slate-400 truncate">{user.email}</p>
               )}
             </div>
           </div>
         )}
         <button
           onClick={handleLogout}
-          className={`flex w-full items-center gap-3 rounded-xl text-sm font-medium text-brand-orange hover:bg-brand-orange/20 hover:text-brand-orange transition-colors ${
+          className={`flex w-full items-center gap-3 rounded-xl text-sm font-semibold text-rose-400 hover:bg-rose-500/15 hover:text-rose-300 transition-colors ${
             collapsed ? "justify-center px-2 py-3" : "px-4 py-2.5"
           }`}
           title="Logout"

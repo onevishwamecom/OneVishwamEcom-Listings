@@ -79,13 +79,13 @@ function Navbar() {
   const handleLogout = () => confirmLogout({ logout, navigate });
 
   return (
-    <header className="sticky top-0 z-30 glass border-b border-slate-200/60">
+    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* ── Page Title ── */}
         <div className="flex items-center gap-3 ml-12 md:ml-0">
           <div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">{pageTitle}</h1>
-            <p className="text-xs text-slate-400 hidden sm:block">
+            <h1 className="text-lg font-black text-slate-900 tracking-tight">{pageTitle}</h1>
+            <p className="text-xs font-medium text-slate-500 hidden sm:block">
               {new Date().toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
@@ -99,9 +99,9 @@ function Navbar() {
         {/* ── Right Section ── */}
         <div className="flex items-center gap-3">
           {/* Listings count pill */}
-          <div className="hidden sm:flex items-center gap-2 bg-blue-50 rounded-full px-3.5 py-1.5">
-            <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse-soft" />
-            <span className="text-xs font-semibold text-blue-700">
+          <div className="hidden sm:flex items-center gap-2 bg-blue-50 border border-blue-200/70 rounded-full px-3.5 py-1.5 shadow-2xs">
+            <div className="h-2 w-2 rounded-full bg-brand-blue animate-pulse-soft" />
+            <span className="text-xs font-extrabold text-brand-blue">
               {totalListings} Listings
             </span>
           </div>
@@ -111,15 +111,15 @@ function Navbar() {
             to="/notifications"
             className={`relative flex items-center justify-center h-10 w-10 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-blue/20 ${
               location.pathname === '/notifications'
-                ? 'bg-brand-blue/10 text-brand-blue'
-                : 'text-slate-500 hover:bg-slate-100/80 hover:text-slate-700'
+                ? 'bg-blue-50 text-brand-blue border border-blue-200/60'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-brand-blue'
             }`}
             aria-label="Notifications"
             title="Notifications"
           >
             <i className="fa-solid fa-bell text-base" aria-hidden="true" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-brand-orange text-white text-[10px] font-bold flex items-center justify-center shadow-sm border-2 border-white">
+              <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-sm border-2 border-white">
                 {unreadCount}
               </span>
             )}
@@ -134,10 +134,10 @@ function Navbar() {
               aria-expanded={dropdownOpen}
               className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100/80 focus:outline-none focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
             >
-              <div className="h-10 w-10 rounded-xl bg-brand-blue/10 text-brand-blue flex items-center justify-center transition-colors group-hover:bg-brand-blue group-hover:text-white shadow-sm">
-                <i className="fa-solid fa-plus text-sm" />
+              <div className="h-9 w-9 rounded-xl bg-blue-50 text-brand-blue border border-blue-200/60 flex items-center justify-center font-bold text-xs shadow-2xs">
+                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
-              <span className="hidden sm:block font-semibold text-slate-700">{displayName}</span>
+              <span className="hidden sm:block font-bold text-slate-800">{displayName}</span>
               <i
                 className={`fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-200 ${
                   dropdownOpen ? 'rotate-180' : ''
@@ -199,7 +199,7 @@ function Navbar() {
                     onClick={handleLogout}
                     type="button"
                     role="menuitem"
-                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-brand-orange hover:bg-brand-orange/10 transition-colors group/item"
+                    className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 transition-colors group/item"
                   >
                     <i className="fa-solid fa-right-from-bracket w-5 text-center transition-transform group-hover/item:-translate-x-1" />
                     Logout

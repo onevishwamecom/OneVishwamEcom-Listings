@@ -35,7 +35,7 @@ export function SegmentedTabs({
             {tab.count !== undefined && (
               <span
                 className={`inline-flex items-center justify-center px-1.5 py-0.2 rounded-md text-[10px] font-extrabold ${
-                  isActive ? 'bg-black/10 text-current' : 'bg-slate-300/70 text-slate-700'
+                  isActive ? 'bg-brand-blue/15 text-brand-blue' : 'bg-slate-300/70 text-slate-700'
                 }`}
               >
                 {tab.count}

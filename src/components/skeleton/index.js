@@ -15,4 +15,5 @@ export { default as DetailPageSkeleton } from './DetailPageSkeleton';
 export { default as DashboardSkeleton } from './DashboardSkeleton';
 export { default as ListingsPageSkeleton } from './ListingsPageSkeleton';
 export { default as ErrorState } from './ErrorState';
+export { default as SkeletonMask } from './SkeletonMask';
 export { SkeletonLoading } from './SkeletonLoading';

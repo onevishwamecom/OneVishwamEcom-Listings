@@ -250,11 +250,11 @@ export default function BulkListing() {
               onClick={() => navigate(`/bulk-listing/${cat.id}`)}
               className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
                 isActive
-                  ? "bg-slate-900 text-white shadow-xs"
+                  ? "bg-brand-blue text-white shadow-xs"
                   : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
-              <i className={`fa-solid ${cat.icon} ${isActive ? "text-blue-400" : "text-slate-400"}`} />
+              <i className={`fa-solid ${cat.icon} ${isActive ? "text-action-primary" : "text-slate-400"}`} />
               <span>{cat.label}</span>
             </button>
           );

@@ -51,7 +51,7 @@ export function EmptyStateCard() {
       <p className="text-xs text-slate-400 mb-4">Start by posting your first product listing</p>
       <Link
         to="/add-listing"
-        className="inline-flex items-center gap-2 bg-brand-gold text-brand-navy px-4 py-2 rounded-xl text-xs font-bold hover:bg-brand-gold/90 transition-all duration-150"
+        className="inline-flex items-center gap-2 bg-action-primary hover:bg-action-primary-hover text-action-primary-text border border-action-primary-border px-4 py-2 rounded-xl text-xs font-black shadow-xs transition-all duration-150 active:scale-[0.98]"
       >
         <i className="fa-solid fa-plus text-xs" aria-hidden="true" />
         List New Product

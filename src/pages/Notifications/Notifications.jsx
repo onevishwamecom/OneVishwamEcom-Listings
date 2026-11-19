@@ -99,7 +99,7 @@ function Notifications() {
 
       {/* Summary Card */}
       <div className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-white p-5 shadow-card animate-fade-in">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-brand-gold to-brand-gold/70 flex items-center justify-center text-white shadow-sm shrink-0">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-brand-blue to-sky-500 flex items-center justify-center text-white shadow-sm shrink-0">
           <i className="fa-solid fa-bell" aria-hidden="true" />
         </div>
         <div className="flex-1">

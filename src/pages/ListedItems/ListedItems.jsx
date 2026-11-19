@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   PageContainer,
   EmptyState,
   ListingTable,
+  ListingCard,
   Button,
   SegmentedTabs,
   FilterPills,
@@ -17,6 +19,7 @@ import BulkBatchesView from './components/BulkBatchesView';
 function ListedItems() {
   const [searchParams, setSearchParams] = useSearchParams();
   const viewMode = searchParams.get('view') === 'bulk' || searchParams.get('tab') === 'bulk' ? 'bulk' : 'items';
+  const [layoutMode, setLayoutMode] = useState('table'); // 'table' | 'grid'
 
   const {
     loading,
@@ -68,7 +71,7 @@ function ListedItems() {
           </Button>
           <Button
             to="/add-listing"
-            variant="gold"
+            variant="action"
             size="md"
             icon="fa-plus"
           >
@@ -135,44 +138,78 @@ function ListedItems() {
             </div>
 
             {/* ── Search & Filter Controls ── */}
-            <div className="p-3 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_180px_180px] gap-2">
-              <SearchInput
-                value={search}
-                onChange={(val) => setSearch(val)}
-                placeholder="Search by title, category, city..."
-                aria-label="Search listings"
-              />
-
-              <div className="relative">
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  aria-label="Filter by category"
-                  className="w-full appearance-none rounded-lg border bg-white px-3 py-1.5 pr-7 text-xs font-medium outline-none transition-all duration-150 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 hover:border-slate-300 text-slate-700"
-                >
-                  <option value="all">All Categories</option>
-                  {PRIMARY_CATEGORIES.map((cat) => (
-                    <option key={cat.key} value={cat.key}>{cat.label}</option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
-                  <i className="fa-solid fa-chevron-down text-[10px]" aria-hidden="true" />
-                </div>
+            <div className="p-3 border-b border-slate-100 flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
+              <div className="flex-1">
+                <SearchInput
+                  value={search}
+                  onChange={(val) => setSearch(val)}
+                  placeholder="Search by title, category, city..."
+                  aria-label="Search listings"
+                />
               </div>
 
-              <div className="relative">
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  aria-label="Sort listings"
-                  className="w-full appearance-none rounded-lg border bg-white px-3 py-1.5 pr-7 text-xs font-medium outline-none transition-all duration-150 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 hover:border-slate-300 text-slate-700"
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
-                  <i className="fa-solid fa-chevron-down text-[10px]" aria-hidden="true" />
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="relative w-full sm:w-44">
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    aria-label="Filter by category"
+                    className="w-full appearance-none rounded-lg border bg-white px-3 py-1.5 pr-7 text-xs font-medium outline-none transition-all duration-150 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 hover:border-slate-300 text-slate-700"
+                  >
+                    <option value="all">All Categories</option>
+                    {PRIMARY_CATEGORIES.map((cat) => (
+                      <option key={cat.key} value={cat.key}>{cat.label}</option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                    <i className="fa-solid fa-chevron-down text-[10px]" aria-hidden="true" />
+                  </div>
+                </div>
+
+                <div className="relative w-full sm:w-44">
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                    aria-label="Sort listings"
+                    className="w-full appearance-none rounded-lg border bg-white px-3 py-1.5 pr-7 text-xs font-medium outline-none transition-all duration-150 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 hover:border-slate-300 text-slate-700"
+                  >
+                    {SORT_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                    <i className="fa-solid fa-chevron-down text-[10px]" aria-hidden="true" />
+                  </div>
+                </div>
+
+                {/* View Mode Toggle: Grid vs Table */}
+                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setLayoutMode('grid')}
+                    className={`w-7 h-7 rounded-md flex items-center justify-center text-xs transition-all cursor-pointer ${
+                      layoutMode === 'grid'
+                        ? 'bg-white text-brand-blue shadow-2xs font-bold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                    title="Grid / Cards View"
+                    aria-label="Grid / Cards View"
+                  >
+                    <i className="fa-solid fa-grip" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLayoutMode('table')}
+                    className={`w-7 h-7 rounded-md flex items-center justify-center text-xs transition-all cursor-pointer ${
+                      layoutMode === 'table'
+                        ? 'bg-white text-brand-blue shadow-2xs font-bold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                    title="Table View"
+                    aria-label="Table View"
+                  >
+                    <i className="fa-solid fa-list" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -216,6 +253,25 @@ function ListedItems() {
                 >
                   Clear filters
                 </Button>
+              </div>
+            ) : layoutMode === 'grid' ? (
+              <div className="p-3.5 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 animate-fade-in">
+                {pageItems.map((item, idx) => {
+                  const targetId = item.itemId || item._id || item.id;
+                  const cat = item._type || item.category || 'properties';
+                  const detailUrl = targetId ? `/listings/${encodeURIComponent(targetId)}?type=${encodeURIComponent(cat)}&fromPage=${currentPage}` : '#';
+                  const editUrl = targetId ? `/add-listing?edit=${encodeURIComponent(targetId)}&type=${encodeURIComponent(cat)}` : '#';
+                  return (
+                    <ListingCard
+                      key={targetId || idx}
+                      item={item}
+                      detailUrl={detailUrl}
+                      editUrl={editUrl}
+                      onDelete={handleDelete}
+                      isBusy={busyId === targetId}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <ListingTable
