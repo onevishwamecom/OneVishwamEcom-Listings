@@ -50,8 +50,10 @@ export default function AddListing() {
     docDragOver,
     // Handlers
     updateForm,
+    resetForm,
     handleAddPhoto,
     handleAddPhotoUrl,
+    clearAllPhotos,
     handleAddDocument,
     removePhoto,
     movePhoto,
@@ -160,8 +162,8 @@ export default function AddListing() {
               <button
                 type="button"
                 onClick={() => {
+                  resetForm('');
                   navigate('/add-listing');
-                  updateForm('category', '');
                   setStep(0);
                 }}
                 className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
@@ -189,6 +191,7 @@ export default function AddListing() {
 
           {(category === 'properties' || category === 'real-estate') ? (
             <PropertyListingForm
+              key={`properties_${isEditing ? originalListingId : 'create'}`}
               form={form}
               updateForm={updateForm}
               photos={photos}
@@ -196,6 +199,7 @@ export default function AddListing() {
               onAddPhotoUrl={handleAddPhotoUrl}
               onRemovePhoto={removePhoto}
               onMovePhoto={movePhoto}
+              onClearPhotos={clearAllPhotos}
               video={video}
               videoPreview={videoPreview}
               onVideoSelect={handleVideoSelect}
@@ -206,8 +210,8 @@ export default function AddListing() {
               onRemoveBrochure={handleRemoveBrochure}
               onSubmit={handlePublish}
               onCancel={() => {
+                resetForm('');
                 navigate('/add-listing');
-                updateForm('category', '');
                 setStep(0);
               }}
               onPhaseChange={setPropertiesPhase}
@@ -216,6 +220,7 @@ export default function AddListing() {
             />
           ) : (
             <UniversalCategoryListingForm
+              key={`${category}_${isEditing ? originalListingId : 'create'}`}
               category={category}
               form={form}
               updateForm={updateForm}
@@ -225,6 +230,7 @@ export default function AddListing() {
               onAddPhotoUrl={handleAddPhotoUrl}
               onRemovePhoto={removePhoto}
               onMovePhoto={movePhoto}
+              onClearPhotos={clearAllPhotos}
               video={video}
               videoPreview={videoPreview}
               onVideoSelect={handleVideoSelect}
@@ -235,8 +241,8 @@ export default function AddListing() {
               onRemoveBrochure={handleRemoveBrochure}
               onSubmit={handlePublish}
               onCancel={() => {
+                resetForm('');
                 navigate('/add-listing');
-                updateForm('category', '');
                 setStep(0);
               }}
               onSaveDraft={handleSaveDraft}
@@ -324,6 +330,7 @@ export default function AddListing() {
         <div className="flex flex-col gap-3">
           <Link
             to="/listings?status=pending"
+            onClick={() => resetForm('')}
             className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-blue to-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-300 hover:-translate-y-0.5"
           >
             <i className="fa-solid fa-list" /> View Pending Listings
@@ -331,6 +338,7 @@ export default function AddListing() {
           {!isEditing && (
             <button
               onClick={() => {
+                resetForm('');
                 window.location.href = "/add-listing";
               }}
               className="w-full inline-flex items-center justify-center gap-2 bg-white text-slate-700 border-2 border-slate-200 px-6 py-3 rounded-2xl font-bold text-sm hover:border-slate-300 hover:bg-slate-50 transition-all duration-300 hover:-translate-y-0.5"

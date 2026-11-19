@@ -4,6 +4,7 @@ import Swal from "sweetalert2";
 import { useAuth } from "@/store/authSlice";
 import logo from "@/assets/logo.png";
 import { AuthBrandPanel } from "@/components/AuthBrandPanel";
+import { AuthLegalModal } from "@/components/AuthLegalModal";
 import Input from "@/components/ui/Input";
 import { OTPInput } from "@/components/ui/OTPInput";
 import { normalizePhone } from "@/utils/phone";
@@ -81,6 +82,7 @@ function RegisterPage() {
   });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState(null);
+  const [legalModalType, setLegalModalType] = useState(null);
   const [otpSent, setOtpSent] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [firebaseIdToken, setFirebaseIdToken] = useState(null);
@@ -325,6 +327,7 @@ function RegisterPage() {
       <AuthBrandPanel
         heading={<>Create your <span className="text-brand-gold">account</span></>}
         subheading="Join thousands of users managing their properties, vehicles, and businesses on our platform."
+        onOpenModal={setLegalModalType}
       />
 
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative overflow-y-auto">
@@ -525,6 +528,7 @@ function RegisterPage() {
                   maxLength={128}
                   value={form.confirm}
                   onChange={(e) => handleChange("confirm", e.target.value)}
+                  onPaste={(e) => e.preventDefault()}
                   placeholder="Confirm password"
                   aria-invalid={!!errors.confirm}
                   aria-describedby={
@@ -577,9 +581,41 @@ function RegisterPage() {
                 Sign in
               </Link>
             </div>
+
+            {/* Mobile Footer Links */}
+            <div className="flex items-center justify-center gap-4 pt-4 mt-4 border-t border-slate-100 text-xs text-slate-400 font-medium lg:hidden">
+              <button
+                type="button"
+                onClick={() => setLegalModalType("terms")}
+                className="hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                Terms
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => setLegalModalType("privacy")}
+                className="hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                Privacy
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => setLegalModalType("help")}
+                className="hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                Help
+              </button>
+            </div>
           </form>
         </div>
       </div>
+
+      <AuthLegalModal
+        type={legalModalType}
+        onClose={() => setLegalModalType(null)}
+      />
     </div>
   );
 }

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/store/authSlice';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { getCategoryConfig, normalizeCategoryKey } from '@/config/listingConfig';
-import { SUBCATEGORY_CARDS, SUBCATEGORIES } from '../constants';
+import { SUBCATEGORY_CARDS, SUBCATEGORIES, EV_SUBCATEGORIES } from '../constants';
 import ListingPhaseStepper from './shared/ListingPhaseStepper';
 import ListerIdentityCard from './shared/ListerIdentityCard';
 import LocationFieldsSection from './shared/LocationFieldsSection';
@@ -27,6 +27,7 @@ export default function UniversalCategoryListingForm({
   onAddPhotoUrl,
   onRemovePhoto,
   onMovePhoto,
+  onClearPhotos,
   video = null,
   videoPreview = null,
   onVideoSelect,
@@ -87,6 +88,15 @@ export default function UniversalCategoryListingForm({
     form.bodyType ||
     (subcategoryList.length > 0 ? subcategoryList[0].id : '');
 
+  const isVehicleCategory = category === 'vehicle' || category === 'vehicles';
+  const isElectricVehicle =
+    isVehicleCategory &&
+    (selectedSubcategory === 'Electric Vehicle' ||
+      form.subcategory === 'Electric Vehicle' ||
+      String(form.subcategory || '').startsWith('Electric') ||
+      form.fuelType === 'Electric' ||
+      Boolean(form.evType));
+
   // Auto-init subcategory if missing
   useEffect(() => {
     if (!form.subcategory && subcategoryList.length > 0) {
@@ -98,10 +108,60 @@ export default function UniversalCategoryListingForm({
     }
   }, [category, form.subcategory, subcategoryList, updateForm]);
 
+  // BUG-016: If user chooses the electric option, the fuel type must be electric by default
+  useEffect(() => {
+    if (isVehicleCategory && isElectricVehicle) {
+      if (!form.fuelType || (form.fuelType !== 'Electric' && form.fuelType !== 'Hybrid' && form.fuelType !== 'Plug-in Hybrid')) {
+        updateForm('fuelType', 'Electric');
+      }
+      if (!form.transmission || form.transmission === 'Manual') {
+        updateForm('transmission', 'Automatic (Single-Speed EV)');
+      }
+    }
+  }, [isVehicleCategory, isElectricVehicle, form.fuelType, form.transmission, updateForm]);
+
   const handleSelectSubcategory = (subId) => {
     updateForm('subcategory', subId);
-    if (category === 'vehicle' || category === 'vehicles') {
-      updateForm('categoryVehicle', subId);
+    if (isVehicleCategory) {
+      if (subId === 'Electric Vehicle') {
+        const defaultEv = EV_SUBCATEGORIES[0];
+        updateForm('evType', defaultEv.id);
+        updateForm('fuelType', 'Electric');
+        updateForm('transmission', 'Automatic (Single-Speed EV)');
+        updateForm('categoryVehicle', defaultEv.categoryVehicle);
+        updateForm('wheelerType', defaultEv.wheelerType);
+        updateForm('bodyType', defaultEv.defaultBodyType);
+      } else if (subId === 'Bike') {
+        updateForm('evType', '');
+        updateForm('fuelType', 'Petrol');
+        updateForm('categoryVehicle', '2-Wheeler');
+        updateForm('wheelerType', '2-wheeler');
+        updateForm('bodyType', 'Motorcycle / Bike');
+        updateForm('transmission', 'Manual');
+      } else if (subId === 'Car') {
+        updateForm('evType', '');
+        updateForm('fuelType', 'Petrol');
+        updateForm('categoryVehicle', '4-Wheeler');
+        updateForm('wheelerType', '4-wheeler');
+        updateForm('bodyType', 'Hatchback');
+        updateForm('transmission', 'Manual');
+      } else if (subId === 'Commercial Vehicle') {
+        updateForm('evType', '');
+        updateForm('fuelType', 'Diesel');
+        updateForm('categoryVehicle', 'Commercial');
+        updateForm('wheelerType', 'commercial');
+        updateForm('bodyType', 'Mini Truck / Pickup');
+        updateForm('transmission', 'Manual');
+      } else if (subId === 'Auto Rickshaw') {
+        updateForm('evType', '');
+        updateForm('fuelType', 'CNG');
+        updateForm('categoryVehicle', '3-Wheeler');
+        updateForm('wheelerType', '3-wheeler');
+        updateForm('bodyType', 'Passenger Auto');
+        updateForm('transmission', 'Manual');
+      } else {
+        updateForm('categoryVehicle', subId);
+      }
     }
     setLocalErrors((prev) => {
       const next = { ...prev };
@@ -109,6 +169,106 @@ export default function UniversalCategoryListingForm({
       return next;
     });
   };
+
+  const handleSelectEvType = (ev) => {
+    updateForm('evType', ev.id);
+    updateForm('subcategory', 'Electric Vehicle');
+    updateForm('fuelType', 'Electric');
+    updateForm('transmission', 'Automatic (Single-Speed EV)');
+    updateForm('categoryVehicle', ev.categoryVehicle);
+    updateForm('wheelerType', ev.wheelerType);
+    updateForm('bodyType', ev.defaultBodyType);
+  };
+
+  const activeFields = useMemo(() => {
+    if (!isVehicleCategory) return catFields;
+
+    return catFields
+      .map((field) => {
+        if (field.name === 'fuelType') {
+          if (isElectricVehicle) {
+            return {
+              ...field,
+              label: 'Fuel Type',
+              options: ['Electric', 'Hybrid', 'Plug-in Hybrid'],
+            };
+          }
+          return field;
+        }
+
+        if (field.name === 'transmission') {
+          if (isElectricVehicle) {
+            return {
+              ...field,
+              label: 'Drive / Transmission',
+              options: ['Automatic (Single-Speed EV)', 'Automatic'],
+            };
+          }
+          if (selectedSubcategory === 'Bike') {
+            return {
+              ...field,
+              options: ['Manual', 'Automatic / CVT (Scooter)'],
+            };
+          }
+          return field;
+        }
+
+        if (field.name === 'mileage') {
+          if (isElectricVehicle) {
+            return {
+              ...field,
+              label: 'Battery Range per Full Charge',
+              placeholder: 'e.g. 315 km / full charge (ARAI) or 465 km',
+            };
+          }
+          return field;
+        }
+
+        if (field.name === 'bodyType') {
+          if (isElectricVehicle) {
+            const currentEv = EV_SUBCATEGORIES.find((e) => e.id === form.evType) || EV_SUBCATEGORIES[0];
+            return {
+              ...field,
+              label: 'Body Type / Style',
+              options: currentEv.bodyTypes || ['SUV', 'Sedan', 'Hatchback', 'Electric Scooter'],
+            };
+          }
+          if (selectedSubcategory === 'Bike') {
+            return {
+              ...field,
+              label: 'Vehicle Style / Type',
+              options: ['Motorcycle / Bike', 'Scooter', 'Cruiser', 'Sports Bike', 'Commuter', 'Moped'],
+            };
+          }
+          if (selectedSubcategory === 'Commercial Vehicle') {
+            return {
+              ...field,
+              label: 'Commercial Body Type',
+              options: ['Mini Truck / Pickup', 'Cargo Van', 'Heavy Truck', 'Tipper', 'Bus / Mini Bus'],
+            };
+          }
+          if (selectedSubcategory === 'Auto Rickshaw') {
+            return {
+              ...field,
+              label: '3-Wheeler Type',
+              options: ['Passenger Auto', 'Cargo Auto / Delivery', 'E-Rickshaw'],
+            };
+          }
+          return {
+            ...field,
+            options: ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Coupe', 'Luxury / Sports'],
+          };
+        }
+
+        return field;
+      })
+      .filter((field) => {
+        if ((field.name === 'batteryCapacity' || field.name === 'chargingTime') && !isElectricVehicle) {
+          return false;
+        }
+        return true;
+      });
+  }, [isVehicleCategory, isElectricVehicle, catFields, selectedSubcategory, form.evType]);
 
   // Phase validation
   const validatePhase1 = () => {
@@ -263,10 +423,66 @@ export default function UniversalCategoryListingForm({
                       <i className={`fa-solid ${sub.icon || categoryMeta.icon || 'fa-tag'}`} />
                     </div>
                     <span className="text-xs font-bold leading-tight line-clamp-1">{sub.label}</span>
+                    {sub.subtitle && (
+                      <span className="text-[10px] text-slate-400 mt-1 line-clamp-1 hidden sm:block">{sub.subtitle}</span>
+                    )}
                   </button>
                 );
               })}
             </div>
+
+            {/* Dedicated EV Classification Sub-Selector */}
+            {isVehicleCategory && selectedSubcategory === 'Electric Vehicle' && (
+              <div className="mt-4 pt-4 border-t border-slate-200/80 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
+                      <i className="fa-solid fa-bolt" />
+                    </span>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                      Choose Electric Vehicle (EV) Type
+                    </h3>
+                    <span className="text-red-500 text-xs">*</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/80 self-start sm:self-auto">
+                    Smart EV presets enabled
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {EV_SUBCATEGORIES.map((ev) => {
+                    const isEvSelected = (form.evType || 'Electric Car') === ev.id;
+                    return (
+                      <button
+                        key={ev.id}
+                        type="button"
+                        onClick={() => handleSelectEvType(ev)}
+                        className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          isEvSelected
+                            ? 'border-emerald-500 bg-emerald-50/70 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs'
+                            : 'border-slate-200/90 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full mb-1.5">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${
+                            isEvSelected ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            <i className={`fa-solid ${ev.icon}`} />
+                          </div>
+                          {isEvSelected && (
+                            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-600 text-white">
+                              Selected
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-slate-900 line-clamp-1">{ev.label}</span>
+                        <span className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{ev.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -287,15 +503,18 @@ export default function UniversalCategoryListingForm({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <Input
+                  id="listing-title"
+                  name="listingTitle"
                   label="Listing Title / Headline"
+                  autoComplete="off"
                   required
-                  placeholder={`e.g. ${
+                  placeholder={
                     category === 'vehicle' || category === 'vehicles'
-                      ? 'Maruti Suzuki Swift ZXi 2024 · Brand New Bangalore'
+                      ? 'Enter vehicle title or headline (e.g. 2024 Tata Nexon EV · Bangalore)'
                       : category === 'groceries'
-                      ? 'Premium Organic Sona Masoori Rice - 25 Kg Pack'
-                      : 'Featured Listing Title'
-                  }`}
+                      ? 'Enter product title (e.g. Premium Organic Sona Masoori Rice - 25 Kg Pack)'
+                      : 'Enter listing title or headline'
+                  }
                   value={form.title || ''}
                   onChange={(e) => updateForm('title', e.target.value)}
                   error={mergedErrors.title}
@@ -327,7 +546,7 @@ export default function UniversalCategoryListingForm({
           </div>
 
           {/* Dynamic Category Specifications Card */}
-          {catFields.length > 0 && (
+          {activeFields.length > 0 && (
             <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-4">
               <div className="border-b border-slate-100 pb-3">
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -338,13 +557,17 @@ export default function UniversalCategoryListingForm({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {catFields.map((field) => (
+                {activeFields.map((field) => (
                   <div key={field.name} className={field.colSpan === 2 ? 'sm:col-span-2' : ''}>
                     {field.type === 'select' ? (
                       <Select
                         label={field.label}
                         required={field.required}
-                        value={form[field.name] || ''}
+                        value={
+                          field.name === 'fuelType' && isElectricVehicle
+                            ? (form.fuelType === 'Hybrid' || form.fuelType === 'Plug-in Hybrid' ? form.fuelType : 'Electric')
+                            : (form[field.name] || '')
+                        }
                         onChange={(e) => updateForm(field.name, e.target.value)}
                         options={field.options || []}
                         error={mergedErrors[field.name]}
@@ -382,6 +605,7 @@ export default function UniversalCategoryListingForm({
           onAddPhotoUrl={onAddPhotoUrl}
           onRemovePhoto={onRemovePhoto}
           onMovePhoto={onMovePhoto}
+          onClearPhotos={onClearPhotos}
           video={video}
           videoPreview={videoPreview}
           onVideoSelect={onVideoSelect}

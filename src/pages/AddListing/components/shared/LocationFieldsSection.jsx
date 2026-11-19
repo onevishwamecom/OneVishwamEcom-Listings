@@ -7,9 +7,9 @@ const rawCities = Array.isArray(cities)
   ? cities
   : (typeof cities === 'object' && cities !== null)
   ? Object.values(cities).map((c) => c?.label || c?.name || c)
-  : ['Bengaluru', 'Mysuru', 'Mangaluru', 'Hubballi', 'Belagavi'];
+  : ['Bengaluru'];
 
-const CITY_OPTIONS = (rawCities.length > 0 ? rawCities : ['Bengaluru', 'Mysuru', 'Mangaluru', 'Hubballi', 'Belagavi']).map((c) => {
+const CITY_OPTIONS = (rawCities.length > 0 ? rawCities : ['Bengaluru']).map((c) => {
   const name = typeof c === 'object' ? (c.label || c.name || '') : String(c);
   return { value: name, label: name };
 });
@@ -37,9 +37,12 @@ export function LocationFieldsSection({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="sm:col-span-2">
           <Input
+            id="listing-locality"
+            name="listingLocality"
+            autoComplete="off"
             label="Locality / Area / Landmark"
             required
-            placeholder="e.g. Indiranagar, Whitefield, Koramangala, Outer Ring Road"
+            placeholder="Enter locality, area, or landmark"
             value={form.area || ''}
             onChange={(e) => updateForm('area', e.target.value)}
             error={errors.area}
@@ -48,6 +51,8 @@ export function LocationFieldsSection({
 
         <div>
           <Select
+            id="listing-city"
+            name="listingCity"
             label="City"
             value={form.city || 'Bengaluru'}
             onChange={(e) => updateForm('city', e.target.value)}
@@ -57,8 +62,11 @@ export function LocationFieldsSection({
 
         <div className="sm:col-span-2">
           <Input
+            id="listing-address"
+            name="listingAddress"
+            autoComplete="off"
             label="Full Street Address"
-            placeholder="e.g. #42, 100 Feet Road, HAL 2nd Stage, Indiranagar"
+            placeholder="Enter full street address or building details"
             value={form.address || ''}
             onChange={(e) => updateForm('address', e.target.value)}
             error={errors.address}
@@ -67,8 +75,11 @@ export function LocationFieldsSection({
 
         <div>
           <Input
+            id="listing-pincode"
+            name="listingPincode"
+            autoComplete="off"
             label="Pincode"
-            placeholder="e.g. 560038"
+            placeholder="Enter 6-digit pincode"
             value={form.pincode || ''}
             onChange={(e) => updateForm('pincode', e.target.value)}
             error={errors.pincode}
@@ -77,8 +88,11 @@ export function LocationFieldsSection({
 
         <div className="sm:col-span-3">
           <Input
+            id="listing-mapurl"
+            name="listingMapUrl"
+            autoComplete="off"
             label="Google Maps Location Link"
-            placeholder="https://maps.app.goo.gl/... or https://goo.gl/maps/..."
+            placeholder="Paste Google Maps link (https://maps.app.goo.gl/...)"
             value={form.mapUrl ?? ''}
             onChange={(e) => updateForm('mapUrl', e.target.value)}
           />

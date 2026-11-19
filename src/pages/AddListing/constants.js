@@ -18,7 +18,7 @@ export const CATEGORIES = [
   },
   {
     id: "vehicle",
-    label: "Automobiles & Vehicles",
+    label: "Automobiles",
     singularLabel: "Vehicle",
     icon: "fa-car-side",
     desc: "Cars, Two-Wheelers, Commercial Trucks & Electric Vehicles",
@@ -142,12 +142,41 @@ export const SUBCATEGORY_CARDS = {
     { id: "Industrial", label: "Industrial", icon: "fa-industry" },
   ],
   vehicle: [
-    { id: "Car", label: "Car / 4-Wheeler", icon: "fa-car" },
-    { id: "Bike", label: "Bike / 2-Wheeler", icon: "fa-motorcycle" },
-    { id: "Commercial Vehicle", label: "Commercial Vehicle", icon: "fa-truck" },
-    { id: "Electric Vehicle", label: "Electric Vehicle (EV)", icon: "fa-bolt" },
-    { id: "Auto Rickshaw", label: "Auto Rickshaw / 3-Wheeler", icon: "fa-van-shuttle" },
-    { id: "Luxury & Sports", label: "Luxury & Sports", icon: "fa-car-side" },
+    {
+      id: "Car",
+      label: "Cars & 4-Wheelers",
+      subtitle: "Hatchbacks, Sedans, SUVs, MUVs & Luxury",
+      icon: "fa-car",
+      badge: "4-Wheeler",
+    },
+    {
+      id: "Bike",
+      label: "Bikes & Two-Wheelers",
+      subtitle: "Motorcycles, Scooters & Cruisers",
+      icon: "fa-motorcycle",
+      badge: "2-Wheeler",
+    },
+    {
+      id: "Electric Vehicle",
+      label: "Electric Vehicles (EV)",
+      subtitle: "EV Cars, Electric Scooters, E-Autos & Loaders",
+      icon: "fa-bolt",
+      badge: "Green EV",
+    },
+    {
+      id: "Commercial Vehicle",
+      label: "Commercial & Trucks",
+      subtitle: "Pickups, Mini Trucks, Lorries & Cargo",
+      icon: "fa-truck",
+      badge: "Commercial",
+    },
+    {
+      id: "Auto Rickshaw",
+      label: "Auto Rickshaws / 3-Wheelers",
+      subtitle: "Passenger Autos & Delivery Loaders",
+      icon: "fa-van-shuttle",
+      badge: "3-Wheeler",
+    },
   ],
   grocery: [
     { id: "Vegetables", label: "Vegetables", icon: "fa-carrot" },
@@ -203,6 +232,49 @@ export const SUBCATEGORY_CARDS = {
   ],
 };
 
+export const EV_SUBCATEGORIES = [
+  {
+    id: "Electric Car",
+    label: "Electric Car (4W EV)",
+    desc: "e.g. Tata Nexon EV, MG ZS EV, Tiago EV, BYD",
+    icon: "fa-car",
+    wheelerType: "4-wheeler",
+    categoryVehicle: "4-Wheeler",
+    defaultBodyType: "SUV",
+    bodyTypes: ["SUV", "Hatchback", "Sedan", "MUV", "Coupe", "Luxury"],
+  },
+  {
+    id: "Electric Two-Wheeler",
+    label: "Electric Scooter / Bike (2W EV)",
+    desc: "e.g. Ather 450X, Ola S1, TVS iQube, Chetak, River",
+    icon: "fa-motorcycle",
+    wheelerType: "2-wheeler",
+    categoryVehicle: "2-Wheeler",
+    defaultBodyType: "Electric Scooter",
+    bodyTypes: ["Electric Scooter", "Electric Motorcycle", "Sports Bike", "Moped"],
+  },
+  {
+    id: "Electric 3-Wheeler",
+    label: "Electric Auto / 3-Wheeler (3W EV)",
+    desc: "e.g. Mahindra Treo, Piaggio Ape E-City, E-Rickshaw",
+    icon: "fa-van-shuttle",
+    wheelerType: "3-wheeler",
+    categoryVehicle: "3-Wheeler",
+    defaultBodyType: "Passenger Auto / E-Rickshaw",
+    bodyTypes: ["Passenger Auto / E-Rickshaw", "Cargo / Delivery 3-Wheeler"],
+  },
+  {
+    id: "Electric Commercial",
+    label: "Electric Commercial & Cargo (EV)",
+    desc: "e.g. Tata Ace EV, Mahindra Zor Grand, E-Delivery Van",
+    icon: "fa-truck",
+    wheelerType: "commercial",
+    categoryVehicle: "Commercial",
+    defaultBodyType: "Mini Truck / Pickup",
+    bodyTypes: ["Mini Truck / Pickup", "Cargo Van", "Heavy Truck", "Delivery Loader"],
+  },
+];
+
 export const SUBCATEGORIES = {
   properties: [
     "Apartment",
@@ -217,9 +289,17 @@ export const SUBCATEGORIES = {
   vehicle: [
     "Car",
     "Bike",
+    "Electric Vehicle",
     "Commercial Vehicle",
     "Auto Rickshaw",
-    "Electric Vehicle",
+    "Electric Car",
+    "Electric Two-Wheeler",
+    "Electric 3-Wheeler",
+    "Electric Commercial",
+    "4-Wheeler",
+    "2-Wheeler",
+    "3-Wheeler",
+    "Commercial",
   ],
   grocery: [
     "Fruits",

@@ -30,7 +30,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-5">
       <WelcomeBanner user={user} verifyEmailAction={verifyEmailAction} initial={initial} displayName={displayName} />
       <StatCards user={user} stats={stats} verifyEmailAction={verifyEmailAction} />
       <ListingsByType stats={{ total: stats.total, byType: stats.byType }} loading={loading} error={statsError} onRetry={refreshStats} />

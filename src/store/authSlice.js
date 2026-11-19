@@ -89,15 +89,15 @@ export const firebaseEmailLogin = createAsyncThunk(
 
       return profileData;
     } catch (err) {
-      let message = 'Login failed';
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-        message = 'USER_NOT_FOUND';
-      } else if (err.code === 'auth/wrong-password') {
-        message = 'Incorrect password. Please try again.';
+      let message = 'Invalid credentials. Please check your email and password.';
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        message = 'Invalid credentials. Please check your email and password.';
       } else if (err.code === 'auth/too-many-requests') {
         message = 'Too many failed login attempts. Access temporarily disabled for security.';
       } else if (err.code === 'auth/invalid-email') {
         message = 'Please enter a valid email address.';
+      } else if (err.code === 'auth/network-request-failed') {
+        message = 'Connection to authentication service failed. If you have an ad-blocker, Brave Shields, or VPN enabled, please disable it and try again.';
       } else if (err.message) {
         message = err.message;
       }
@@ -112,16 +112,7 @@ export const firebaseEmailRegister = createAsyncThunk(
     try {
       const cleanEmail = (email || '').trim().toLowerCase();
 
-      let userCredential = null;
-      try {
-        userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
-      } catch (createErr) {
-        if (createErr.code === 'auth/email-already-in-use') {
-          userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
-        } else {
-          throw createErr;
-        }
-      }
+      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
 
       const firebaseUser = userCredential.user;
       if (name && name.trim()) {
@@ -183,6 +174,8 @@ export const firebaseEmailRegister = createAsyncThunk(
         message = 'Please enter a valid email address.';
       } else if (err.code === 'auth/weak-password') {
         message = 'Password should be at least 6 characters.';
+      } else if (err.code === 'auth/network-request-failed') {
+        message = 'Connection to authentication service failed. If you have an ad-blocker, Brave Shields, or VPN enabled, please disable it and try again.';
       } else if (err.message) {
         message = err.message;
       }

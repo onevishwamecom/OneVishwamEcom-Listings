@@ -442,7 +442,8 @@ async function deploy() {
   const summaryCard = renderBox({
     title: `${C.bold}${C.brightWhite}✨ ${CONFIG.appName} • DEPLOYED!${C.reset}`,
     items: [
-      `${C.bold}🌐 Live Website:${C.reset}     ${clickableUrl} ${C.dim}(Cmd+Click to open)${C.reset}`,
+      `${C.bold}🌐 Live Website:${C.reset}     ${clickableUrl} ${C.dim}(Primary)${C.reset}`,
+      `${C.bold}🔗 Mirror Domain:${C.reset}    ${C.brightCyan}${C.underline}https://onevishwam-listings.firebaseapp.com${C.reset}`,
       `${C.bold}🎯 Deploy Target:${C.reset}    ${C.brightMagenta}hosting:${CONFIG.target}${C.reset} → ${C.brightWhite}${CONFIG.site}${C.reset}`,
       `${C.bold}📦 Total Assets:${C.reset}     ${C.brightWhite}${totalFiles} files synchronized${C.reset}`,
       `${C.bold}📊 Upload Size:${C.reset}      ${C.brightGreen}${formatBytes(totalBytes)}${C.reset}`,

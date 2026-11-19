@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/ui/PageHeader';
 import PageContainer from '@/components/ui/PageContainer';
 import { DetailPageSkeleton } from '@/components/skeleton';
@@ -21,10 +21,20 @@ import { StatusCard } from './components/StatusCard';
 import { ImageLightbox } from './components/ImageLightbox';
 
 function ListingDetails() {
+  const navigate = useNavigate();
   const { listingId } = useParams();
   const [searchParams] = useSearchParams();
   const typeHint = searchParams.get('type') || searchParams.get('category') || '';
   const [selectedImage, setSelectedImage] = useState(null);
+
+  const handleBackToListings = () => {
+    const fromPage = searchParams.get('fromPage') || sessionStorage.getItem('vishwam_listings_page');
+    if (fromPage && fromPage !== '1') {
+      navigate(`/listings?page=${fromPage}`);
+    } else {
+      navigate('/listings');
+    }
+  };
 
   const {
     data: listing,
@@ -53,12 +63,13 @@ function ListingDetails() {
           title="Listing Details"
           subtitle="Full details and activity for this listing"
           action={
-            <Link
-              to="/listings"
-              className="inline-flex items-center gap-2 bg-brand-blue text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-200 hover:-translate-y-0.5"
+            <button
+              type="button"
+              onClick={handleBackToListings}
+              className="inline-flex items-center gap-2 bg-brand-blue text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
             >
               <i className="fa-solid fa-arrow-left text-xs" /> Back to All Listings
-            </Link>
+            </button>
           }
         />
 
@@ -132,12 +143,13 @@ function ListingDetails() {
         title={displayTitle}
         subtitle={`${categoryInfo.label} • ${subcategory}`}
         action={
-          <Link
-            to="/listings"
-            className="inline-flex items-center gap-2 bg-brand-blue text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-200 hover:-translate-y-0.5"
+          <button
+            type="button"
+            onClick={handleBackToListings}
+            className="inline-flex items-center gap-2 bg-brand-blue text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-glow-blue hover:bg-brand-blue/90 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
           >
             <i className="fa-solid fa-arrow-left text-xs" /> Back to Listed Items
-          </Link>
+          </button>
         }
       />
 

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import logo from '../assets/logo.png';
 
-export function AuthBrandPanel({ heading, subheading }) {
+export function AuthBrandPanel({ heading, subheading, onOpenModal }) {
   return (
     <div className="hidden lg:flex flex-1 flex-col justify-between bg-auth-gradient p-12 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-96 h-96 bg-brand-gold/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -22,16 +22,43 @@ export function AuthBrandPanel({ heading, subheading }) {
         </p>
       </div>
 
-      <div className="relative z-10 flex gap-4 text-sm text-white/60 font-medium">
-        <a href="#" className="hover:text-white transition-colors">
+      <div className="relative z-10 flex gap-5 text-sm text-white/70 font-semibold">
+        <Link
+          to="/terms"
+          onClick={(e) => {
+            if (onOpenModal) {
+              e.preventDefault();
+              onOpenModal('terms');
+            }
+          }}
+          className="hover:text-white hover:underline transition-colors cursor-pointer"
+        >
           Terms
-        </a>
-        <a href="#" className="hover:text-white transition-colors">
+        </Link>
+        <Link
+          to="/privacy"
+          onClick={(e) => {
+            if (onOpenModal) {
+              e.preventDefault();
+              onOpenModal('privacy');
+            }
+          }}
+          className="hover:text-white hover:underline transition-colors cursor-pointer"
+        >
           Privacy
-        </a>
-        <a href="#" className="hover:text-white transition-colors">
+        </Link>
+        <Link
+          to="/help"
+          onClick={(e) => {
+            if (onOpenModal) {
+              e.preventDefault();
+              onOpenModal('help');
+            }
+          }}
+          className="hover:text-white hover:underline transition-colors cursor-pointer"
+        >
           Help
-        </a>
+        </Link>
       </div>
     </div>
   );

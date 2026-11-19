@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import logo from "@/assets/logo.png";
 import Input from "@/components/ui/Input";
 import { AuthBrandPanel } from "@/components/AuthBrandPanel";
+import { AuthLegalModal } from "@/components/AuthLegalModal";
 
 function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -12,10 +13,12 @@ function ForgotPasswordPage() {
   const { forgotPassword, loading, error, clearError } = useAuth();
 
   const [email, setEmail] = useState(location.state?.email || "");
+  const [lastSentEmail, setLastSentEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [serverError, setServerError] = useState(null);
   const [sentSuccess, setSentSuccess] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [legalModalType, setLegalModalType] = useState(null);
 
   useEffect(() => {
     let timer;
@@ -46,8 +49,15 @@ function ForgotPasswordPage() {
 
     if (!validate()) return;
 
+    const normalized = email.trim().toLowerCase();
+    if (cooldown > 0 && normalized === lastSentEmail.toLowerCase()) {
+      setServerError(`Please wait ${cooldown}s before requesting another reset email for ${email.trim()}.`);
+      return;
+    }
+
     try {
       await forgotPassword(email.trim()).unwrap();
+      setLastSentEmail(normalized);
       setSentSuccess(true);
       setCooldown(60);
 
@@ -77,6 +87,7 @@ function ForgotPasswordPage() {
 
     try {
       await forgotPassword(email.trim()).unwrap();
+      setLastSentEmail(email.trim().toLowerCase());
       setCooldown(60);
       Swal.fire({
         icon: "success",
@@ -92,11 +103,19 @@ function ForgotPasswordPage() {
     }
   };
 
+  const isSameEmailCooldown = Boolean(
+    email.trim() &&
+    lastSentEmail &&
+    email.trim().toLowerCase() === lastSentEmail.toLowerCase() &&
+    cooldown > 0
+  );
+
   return (
     <div className="min-h-screen flex bg-slate-50">
       <AuthBrandPanel
         heading={<>Reset your <span className="text-brand-gold">password</span></>}
         subheading="Enter your registered email address and we will send you a secure link to reset your account password."
+        onOpenModal={setLegalModalType}
       />
 
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative">
@@ -148,13 +167,18 @@ function ForgotPasswordPage() {
 
                 <button
                   type="submit"
-                  disabled={loading || !email.trim()}
+                  disabled={loading || !email.trim() || isSameEmailCooldown}
                   className="w-full rounded-xl mt-2 bg-gradient-to-r from-brand-blue to-blue-600 py-3.5 text-xs font-bold text-white shadow-glow-blue hover:shadow-glow-blue transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
                       <i className="fa-solid fa-circle-notch fa-spin text-sm" aria-hidden="true" />
                       <span>Sending Reset Link...</span>
+                    </>
+                  ) : isSameEmailCooldown ? (
+                    <>
+                      <i className="fa-solid fa-clock text-xs" aria-hidden="true" />
+                      <span>Wait {cooldown}s to resend</span>
                     </>
                   ) : (
                     <>
@@ -219,16 +243,28 @@ function ForgotPasswordPage() {
                   </span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSentSuccess(false);
-                    setEmail("");
-                  }}
-                  className="w-full text-xs font-bold text-slate-500 hover:text-slate-800 py-2 transition-colors cursor-pointer"
-                >
-                  Try another email address
-                </button>
+                <div className="pt-2 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSentSuccess(false);
+                      setEmail("");
+                    }}
+                    className="w-full text-xs font-semibold text-slate-600 hover:text-brand-blue py-1.5 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <i className="fa-solid fa-envelope text-[11px]" />
+                    <span>Try another email address</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLegalModalType("help")}
+                    className="w-full text-xs font-semibold text-slate-600 hover:text-brand-blue py-1.5 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <i className="fa-solid fa-headset text-[11px]" />
+                    <span>Need other ways to recover? Contact Support</span>
+                  </button>
+                </div>
               </div>
 
               <div className="pt-6 mt-6 border-t border-slate-100">
@@ -242,8 +278,39 @@ function ForgotPasswordPage() {
               </div>
             </div>
           )}
+          {/* Mobile Footer Links */}
+          <div className="flex items-center justify-center gap-4 pt-4 mt-6 border-t border-slate-100 text-xs text-slate-400 font-medium lg:hidden">
+            <button
+              type="button"
+              onClick={() => setLegalModalType("terms")}
+              className="hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              Terms
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => setLegalModalType("privacy")}
+              className="hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              Privacy
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => setLegalModalType("help")}
+              className="hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              Help
+            </button>
+          </div>
         </div>
       </div>
+
+      <AuthLegalModal
+        type={legalModalType}
+        onClose={() => setLegalModalType(null)}
+      />
     </div>
   );
 }

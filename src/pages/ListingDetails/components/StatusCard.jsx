@@ -1,8 +1,9 @@
 import { SectionCard } from './UIComponents';
 import Badge from '@/components/ui/Badge';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export function StatusCard({ listing, config, categoryInfo, subcategory, adminFeedback, formatDate, getDisplayId }) {
+  const navigate = useNavigate();
   return (
     <SectionCard title="Status & Details" icon="fa-circle-info" className="sticky top-20">
       <div className="space-y-4">
@@ -95,24 +96,28 @@ export function StatusCard({ listing, config, categoryInfo, subcategory, adminFe
         <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
           <Link
             to={`/add-listing?edit=${listing._id || listing.id}&type=${listing._type || listing.category || 'properties'}`}
-            className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all duration-150 ${
+            className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-black text-xs transition-all duration-150 ${
               listing.status === 'approved'
-                ? 'bg-brand-blue text-white hover:bg-blue-600 shadow-xs'
+                ? 'bg-brand-blue text-white hover:bg-brand-blue-hover shadow-xs'
                 : listing.status === 'changes-required'
-                ? 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90 shadow-xs'
-                : 'bg-slate-100 text-slate-800 border border-slate-200/80 hover:bg-slate-200'
+                ? 'bg-action-primary text-action-primary-text hover:bg-action-primary-hover border border-action-primary-border shadow-xs'
+                : 'bg-action-primary text-action-primary-text hover:bg-action-primary-hover border border-action-primary-border shadow-xs'
             }`}
           >
             <i className="fa-solid fa-pen text-xs" aria-hidden="true" />
             {listing.status === 'approved' ? 'Edit & Resubmit' : 'Edit Listing'}
           </Link>
 
-          <Link
-            to="/listings"
-            className="inline-flex items-center justify-center gap-1.5 bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors"
+          <button
+            type="button"
+            onClick={() => {
+              const fromPage = sessionStorage.getItem('vishwam_listings_page');
+              navigate(fromPage && fromPage !== '1' ? `/listings?page=${fromPage}` : '/listings');
+            }}
+            className="inline-flex items-center justify-center gap-1.5 bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <i className="fa-solid fa-arrow-left text-xs" aria-hidden="true" /> Back to Listings
-          </Link>
+          </button>
         </div>
       </div>
     </SectionCard>

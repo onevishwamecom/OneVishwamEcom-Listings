@@ -3,6 +3,7 @@ const VARIANTS = {
   success: 'bg-brand-gold/15 text-brand-gold border-brand-gold/30',
   pending: 'bg-amber-50 text-amber-700 border-amber-200/60',
   warning: 'bg-brand-orange/10 text-brand-orange border-brand-orange/25',
+  draft: 'bg-slate-100 text-slate-700 border-slate-300',
   inactive: 'bg-slate-100 text-slate-500 border-slate-200',
   danger: 'bg-rose-50 text-rose-600 border-rose-200/60',
   blue: 'bg-blue-50 text-brand-blue border-blue-200/60',

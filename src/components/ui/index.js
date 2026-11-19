@@ -5,6 +5,7 @@ export { default as CategoryBadge, CATEGORY_CONFIG } from './CategoryBadge';
 export { default as FilterPills, SegmentedTabs } from './Tabs';
 export { default as SearchInput } from './SearchInput';
 export { default as ListingTable } from './ListingTable';
+export { default as ListingCard } from './ListingCard';
 export { default as Badge } from './Badge';
 export { default as EmptyState } from './EmptyState';
 export { default as Modal } from './Modal';

@@ -65,11 +65,11 @@ function ProfilePage() {
               aria-current={activeTab === 'notifications' ? 'page' : undefined}
               className={`pb-4 text-sm font-bold border-b-2 transition-all duration-200 flex items-center gap-2 ${
                 activeTab === 'notifications'
-                  ? 'border-brand-gold text-brand-gold'
+                  ? 'border-brand-blue text-brand-blue'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
             >
-              <i className={`fa-solid fa-bell ${activeTab === 'notifications' ? 'text-brand-gold' : 'text-slate-400'}`} aria-hidden="true" />
+              <i className={`fa-solid fa-bell ${activeTab === 'notifications' ? 'text-brand-blue' : 'text-slate-400'}`} aria-hidden="true" />
               Notifications
             </button>
           </nav>

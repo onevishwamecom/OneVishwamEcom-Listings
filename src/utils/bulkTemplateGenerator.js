@@ -290,7 +290,7 @@ export const MULTI_SHEET_CONFIGS = {
   },
 
   vehicle: {
-    categoryLabel: 'Vehicle',
+    categoryLabel: 'Automobiles',
     sheets: [
       {
         sheetName: '4-Wheelers & Cars',
@@ -357,9 +357,11 @@ export const MULTI_SHEET_CONFIGS = {
           'Title*',
           'Brand*',
           'Model*',
+          'EV Type (4W / 2W / 3W / Commercial)*',
           'Year*',
           'Condition*',
-          'Fuel Type*',
+          'Battery Capacity (kWh)',
+          'Driving Range (km)*',
           'KM Driven*',
           'Price (₹)*',
           'City*',

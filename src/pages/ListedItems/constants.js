@@ -2,6 +2,7 @@ export { SERVICE_CONFIG, PRIMARY_CATEGORIES, normalizeCategoryKey } from '../../
 
 export const STATUS_TABS = [
   { id: 'all', label: 'All' },
+  { id: 'draft', label: 'Drafts' },
   { id: 'pending', label: 'Pending' },
   { id: 'approved', label: 'Approved' },
   { id: 'changes-required', label: 'Changes Required' },
@@ -25,6 +26,12 @@ export const EMPTY_STATE = {
     icon: 'fa-box-open',
     title: 'No listings yet',
     subtitle: 'Start by listing your first product.',
+    showCta: true,
+  },
+  draft: {
+    icon: 'fa-floppy-disk',
+    title: 'No drafts saved',
+    subtitle: "You don't have any incomplete listing drafts.",
     showCta: true,
   },
   pending: {

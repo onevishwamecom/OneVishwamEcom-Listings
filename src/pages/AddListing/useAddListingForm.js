@@ -12,6 +12,7 @@ import { uploadMediaToStorage } from "../../services/storageService";
 import { getCachedUser } from "../../services/userCache";
 import { useListingStats } from "../../components/ListingStats";
 import { resolvePartnerIdentity } from "../../config/partnerDirectory";
+import { saveDraft, getDraftById, deleteDraft } from "../../services/draftsService";
 
 export function useAddListingForm() {
   const [searchParams] = useSearchParams();
@@ -19,6 +20,7 @@ export function useAddListingForm() {
   const navigate = useNavigate();
   const editId = searchParams.get("edit");
   const editType = searchParams.get("type");
+  const draftId = searchParams.get("draft");
   const isEditing = Boolean(editId && editType);
   const { refresh: refreshStats } = useListingStats();
 
@@ -61,22 +63,54 @@ export function useAddListingForm() {
     }
   };
 
+  const prevIsEditingRef = useRef(isEditing);
+  const prevCategoryTypeRef = useRef(categoryType);
+
+  const resetForm = (targetCategory = "") => {
+    const cachedUser = getCachedUser() || {};
+    const partnerInfo = resolvePartnerIdentity(cachedUser.email || cachedUser.vendorEmail);
+    const listerName = cachedUser.name || cachedUser.fullName || cachedUser.vendorName || partnerInfo.partnerName || '';
+    const assignedPartner = cachedUser.partnerName || partnerInfo.partnerName || listerName;
+    const assignedVendor = cachedUser.vendorName || listerName;
+    const assignedRole = cachedUser.role || partnerInfo.role || '';
+    const assignedOrigin = cachedUser.origin || partnerInfo.origin || (assignedRole === 'in_house' ? 'in_house_project' : undefined);
+
+    setForm({
+      ...INITIAL_FORM,
+      category: targetCategory,
+      channelPartnerName: assignedPartner || "",
+      vendorName: assignedVendor || "",
+      origin: assignedOrigin || "in_house_project",
+    });
+    setPhotos([]);
+    setDocuments([]);
+    setVideo(null);
+    setVideoPreview(null);
+    setBrochure(null);
+    setBrochureUrl(null);
+    setValidationErrors({});
+    setOriginalListingId(null);
+    setAdminFeedback(null);
+    setSubmitError(null);
+    setSubmitted(false);
+  };
+
   useEffect(() => {
-    if (categoryType) {
-      if (form.category !== categoryType) {
-        setForm((prev) => ({ ...prev, category: categoryType }));
-      }
-      if (step === 0 && !isEditing) {
-        setStep(1);
-      }
-    } else if (!categoryType && !isEditing) {
-      if (form.category) {
-        setForm((prev) => ({ ...prev, category: "" }));
-      }
-      if (step !== 0) {
+    // If user left edit mode, reset to fresh form
+    if (prevIsEditingRef.current && !isEditing) {
+      resetForm(categoryType || "");
+      setStep(categoryType && categoryType !== "properties" && categoryType !== "real-estate" ? 1 : 0);
+    } else if (!isEditing && prevCategoryTypeRef.current !== categoryType) {
+      // Category switched while creating listings — reset previous category form data
+      resetForm(categoryType || "");
+      if (categoryType) {
+        if (step === 0) setStep(1);
+      } else {
         setStep(0);
       }
     }
+    prevIsEditingRef.current = isEditing;
+    prevCategoryTypeRef.current = categoryType;
   }, [categoryType, isEditing]);
 
   // Pre-fill locked partner identity and in-house tags
@@ -105,6 +139,59 @@ export function useAddListingForm() {
       });
     }
   }, [isEditing]);
+
+  // Restore draft if draftId is present in URL
+  useEffect(() => {
+    if (!draftId) return;
+    const draft = getDraftById(draftId);
+    if (!draft) return;
+    if (draft.form) {
+      setForm((prev) => ({
+        ...prev,
+        ...draft.form,
+        category: draft.category || prev.category,
+        subcategory: draft.subcategory || draft.form?.subcategory || prev.subcategory,
+      }));
+    }
+    if (Array.isArray(draft.photos) && draft.photos.length > 0) {
+      const restored = draft.photos.map((p, i) => {
+        if (typeof p === 'string') {
+          return { id: `restored-${i}-${p}`, url: p, name: `photo-${i + 1}`, isDirectLink: true };
+        }
+        return {
+          id: p.id || `restored-${i}-${p.url}`,
+          url: p.url,
+          name: p.name || `photo-${i + 1}`,
+          isDirectLink: Boolean(p.isDirectLink),
+        };
+      });
+      setPhotos(restored);
+    }
+    if (Array.isArray(draft.documents) && draft.documents.length > 0) {
+      const restoredDocs = draft.documents.map((d, i) => {
+        if (typeof d === 'string') {
+          return { id: `doc-${i}`, url: d, name: `document-${i + 1}` };
+        }
+        return d;
+      });
+      setDocuments(restoredDocs);
+    }
+    if (draft.brochure) {
+      setBrochureUrl(draft.brochure);
+    }
+    if (draft.step) {
+      setStep(draft.step);
+    }
+  }, [draftId]);
+
+  const clearAllPhotos = () => {
+    photos.forEach((p) => {
+      if (p?.url && p.url.startsWith('blob:')) {
+        URL.revokeObjectURL(p.url);
+      }
+    });
+    setPhotos([]);
+  };
 
   const imageUrls = photos.filter((p) => p.url).map((p) => p.url);
   const docUrls = documents.filter((d) => d.url).map((d) => d.url);
@@ -236,25 +323,49 @@ export function useAddListingForm() {
 
   const handleSaveDraft = () => {
     try {
-      const draft = {
-        step,
-        category,
-        subcategory,
-        form,
-        photos: photos.map((p) => p.url).filter(Boolean),
-        documents: documents.map((d) => d.url).filter(Boolean),
+      const currentDraftId = draftId || `draft_${Date.now()}`;
+      const draftTitle = form.title || [form.brand, form.model].filter(Boolean).join(' ') || `${category || 'Product'} Draft`;
+      const draftData = {
+        _id: currentDraftId,
+        id: currentDraftId,
+        status: 'draft',
+        title: draftTitle,
+        category: category || categoryType || 'properties',
+        _type: category || categoryType || 'properties',
+        subcategory: subcategory || form.subcategory || '',
+        price: form.price || '',
+        images: photos.map((p) => p.url).filter(Boolean),
+        photos: photos.map((p) => ({
+          id: p.id,
+          name: p.name,
+          url: p.url,
+          isDirectLink: Boolean(p.isDirectLink),
+        })),
+        documents: documents.map((d) => ({
+          id: d.id,
+          name: d.name,
+          url: d.url,
+        })),
+        video: typeof video === 'string' ? video : null,
         brochure: brochureUrl,
+        form: { ...form },
+        step,
         savedAt: Date.now(),
+        updatedAt: new Date().toISOString(),
       };
-      localStorage.setItem("OneVishwam_listing_draft", JSON.stringify(draft));
+      saveDraft(draftData);
       Swal.fire({
         icon: "success",
         title: "Draft Saved!",
-        text: "Your draft has been saved locally. You can continue later.",
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: "top-end",
+        text: "Your listing draft has been saved. You can view, resume, or edit it from Listed Items > Drafts.",
+        showCancelButton: true,
+        confirmButtonText: "View Drafts",
+        cancelButtonText: "Continue Editing",
+        confirmButtonColor: "#2563eb",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/listings?status=draft");
+        }
       });
     } catch (err) {
       console.warn("Save draft failed:", err?.message);
@@ -447,9 +558,19 @@ export function useAddListingForm() {
         });
       }
 
+      if (draftId) {
+        deleteDraft(draftId);
+      }
+
       invalidateListings();
       refreshStats();
       setSubmitted(true);
+      clearAllPhotos();
+      setDocuments([]);
+      setVideo(null);
+      setVideoPreview(null);
+      setBrochure(null);
+      setBrochureUrl(null);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setSubmitError(
@@ -719,8 +840,10 @@ return {
     setDocDragOver,
     // Handlers
     updateForm,
+    resetForm,
     handleAddPhoto,
     handleAddPhotoUrl,
+    clearAllPhotos,
     handleAddDocument,
     removePhoto,
     movePhoto,

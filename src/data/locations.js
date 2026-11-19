@@ -9,29 +9,13 @@ export const cities = {
       'Basavanagudi', 'Hebbal',
     ],
   },
-  mysuru: {
-    label: 'Mysuru',
-    areas: ['Gokulam', 'Vijayanagar', 'Jayalakshmipuram', 'Kuvempunagar', 'Saraswathipuram'],
-  },
-  mangaluru: {
-    label: 'Mangaluru',
-    areas: ['Kadri', 'Bejai', 'Kodialbail', 'Urwa', 'Lalbagh'],
-  },
-  hubballi: {
-    label: 'Hubballi',
-    areas: ['Vidyanagar', 'Keshwapur', 'Gokul Road', 'Navanagar'],
-  },
-  belagavi: {
-    label: 'Belagavi',
-    areas: ['Tilakwadi', 'Camp', 'Udyambag', 'Khasbag'],
-  },
 };
 
 export const defaultCity = 'bengaluru';
 export const defaultArea = 'Koramangala';
 
 export function getCityLabel(cityId) {
-  return cities[cityId]?.label || cityId;
+  return cities[cityId]?.label || 'Bengaluru';
 }
 
 export function getAreaLabel(cityId, area) {

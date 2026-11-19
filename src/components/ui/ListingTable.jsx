@@ -41,12 +41,35 @@ export const DEFAULT_STATUS_CONFIG = {
   },
 };
 
+// Mock placeholder items for auto-adapting skeleton loading
+const MOCK_SKELETON_ITEMS = Array.from({ length: 12 }).map((_, i) => ({
+  _id: `mock-skel-${i}`,
+  itemId: `mock-skel-${i}`,
+  id: `mock-skel-${i}`,
+  title: 'Residential Plot in Nadaprabhu Kempegowda',
+  category: 'properties',
+  _type: 'properties',
+  propertyType: 'Plot',
+  location: '1,200 Sq.ft (30x40), bengaluru',
+  city: 'bengaluru',
+  area: '1,200 Sq.ft',
+  createdAt: '2026-11-19T00:00:00.000Z',
+  date: '2026-11-19T00:00:00.000Z',
+  status: 'approved',
+  price: 6500000,
+  numericPrice: 6500000,
+  images: [],
+}));
+
 /**
  * Reusable ListingTable component matching screenshot design.
  * Configurable via props for use across Lister and Admin portals.
+ * Supports auto-adapting layout skeleton via `loading={true}`.
  */
 function ListingTable({
   items = [],
+  loading = false,
+  skeletonRows = 8,
   columns = ['product', 'category', 'location', 'date', 'status', 'actions'],
   getItemLink,
   getEditLink,
@@ -66,7 +89,9 @@ function ListingTable({
   currentPage = 1,
   perPage = 10,
 }) {
-  if (!items || items.length === 0) {
+  const displayItems = loading ? MOCK_SKELETON_ITEMS.slice(0, skeletonRows) : items;
+
+  if (!loading && (!displayItems || displayItems.length === 0)) {
     return emptyState || (
       <EmptyState
         title="No items available"
@@ -77,20 +102,28 @@ function ListingTable({
 
   // Helper to resolve detail URL
   const resolveDetailUrl = (item) => {
+    if (loading) return '#';
     if (typeof getItemLink === 'function') return getItemLink(item);
     const targetId = item.itemId || item._id || item.id;
     const cat = item._type || item.category || 'properties';
+    if (item.status === 'draft' || String(targetId).startsWith('draft_')) {
+      return `/add-listing/${encodeURIComponent(cat)}?draft=${encodeURIComponent(targetId)}`;
+    }
     if (portal === 'admin') {
       return targetId ? `/admin/listings/${encodeURIComponent(cat)}/${encodeURIComponent(targetId)}` : '#';
     }
-    return targetId ? `/listings/${encodeURIComponent(targetId)}?type=${encodeURIComponent(cat)}` : '#';
+    return targetId ? `/listings/${encodeURIComponent(targetId)}?type=${encodeURIComponent(cat)}&fromPage=${currentPage}` : '#';
   };
 
   // Helper to resolve edit URL
   const resolveEditUrl = (item) => {
+    if (loading) return '#';
     if (typeof getEditLink === 'function') return getEditLink(item);
     const targetId = item._id || item.id || item.itemId;
     const cat = item._type || item.category || 'properties';
+    if (item.status === 'draft' || String(targetId).startsWith('draft_')) {
+      return `/add-listing/${encodeURIComponent(cat)}?draft=${encodeURIComponent(targetId)}`;
+    }
     if (portal === 'admin') {
       return targetId ? `/admin/listings/${encodeURIComponent(cat)}/${encodeURIComponent(targetId)}` : '#';
     }
@@ -115,19 +148,19 @@ function ListingTable({
       const reason = item.adminComment || item.adminFeedback || item.reason;
 
       return (
-        <div className="flex items-center gap-3 min-w-[200px] max-w-[280px]">
+        <div className="flex items-center gap-2.5 min-w-[180px] max-w-[260px]">
           {img ? (
-            <Link to={detailUrl} className="shrink-0 group/thumb block overflow-hidden rounded-xl">
+            <Link to={detailUrl} className="shrink-0 group/thumb block overflow-hidden rounded-lg">
               <img
                 src={img}
                 alt=""
-                className="w-10 h-10 rounded-xl object-cover border border-slate-200/80 shrink-0 bg-slate-100 group-hover/thumb:border-brand-blue group-hover/thumb:scale-105 transition-all"
+                className="w-8 h-8 rounded-lg object-cover border border-slate-200/80 shrink-0 bg-slate-100 group-hover/thumb:border-brand-blue group-hover/thumb:scale-105 transition-all"
               />
             </Link>
           ) : (
-            <Link to={detailUrl} className="shrink-0 group/thumb block rounded-xl">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/80 text-slate-400 flex items-center justify-center shrink-0 group-hover/thumb:border-brand-blue group-hover/thumb:text-brand-blue transition-colors">
-                <i className="fa-solid fa-image text-xs" />
+            <Link to={detailUrl} className="shrink-0 group/thumb block rounded-lg">
+              <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200/80 text-slate-400 flex items-center justify-center shrink-0 group-hover/thumb:border-brand-blue group-hover/thumb:text-brand-blue transition-colors">
+                <i className="fa-solid fa-image text-[10px]" />
               </div>
             </Link>
           )}
@@ -135,20 +168,20 @@ function ListingTable({
           <div className="min-w-0 flex-1">
             <Link
               to={detailUrl}
-              className="font-bold text-slate-900 text-xs hover:text-brand-blue hover:underline truncate block transition-colors"
+              className="font-bold text-slate-900 text-xs hover:text-brand-blue hover:underline truncate block transition-colors leading-tight"
               title={title}
             >
               {title}
             </Link>
             {isCancelled && reason && (
-              <p className="text-[11px] font-medium text-rose-600 truncate mt-0.5 flex items-center gap-1">
-                <i className="fa-solid fa-circle-exclamation text-[10px]" />
+              <p className="text-[10px] font-medium text-rose-600 truncate mt-0.5 flex items-center gap-1">
+                <i className="fa-solid fa-circle-exclamation text-[9px]" />
                 Reason: {reason}
               </p>
             )}
             {isChangesReq && reason && (
-              <p className="text-[11px] font-medium text-amber-600 truncate mt-0.5 flex items-center gap-1">
-                <i className="fa-solid fa-pen-to-square text-[10px]" />
+              <p className="text-[10px] font-medium text-amber-600 truncate mt-0.5 flex items-center gap-1">
+                <i className="fa-solid fa-pen-to-square text-[9px]" />
                 Reason: {reason}
               </p>
             )}
@@ -223,7 +256,7 @@ function ListingTable({
       );
     },
 
-    status: (item) => <StatusPill status={item.status} />,
+    status: (item) => <StatusPill status={item.status} size="xs" />,
 
     actions: (item) => {
       const itemId = item._id || item.id || item.itemId;
@@ -235,34 +268,32 @@ function ListingTable({
           {/* Custom actions slot first (e.g. Media button) */}
           {renderCustomActions?.(item, isBusy)}
 
-          {/* Edit button or Link */}
+          {/* Edit icon button */}
           {onEdit ? (
-            <Button
+            <IconButton
               variant="secondary"
-              size="sm"
-              icon="fa-pen"
+              size="icon-xs"
+              icon={item.status === 'draft' ? "fa-floppy-disk" : "fa-pen"}
               onClick={() => onEdit(item)}
-              title="Edit"
-            >
-              Edit
-            </Button>
+              title={item.status === 'draft' ? "Resume Draft" : "Edit listing"}
+              aria-label={item.status === 'draft' ? "Resume Draft" : "Edit listing"}
+            />
           ) : getEditLink || portal === 'lister' ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              icon="fa-pen"
+            <IconButton
+              variant={item.status === 'draft' ? "gold-soft" : "secondary"}
+              size="icon-xs"
+              icon={item.status === 'draft' ? "fa-floppy-disk" : "fa-pen"}
               to={editUrl}
-              title="Edit"
-            >
-              Edit
-            </Button>
+              title={item.status === 'draft' ? "Resume Draft" : "Edit listing"}
+              aria-label={item.status === 'draft' ? "Resume Draft" : "Edit listing"}
+            />
           ) : null}
 
           {/* Delete button */}
           {onDelete && (
             <IconButton
               variant="danger-soft"
-              size="icon"
+              size="icon-xs"
               icon="fa-trash"
               onClick={() => onDelete(item)}
               loading={isBusy}
@@ -309,16 +340,20 @@ function ListingTable({
   });
 
   return (
-    <div className={`w-full ${className}`}>
+    <div
+      className={`w-full ${loading ? 'skeleton-mask' : ''} ${className}`}
+      {...(loading ? { 'aria-busy': 'true', role: 'status', 'data-skeleton': 'true' } : {})}
+    >
+      {loading && <span className="sr-only">Loading listings data…</span>}
       {/* ── Desktop & Tablet Table ── */}
       <div className={`overflow-x-auto ${responsiveMode === 'cards' ? 'hidden lg:block' : 'block'}`}>
         <table className={`w-full text-left border-collapse ${tableClassName}`}>
           <thead>
-            <tr className="bg-slate-50/90 border-b border-slate-100 text-[10px] uppercase tracking-wider font-extrabold text-slate-500">
+            <tr className="bg-slate-50/80 border-b border-slate-100 text-[10px] uppercase tracking-wider font-extrabold text-slate-400">
               {normalizedColumns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-4 py-2.5 ${col.className || ''} ${col.headerClassName || ''}`}
+                  className={`px-3.5 py-2 ${col.className || ''} ${col.headerClassName || ''}`}
                 >
                   {col.label}
                 </th>
@@ -326,14 +361,14 @@ function ListingTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-            {items.map((item, idx) => {
+            {displayItems.map((item, idx) => {
               const rowId = item._id || item.id || item.itemId || idx;
               return (
-                <tr key={rowId} className="hover:bg-slate-50/80 transition-colors">
+                <tr key={rowId} className={loading ? '' : 'hover:bg-blue-50/40 transition-colors'}>
                   {normalizedColumns.map((col) => {
                     const cellRenderer = col.render || defaultRenderers[col.key];
                     return (
-                      <td key={col.key} className={`px-4 py-3 ${col.className || ''}`}>
+                      <td key={col.key} className={`px-3.5 py-2 ${col.className || ''}`}>
                         {cellRenderer ? cellRenderer(item, idx) : item[col.key] || '—'}
                       </td>
                     );
@@ -348,7 +383,7 @@ function ListingTable({
       {/* ── Mobile Responsive Cards (when responsiveMode === 'cards') ── */}
       {responsiveMode === 'cards' && (
         <div className="lg:hidden divide-y divide-slate-100">
-          {items.map((item, idx) => {
+          {displayItems.map((item, idx) => {
             const rowId = item._id || item.id || item.itemId || idx;
             const images = Array.isArray(item.images) && item.images.length > 0 ? item.images : item.image ? [item.image] : [];
             const img = images[0];
