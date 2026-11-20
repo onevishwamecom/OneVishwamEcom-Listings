@@ -61,13 +61,16 @@ export function FilterPills({
 }) {
   return (
     <div className={`overflow-x-auto scrollbar-hide ${className}`}>
-      <nav className="flex gap-1 min-w-max items-center" aria-label={ariaLabel}>
+      <nav className="flex gap-1 min-w-max items-center" aria-label={ariaLabel} role="tablist">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               type="button"
+              role="tab"
+              aria-selected={isActive}
+              data-testid={`status-tab-${tab.id}`}
               onClick={() => onChange(tab.id)}
               aria-current={isActive ? 'page' : undefined}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all duration-150 ${

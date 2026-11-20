@@ -141,6 +141,9 @@ function ListedItems() {
             <div className="p-3 border-b border-slate-100 flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
               <div className="flex-1">
                 <SearchInput
+                  id="search-listings"
+                  name="search"
+                  data-testid="search-input"
                   value={search}
                   onChange={(val) => setSearch(val)}
                   placeholder="Search by title, category, city..."
@@ -151,10 +154,13 @@ function ListedItems() {
               <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <div className="relative w-full sm:w-44">
                   <select
+                    id="category-filter"
+                    name="category"
+                    data-testid="category-filter"
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
                     aria-label="Filter by category"
-                    className="w-full appearance-none rounded-lg border bg-white px-3 py-1.5 pr-7 text-xs font-medium outline-none transition-all duration-150 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 hover:border-slate-300 text-slate-700"
+                    className="w-full appearance-none rounded-lg border bg-white px-3 py-1.5 pr-7 text-xs font-medium outline-none transition-all duration-150 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 hover:border-slate-300 text-slate-700 cursor-pointer"
                   >
                     <option value="all">All Categories</option>
                     {PRIMARY_CATEGORIES.map((cat) => (
@@ -168,10 +174,13 @@ function ListedItems() {
 
                 <div className="relative w-full sm:w-44">
                   <select
+                    id="sort-listings"
+                    name="sort"
+                    data-testid="sort-filter"
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
                     aria-label="Sort listings"
-                    className="w-full appearance-none rounded-lg border bg-white px-3 py-1.5 pr-7 text-xs font-medium outline-none transition-all duration-150 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 hover:border-slate-300 text-slate-700"
+                    className="w-full appearance-none rounded-lg border bg-white px-3 py-1.5 pr-7 text-xs font-medium outline-none transition-all duration-150 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 hover:border-slate-300 text-slate-700 cursor-pointer"
                   >
                     {SORT_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
